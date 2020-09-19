@@ -1,0 +1,611 @@
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="mystyle.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds@master/dist/figma-plugin-ds.css">
+<style>
+
+
+:root {
+  --grafitowy : #2c2c2c;
+  --select-color : #daebf7;
+}
+
+
+body {
+    font-family: 'Inter';
+    font-size: 11px;
+    letter-spacing : 0.2;
+    font-weight : 400;
+    letter-spacing : 0.055px;
+}
+
+
+.material-icons {
+  font-size : 16px;
+  color : Silver;
+}
+
+.list-buttons {
+  float : right;
+  display : inline-block;
+}
+
+.list-buttons .material-icons {
+  opacity : 0
+}
+
+.list-item:hover div .material-icons {
+  opacity : 1;
+  color : black;
+  cursor  : pointer;
+}
+
+.list-item i {
+vertical-align : -10%;
+padding-right : 8px;
+}
+
+.list-label{
+  vertical-align : 20%;
+  margin-left : 0px;
+  display : inline-block;
+  color : var(--grafitowy);
+}
+
+
+.list-item {
+  padding-top : 6px;
+  padding-bottom: 6px;
+}
+
+.event-list .list-item {
+   padding-left : 10px;
+}
+
+.dropdown-content > .list-item {
+  padding-left : 0px;
+}
+
+
+.disabled .list-label {
+color : LightGrey;
+}
+
+#current-slide {
+  display : inline-block;
+}
+
+
+.column {
+  display : inline-block;
+  padding : 10px;
+  vertical-align : text-top;
+  width : 200px;
+}
+
+
+
+/* dropdown */ 
+
+.dropbtn {
+  //background-color: #4CAF50;
+  //color: white;
+  font-family : 'Roboto';
+  font-weight : 500;
+  border: none;
+  cursor: pointer;
+  vertical-align : 40%;
+  padding-bottom : 5px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 220px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  padding-top : 8px;
+  padding-bottom : 8px;
+  height : 300px;
+  overflow : scroll;
+}
+
+.dropdown-content .list-item {
+  color: black;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content {
+}
+
+.dropdown-content .selectable:hover, .child-item:hover  {background-color: var(--select-color)}
+
+.dropdown-content .list-item {
+  padding-left : 10px;
+}
+
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropbtn {
+  
+}
+
+.dropbtn .dropdown-up {
+  display: none;
+}
+
+.dropdown:hover .dropbtn .dropdown-down  {
+  display: none;
+}
+
+.dropdown:hover .dropbtn .dropdown-up  {
+  display: inline;
+}
+
+.dropbtn i {
+  color : black;
+  vertical-align : -20%;
+}
+
+.dropdown-content .list-item {
+  cursor: default;
+}
+
+
+#add-show.disabled, #add-hide.disabled { 
+  color : LightGrey;
+}
+
+#add-show.selectable, #add-hide.selectable {
+  color : black;
+}
+
+.separator {
+  border-style : solid;
+  border-width : 0.5px;
+  border-color : LightGrey;
+  margin-top : 5px;
+  margin-bottom : 5px;
+}
+
+.top-buttons {
+  display : flex;
+  background-color: var(--grafitowy);
+}
+
+.top-buttons div div {
+  filter : invert(100%);
+}
+
+.oddziel {
+  width : 10px
+}
+
+
+
+
+
+
+</style>
+<div class="top-buttons">
+  <div class="icon-button" onclick="exportButton()">
+    <div id="icon-play" class="icon icon--play"></div>
+  </div>
+  <div class="oddziel"> </div>
+  <select id="current-slide" class="select-menu" onchange="changeCurrentSlide(this)">
+  </select>
+</div>
+
+<div class="column" id="slide-column">
+  <div class="row" id="events-label">
+    <div class="dropdown">
+      <div class="dropbtn" onmouseover="dropDownMouseover(this)">
+        Events
+        <i class="material-icons">add</i>
+      </div>
+      <div class="dropdown-content" id="dropdown-content">
+        <div class="list-item">
+          <div class="list-label no-pointer" id="add-event">Add event for selected objects</div>
+        </div>
+        <div class="event-list">
+          <div class="list-item" id="add-show" onclick="dropDownClick('show')">
+            <i class="material-icons">visibility</i>
+            <div class="list-label" id="add-show">Add show event for selection</div>
+          </div>
+          <div class="list-item" id="add-hide" onclick="dropDownClick('hide')">
+            <i class="material-icons">visibility_off</i>
+            <div class="list-label" id="add-hide">Add hide event for selection</div>
+          </div>
+        </div>
+
+        <div class="separator"> </div>
+
+        <div class="list-item">
+          <div class="list-label no-pointer" id="add-child">Add child slide</div>
+        </div>
+        <div class="event-list" id="child-list">
+          <div class="list-item selectable" id="new-child" onclick="newChildClick()">
+            <i class="material-icons">add</i>
+            <div class="list-label">Create new child slide</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="event-list" class="event-list"> </div>
+  </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
+<script>
+    selectMenu.init(); //initiates the select menu component
+    disclosure.init(); //initiates the disclosure component
+</script>
+
+<script>
+// global variables  *******************
+
+//prefix of dropdown id's
+//this is meant to avoid coincidences with id's
+const dropDownPrefix = "dropdown-prefix:";
+
+//the id of the currently selected slide
+var currentSlide;
+
+//current eventlist 
+var eventList;
+
+
+// functions **************************
+
+
+
+
+//toggle the play button between "spinner" and "play"
+function exportWaiting(waiting) {
+  var button = document.getElementById("icon-play");
+  if (waiting) {
+    button.classList.remove("icon--play");
+    button.classList.add("icon--spinner");
+    button.classList.add("icon--spin");
+  } else {
+    button.classList.add("icon--play");
+    button.classList.remove("icon--spinner");
+    button.classList.remove("icon--spin");
+  }
+}
+
+//sending data to server
+function saveData(msg) {
+  var url = 'http://localhost:8001';
+
+  //I am doing the stringify by hand,
+  //if I do JSON.stringify, then the 100th-byte is coded as "100" : "123"
+  //I guess there is something wrong with my understanding
+
+  var body = '{';
+  var first = true;
+  for (const file of msg.fileList) {
+    if (first)
+      first = false;
+    else
+      body += ',';
+    var s = JSON.stringify(file.file, function (k, v) {
+      if (v instanceof Uint8Array) {
+        return Array.apply([], v);
+      }
+      return v;
+    });
+    body += '\"' + file.name + '\" : ' + s;
+  }
+
+  body += '}';
+
+
+  fetch(url, {
+    method: 'POST',
+    body: body
+  }).
+  then(response => {if (!response.ok) {throw "not connected";} else response.text()}).
+  then(x => {
+    exportWaiting(false);
+  }).catch((error) => {
+  alert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
+  exportWaiting(false);
+});
+}
+
+function exportButton() {
+  exportWaiting(true);
+  postMessage({
+    type: 'saveFile'
+  });
+}
+
+//  change the current slide 
+function changeCurrentSlide(par) {
+  postMessage({
+    type: 'changeSlide',
+    id: par.value
+  })
+}
+
+// **** dragging ****
+
+let drag_dragged;
+let dragSource;
+let dragTarget;
+let drag_list;
+
+document.addEventListener("dragstart", ({
+  target
+}) => {
+  drag_dragged = target;
+  drag_list = target.parentNode.children;
+  for (let i = 0; i < drag_list.length; i += 1) {
+    if (drag_list[i] === drag_dragged) {
+      dragSource = i;
+    }
+  }
+});
+
+document.addEventListener("dragover", (event) => {
+  event.preventDefault();
+});
+
+document.addEventListener("drop", ({
+  target
+}) => {
+
+  var realtarget;
+  if (target.classList.contains("dropzone"))
+    realtarget = target;
+  if (target.parentElement.classList.contains("dropzone"))
+    realtarget = target.parentElement;
+
+  if (realtarget != null && realtarget !== drag_dragged) {
+    for (let i = 0; i < drag_list.length; i += 1) {
+      if (drag_list[i] === realtarget) {
+        dragTarget = i;
+      }
+    }
+    drag_dragged.remove(drag_dragged);
+    if (dragSource > dragTarget) {
+      realtarget.before(drag_dragged);
+    } else {
+      realtarget.after(drag_dragged);
+    }
+    postMessage({
+      type: 'transposition',
+      source: dragSource,
+      target: dragTarget
+    });
+  }
+});
+
+
+
+
+//make a list item for the list of events 
+function makeEvent(event) {
+  var retval = document.createElement('div');
+  retval.id = event.id;
+  if (event.disabled)
+    retval.classList.add("disabled");
+  retval.classList.add("list-item");
+  retval.classList.add("dropzone");
+  retval.setAttribute("draggable", true);
+  var ifcon = document.createElement('i');
+  if (event.type == "show")
+    ifcon.innerHTML = "visibility";
+  if (event.type == "hide")
+    ifcon.innerHTML = "visibility_off";
+  if (event.type == "child")
+    ifcon.innerHTML = "zoom_out_map";
+
+  retval.addEventListener("mouseenter", event => postMessage({
+    type: 'mouseEnter',
+    id: event.target.id
+  }));
+  retval.addEventListener("mouseleave", event => postMessage({
+    type: 'mouseLeave'
+  }));
+  retval.addEventListener("click", event => postMessage({
+    type: 'click'
+  }));
+
+  ifcon.classList.add("material-icons");
+  ifcon.classList.add("hover-visible");
+  retval.appendChild(ifcon);
+  var label = document.createElement('div');
+  label.innerHTML = event.name;
+  label.classList.add("list-label");
+  retval.appendChild(label);
+  var buttons = document.createElement('div');
+  buttons.innerHTML = "<i class=\"material-icons\">delete_outline</i>";
+  buttons.onclick = removeClick;
+  buttons.classList.add("list-buttons");
+  retval.appendChild(buttons);
+  return retval;
+
+}
+
+
+
+//when a remove button is clicked
+function removeClick(event) {
+  var child = event.target.parentElement.parentElement;
+  var index = Array.from(child.parentNode.children).indexOf(child);
+  child.remove();
+  postMessage({
+    type: 'removeEvent',
+    index: index
+  })
+}
+
+
+function postMessage(msg) {
+  parent.postMessage({
+    pluginMessage: msg
+  }, '*');
+}
+
+
+//
+function newChildClick(event) {
+  //hide the dropdown menu
+  document.getElementById("dropdown-content").style.display = "none";
+  postMessage({
+    type: 'createNewChild'
+  })
+}
+
+//when an item of the dropdown menu is clicked
+function dropDownClick(event) {
+  //hide the dropdown menu
+  document.getElementById("dropdown-content").style.display = "none";
+
+  if (event == "show" || event == "hide") {
+    if (document.getElementById("add-show").classList.contains("disabled"))
+      return;
+    // show and hide buttons send strings
+    postMessage({
+      type: 'createEvent',
+      subtype: event
+    })
+  } else {
+    // add child buttons send events
+    var clickedid = event.target.id;
+
+    //a child event was clicked
+    if (clickedid.startsWith(dropDownPrefix)) {
+      //get the id of the selected menu item
+      var s = clickedid.slice(dropDownPrefix.length);
+      postMessage({
+        type: 'createEvent',
+        id: s,
+        subtype: 'child'
+      });
+    }
+  }
+
+
+
+
+}
+
+
+
+//when the dropdown menu is hovered
+//reanable visibility, which might have been turned off after the last click
+function dropDownMouseover(event) {
+  postMessage({
+    type: 'getAllFrames',
+    me: currentSlide
+  });
+  document.getElementById("dropdown-content").style.display = "";
+}
+
+
+
+// handle messages coming from figma
+function messageHandler(event) {
+  msg = event.data.pluginMessage;
+
+  if (msg.type === 'init') {
+
+    //load all slides into the selector of the current slide
+    var currentSlideDiv = document.getElementById("current-slide");
+    currentSlideDiv.innerHTML = "";
+    for (const slide of msg.slidelist) {
+      var item = document.createElement("option");
+      item.innerHTML =   slide.name;
+      item.value = slide.id;
+      if (msg.slideid == slide.id) {
+        item.setAttribute("selected", true);
+      }
+      currentSlideDiv.appendChild(item);
+    }
+
+
+
+
+  }
+
+  if (msg.type === 'refreshEventList') {
+    var eventListHTML = document.getElementById("event-list");
+    eventList = msg.events;
+    eventListHTML.innerHTML = "";
+    for (const event of eventList) {
+      eventListHTML.appendChild(makeEvent(event));
+    }
+
+  }
+
+
+  // fill the dropdown with list of available events to create
+  if (msg.type === 'framelist') {
+    if (msg.selected) {
+      document.getElementById("add-show").classList.add("selectable");
+      document.getElementById("add-show").classList.remove("disabled");
+      document.getElementById("add-hide").classList.add("selectable");
+      document.getElementById("add-hide").classList.remove("disabled");
+    } else {
+      document.getElementById("add-show").classList.remove("selectable");
+    document.getElementById("add-show").classList.add("disabled");
+    document.getElementById("add-hide").classList.remove("selectable");
+    document.getElementById("add-hide").classList.add("disabled");
+  }
+
+  var childlist = document.getElementById("child-list");
+  
+  //if I iterate over children and remove them, this messes with the iterator
+  //so I first creat a copy of the children;
+  var tempchildlist = [];
+  for (const x of childlist.childNodes)
+  if (x.id != "new-child")
+    tempchildlist.push(x);
+  for (const x of tempchildlist)
+    x.remove();
+  
+
+  for (const item of msg.framelist) {
+    var child = document.createElement("div");
+    child.id = dropDownPrefix + item.id;
+    child.onclick = dropDownClick;
+    child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
+    child.classList.add("list-item");
+    child.classList.add("selectable");
+    childlist.appendChild(child)
+  }
+}
+
+if (msg.type === 'selectSlide') {
+  var currentFrameDiv = document.getElementById("current-slide");
+  currentFrameDiv.innerHTML = msg.slide;
+}
+
+if (msg.type === 'saveData') {
+  saveData(msg);
+}
+}
+
+// 
+onmessage = messageHandler;
+postMessage({
+  type: 'init'
+});
+
+
+</script>
