@@ -1,0 +1,177 @@
+<link href="https://fonts.googleapis.com/css2?family=Roboto" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="mystyle.css">
+<style>
+body {
+    font-family: 'Roboto';
+    font-size: 12px;
+}
+
+.nazwa-ramki {
+}
+
+#current-slide {
+  display : inline-block;
+}
+
+.wybrana-ramka {
+  background-color: #ffe6e6;
+}
+
+.dialog-item {
+  margin-top : 10px;
+  margin-bottom: 10px;
+}
+
+.dialog-item-label {
+display : inline-block;
+font-weight : 100;
+}
+
+.overlay-list {
+  padding : 5px
+}
+
+.column {
+  display : inline-block;
+  padding : 10px;
+  vertical-align : text-top;
+}
+
+.invisible {
+    display: none;
+}
+</style>
+<div class="column" id="slide-column">
+<button id="select-slide-button" type="button">Select slide</button>
+<div class="dialog-item">
+<div class ="dialog-item-label"> Current frame: </div>
+<div id="current-slide"></div>
+</div>
+
+<div class="dialog-item">
+<input type="checkbox" id="scales" name="scales"
+         checked>
+  <label for="scales">First slide</label>
+</div>
+
+<div class="dialog-item">
+<div class="dialog-item-label">Events for this slide:</div>
+<div class="dialog-item">
+<button id="add-child-button" type="button">Add child</button>
+<button id="show-element-button" type="button">Show</button>
+<button id="hide-element-button" type="button">Hide</button>
+</div>
+<div class="overlay-list">
+<div class="overlay-item"> dupa </div>
+</div>
+</div>
+</div>
+<div class="column invisible" id="child-column">
+<div class="dialog-item">
+Pick a child frame
+</div>
+<div class="dialog-item">
+<input type="text" id="new-child" name="new-child">
+</div>
+<div class-"dialog-item" id="guziki"/>
+</div>
+<script>
+
+function select_current_slide()
+{
+  document.getElementById("slide-column").classList.add("invisible");
+  document.getElementById("child-column").classList.remove("invisible");
+  parent.postMessage({pluginMessage: {type: 'getAllFrames'}}, '*');
+  
+}
+
+parent.postMessage({pluginMessage: {type: 'init'}}, '*');
+
+document.getElementById("select-slide-button").onclick = select_current_slide;
+
+onmessage = (event) => {
+  
+  
+  msg = event.data.pluginMessage;
+
+  if (msg.type=== 'selectSlide')
+  {
+      var currentFrameDiv = document.getElementById("current-slide");
+      currentFrameDiv.innerHTML =  msg.slide;
+  }
+
+  if (msg.type === 'framelist')
+  {
+      const guziki = document.getElementById("guziki");
+      guziki.innerHTML = '';
+      for (const item of msg.framelist) {
+
+        function ramkaClick(event) {
+          target = event.target;
+          document.getElementById("slide-column").classList.remove("invisible");
+          document.getElementById("child-column").classList.add("invisible");
+          parent.postMessage({
+            pluginMessage: {
+              type: 'selectedFrame',
+              id: target.id
+            }
+          }, '*')
+        }
+
+        function ramkaMouseover(event) {
+          target = event.target;
+          target.classList.add("wybrana-ramka");
+          parent.postMessage({
+            pluginMessage: {
+              type: 'ramkaMouseover',
+              id: target.id
+            }
+          }, '*')
+        }
+
+        function ramkaMouseout(event) {
+          target = event.target;
+          target.classList.remove("wybrana-ramka");
+          parent.postMessage({
+            pluginMessage: {
+              type: 'ramkaMouseout',
+              id: target.id
+            }
+          }, '*')
+        }
+
+
+        
+        var guzik = document.createElement("div");
+        guzik.classList.add("nazwa-ramki");
+        guzik.innerHTML = "<i class=\"material-icons\">face</i>" + item.name;
+        guzik.id = item.id;
+        guzik.onclick = ramkaClick;
+        guzik.onmouseover = ramkaMouseover;
+        guzik.onmouseout = ramkaMouseout;
+        guziki.appendChild(guzik);
+
+  }
+
+  
+
+
+  };
+
+  
+  //console.log("got this from the plugin code", event.data.pluginMessage)
+}
+/*
+document.getElementById('create').onclick = () => {
+  const textbox = document.getElementById('count');
+  const count = parseInt(textbox.value, 10);
+  parent.postMessage({ pluginMessage: { type: 'create-rectangles', count } }, '*')
+}
+
+document.getElementById('cancel').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
+}
+*/
+
+</script>
