@@ -1,0 +1,15 @@
+1. Install the plugin in figma. The steps for this:
+- to "Manage Plugins" from the "Plugins" menu
+- select "Create Plugin" from the "In Development Column"
+- select "Click to choose a manifest.json file"
+- select the manifest.json file from the plugin directory
+So far, I have only tested the non-web client
+
+2. Run the server. 
+- run "python3 serwer.py" in the viewer directory
+
+3. Start using the plugin, when you are ready click the "play" button, which will send the data to the server. As a result, several svg files will appear in the viewer directory.
+
+4. To view the slides, open the following page in your browser: http://localhost:8000/viewer.html
+
+
