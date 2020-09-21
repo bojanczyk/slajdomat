@@ -46,13 +46,22 @@ class RequestHandler(BaseHTTPRequestHandler):
       dataLength = int(self.headers["Content-Length"])
       raw = self.rfile.read(dataLength);
       data = loads(raw)
-      print(data)
-      for key in data:
-          print(key)          
-          f = open(key+'.svg', "wb")
-          f.write(bytes(data[key]))
-          f.close()
 
+      def filename(id):
+          return "slides/"+id+".svg"
+      
+      if not os.path.isdir("slides"):
+          os.mkdir("slides")
+
+     
+      for i in data:
+          last = i['name']
+          f = open(filename(last), "wb")
+          f.write(bytes(i['file'],'utf-8'))
+          f.close()
+      if os.path.isfile("root.svg"):
+          os.remove("root.svg")
+      os.symlink(filename(last), "root.svg")
       response = {}
       response["status"] = "OK"
       self.send_dict_response(response)

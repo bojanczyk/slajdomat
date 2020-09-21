@@ -1,3 +1,4 @@
+
 var slideStack = [];
 var slideTree = null;
 var slideDict = {};
@@ -204,7 +205,7 @@ function pushSlide(node, dir = 1) {
         if (event.type == "child" && !("disabled" in event) && (event.node == null)) {
             event.loading = true;
             newchild.classList.add("slide-list-item-loading");
-            loadSVG(node, event.id, newchild);
+            loadSVG(node, "slides/"+event.id, newchild);
         }
     }
 
@@ -376,7 +377,7 @@ function loadSVG(parent, name, dom) {
             dom.classList.add("disabled-event");
             dom.classList.remove("slide-list-item-loading");
             if (parent != null) {
-                for (event of parent.events) {
+                for (const event of parent.events) {
                     if (event.id == name && event.type == "child") {
                         event.disabled = true;
                         delete event['loading'];
@@ -389,4 +390,4 @@ function loadSVG(parent, name, dom) {
     };
 }
 
-loadSVG(null, "1:2", null);
+loadSVG(null, "root", null);

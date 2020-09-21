@@ -73,8 +73,8 @@ function findChildRectangle(id, slide) {
         return null;
 }
 
-//creates a new slide, and attaches it as a child of the current slide
-function createNewChild() {
+//creates a new frame 
+function createNewFrame(width, height) {
     const nodes = figma.root.findAll(isSlideNode);
 
     // the position of the new child will be at the bottom, on the left
@@ -90,8 +90,14 @@ function createNewChild() {
     var newframe = figma.createFrame();
     newframe.x = minx;
     newframe.y = maxy + 100;
-    newframe.resize(currentSlide.width, currentSlide.height);
+    newframe.resize(width, height);
+    return newframe;
+}
 
+//creates a new slide, and attaches it as a child of the current slide
+function createNewChild() {
+
+    var newframe = createNewFrame(currentSlide.width, currentSlide.height);
     createChildEvent(newframe.id);
 
     saveCurrentData();
@@ -118,6 +124,7 @@ function createChildEvent(id) {
             b: 0
         }
     }];
+    box.opacity = 0.2;
     currentSlide.appendChild(box);
     box.name = id;
     database.events.push({
@@ -204,10 +211,10 @@ function saveFile() {
             currentSlide = node;
             loadCurrentData();
 
-            for (event of database.events)
+            for (const event of database.events)
                 if (event.type == "child")
                     saveRec(findFrame(event.id));
-
+            
             currentSlide = node;
             loadCurrentData();
             database.pagecount = pageCount - savedPages;
@@ -216,13 +223,13 @@ function saveFile() {
             promiseArray.push(
                 node.exportAsync({
                     format: 'SVG',
-                    svgOutlineText: false,
+                    svgOutlineText: true,
                     svgIdAttribute: true
                 }));
             stack.pop();
         }
     }
-    
+
     saveRec(currentSlide);
 
     var msg = {
@@ -241,6 +248,7 @@ function saveFile() {
             figma.ui.postMessage(msg);
         }
     );
+
 }
 
 // the plugin data is stored in a rectangle of the corner of the current slide, whose prefix is saveprefix
@@ -339,10 +347,7 @@ function mostCentral() {
         }
     }
 
-    if (retval == null)
-        throw "no slide frames";
-    else
-        return retval;
+    return retval;
 }
 
 
@@ -382,6 +387,7 @@ function cleanDatabase() {
             for (var j = 0; j < currentSlide.children.length; j++) {
                 if (currentSlide.children[j].id == event.id) {
                     event.index = j;
+                    event.name = currentSlide.children[j].name;
                     delete event.disabled;
                 }
             }
@@ -424,7 +430,7 @@ function getFrameList() {
             if (e.type == "child" && e.id == x.id)
                 alreadyChild = true;
         }
-        if (! alreadyChild)
+        if (!alreadyChild)
             outmsg.framelist.push({
                 name: x.name,
                 id: x.id
@@ -438,22 +444,29 @@ function getFrameList() {
 //set the current slide of the plugin
 function setCurrentSlide(slide) {
     currentSlide = slide;
-    loadCurrentData();
-    var slidelist = [];
-    for (const slide of figma.root.findAll(isSlideNode))
-        slidelist.push({
-            name: slide.name,
-            id: slide.id
-        });
 
-    figma.ui.postMessage({
-        type: 'init',
-        slide: currentSlide.name,
-        slideid: currentSlide.id,
-        slidelist: slidelist,
-        root: (currentSlide.id == rootSlide)
-    });
-    sendRefresh();
+    if (slide != null) {
+        loadCurrentData();
+        var slidelist = [];
+        for (const slide of figma.root.findAll(isSlideNode))
+            slidelist.push({
+                name: slide.name,
+                id: slide.id
+            });
+
+        figma.ui.postMessage({
+            type: 'init',
+            slide: currentSlide.name,
+            slideid: currentSlide.id,
+            slidelist: slidelist,
+            root: (currentSlide.id == rootSlide)
+        });
+        sendRefresh();
+    } else {
+        figma.ui.postMessage({
+            type: 'init'
+        })
+    }
 }
 
 
@@ -486,6 +499,12 @@ function onMessage(msg) {
         transposition(msg.source, msg.target);
     }
 
+    //make a first slide
+    if (msg.type == 'makeFirst') {
+        setCurrentSlide(createNewFrame(msg.width, msg.height));
+        figma.viewport.scrollAndZoomIntoView([currentSlide]);
+    }
+
     //change the current slide
     if (msg.type == 'changeSlide') {
         var newSlide = findFrame(msg.id);
@@ -497,7 +516,14 @@ function onMessage(msg) {
     if (msg.type == 'saveFile')
         saveFile();
 
-    
+    if (msg.type == 'mouseEnterPlugin') {
+        if (currentSlide != null)
+            if (currentSlide.removed)
+                currentSlide = null;
+        setCurrentSlide(currentSlide);
+    }
+
+
     //the mouse is hovering over an event
     //to highlight this event, we select the corresponding object in figma
     if (msg.type == 'mouseEnter') {
@@ -519,6 +545,7 @@ function onMessage(msg) {
         savedSelection = figma.currentPage.selection;
     }
 };
+
 
 
 

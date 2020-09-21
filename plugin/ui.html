@@ -50,6 +50,10 @@ padding-right : 8px;
   margin-left : 0px;
   display : inline-block;
   color : var(--grafitowy);
+  text-overflow: ellipsis;
+  max-width: 150px;
+  white-space : nowrap;
+  overflow : hidden;
 }
 
 
@@ -78,11 +82,14 @@ color : LightGrey;
 
 .column {
   display : inline-block;
-  padding : 10px;
   vertical-align : text-top;
-  width : 200px;
+  width : 100%;
+  height: 100%
 }
 
+.row {
+  padding : 10px;
+}
 
 
 /* dropdown */ 
@@ -192,21 +199,39 @@ color : LightGrey;
 }
 
 
+.hidden {
+  display : none;
+}
 
-
-
+.row .button {
+  margin-left : 10px;
+  margin-bottom : 10px;
+}
 
 </style>
-<div class="top-buttons">
-  <div class="icon-button" onclick="exportButton()">
-    <div id="icon-play" class="icon icon--play"></div>
+<div onmouseenter="pluginMouseover()">
+<div class="column hidden" id="settings-column">
+  <div class="row">
+    Create a first slide.
   </div>
-  <div class="oddziel"> </div>
-  <select id="current-slide" class="select-menu" onchange="changeCurrentSlide(this)">
-  </select>
+  <div class="row">
+  <button class='button button--primary' onclick='makeFirst(1024,768)'>1024 x 768</button>
+  <button class='button button--primary' onclick='makeFirst(1280,960)'>1280 x 960</button>
+  </div>
 </div>
 
-<div class="column" id="slide-column">
+<div class="column hidden" id="slide-column">
+
+  <div class="top-buttons">
+    <div class="icon-button" onclick="exportButton()">
+      <div id="icon-play" class="icon icon--play"></div>
+    </div>
+    <div class="oddziel"> </div>
+    <select id="current-slide" class="select-menu" onchange="changeCurrentSlide(this)">
+    </select>
+  </div>
+
+
   <div class="row" id="events-label">
     <div class="dropdown">
       <div class="dropbtn" onmouseover="dropDownMouseover(this)">
@@ -244,6 +269,7 @@ color : LightGrey;
     <div id="event-list" class="event-list"> </div>
   </div>
 </div>
+</div>
 
 
 
@@ -271,7 +297,6 @@ var eventList;
 
 
 
-
 //toggle the play button between "spinner" and "play"
 function exportWaiting(waiting) {
   var button = document.getElementById("icon-play");
@@ -286,14 +311,20 @@ function exportWaiting(waiting) {
   }
 }
 
+
+
 //sending data to server
 function saveData(msg) {
   var url = 'http://localhost:8001';
 
-  //I am doing the stringify by hand,
+  
+
+  
+//I am doing the stringify by hand,
   //if I do JSON.stringify, then the 100th-byte is coded as "100" : "123"
   //I guess there is something wrong with my understanding
-
+  /*
+  console.log(msg);
   var body = '{';
   var first = true;
   for (const file of msg.fileList) {
@@ -301,6 +332,8 @@ function saveData(msg) {
       first = false;
     else
       body += ',';
+    
+    console.log(new TextDecoder("utf-8").decode(file.file));
     var s = JSON.stringify(file.file, function (k, v) {
       if (v instanceof Uint8Array) {
         return Array.apply([], v);
@@ -311,11 +344,18 @@ function saveData(msg) {
   }
 
   body += '}';
+*/
 
+
+var body = [];
+  for (const file of msg.fileList) {
+    body.push({name : file.name, file : new TextDecoder("utf-8").decode(file.file)})
+  }
 
   fetch(url, {
     method: 'POST',
-    body: body
+    body: JSON.stringify(body)   
+    //body : body
   }).
   then(response => {if (!response.ok) {throw "not connected";} else response.text()}).
   then(x => {
@@ -333,6 +373,16 @@ function exportButton() {
   });
 }
 
+//make first slide
+function makeFirst(width, height) {
+postMessage({
+  type: 'makeFirst',
+  width : width,
+  height : height
+})
+}
+
+
 //  change the current slide 
 function changeCurrentSlide(par) {
   postMessage({
@@ -341,12 +391,20 @@ function changeCurrentSlide(par) {
   })
 }
 
+//the plugin panel has been moused over
+function pluginMouseover() {
+   postMessage({
+     type: 'mouseEnterPlugin'
+   })
+}
+
 // **** dragging ****
 
 let drag_dragged;
 let dragSource;
 let dragTarget;
 let drag_list;
+
 
 document.addEventListener("dragstart", ({
   target
@@ -470,7 +528,6 @@ function newChildClick(event) {
     type: 'createNewChild'
   })
 }
-
 //when an item of the dropdown menu is clicked
 function dropDownClick(event) {
   //hide the dropdown menu
@@ -484,26 +541,24 @@ function dropDownClick(event) {
       type: 'createEvent',
       subtype: event
     })
-  } else {
+  } else
+  if (event.startsWith(dropDownPrefix)) {
     // add child buttons send events
-    var clickedid = event.target.id;
-
+    var clickedid = event.slice(dropDownPrefix.length);
+    console.log(clickedid);
     //a child event was clicked
-    if (clickedid.startsWith(dropDownPrefix)) {
-      //get the id of the selected menu item
-      var s = clickedid.slice(dropDownPrefix.length);
-      postMessage({
-        type: 'createEvent',
-        id: s,
-        subtype: 'child'
-      });
-    }
+    postMessage({
+      type: 'createEvent',
+      id: clickedid,
+      subtype: 'child'
+    });
   }
-
-
-
-
 }
+
+
+
+
+
 
 
 
@@ -525,6 +580,11 @@ function messageHandler(event) {
 
   if (msg.type === 'init') {
 
+    if ('slide' in msg)
+    {
+    //there is a current slide
+    document.getElementById('slide-column').classList.remove("hidden");
+    document.getElementById('settings-column').classList.add("hidden");
     //load all slides into the selector of the current slide
     var currentSlideDiv = document.getElementById("current-slide");
     currentSlideDiv.innerHTML = "";
@@ -536,6 +596,12 @@ function messageHandler(event) {
         item.setAttribute("selected", true);
       }
       currentSlideDiv.appendChild(item);
+    }
+    }
+    else
+    {
+      document.getElementById('slide-column').classList.add("hidden");
+    document.getElementById('settings-column').classList.remove("hidden");
     }
 
 
@@ -583,7 +649,7 @@ function messageHandler(event) {
   for (const item of msg.framelist) {
     var child = document.createElement("div");
     child.id = dropDownPrefix + item.id;
-    child.onclick = dropDownClick;
+    child.onclick = function() {dropDownClick(dropDownPrefix+item.id);};
     child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
     child.classList.add("list-item");
     child.classList.add("selectable");
@@ -600,6 +666,7 @@ if (msg.type === 'saveData') {
   saveData(msg);
 }
 }
+
 
 // 
 onmessage = messageHandler;
