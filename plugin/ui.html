@@ -41,12 +41,10 @@ body {
 }
 
 .list-item i {
-vertical-align : -10%;
 padding-right : 8px;
 }
 
 .list-label{
-  vertical-align : 20%;
   margin-left : 0px;
   display : inline-block;
   color : var(--grafitowy);
@@ -54,12 +52,15 @@ padding-right : 8px;
   max-width: 150px;
   white-space : nowrap;
   overflow : hidden;
+  flex : 1;
 }
 
 
 .list-item {
   padding-top : 6px;
   padding-bottom: 6px;
+  display : flex;
+  align-items : center;
 }
 
 .event-list .list-item {
@@ -81,7 +82,7 @@ color : LightGrey;
 
 
 .column {
-  display : inline-block;
+  display : flex;
   vertical-align : text-top;
   width : 100%;
   height: 100%
@@ -188,6 +189,7 @@ color : LightGrey;
 .top-buttons {
   display : flex;
   background-color: var(--grafitowy);
+  align-items : center;
 }
 
 .top-buttons div div {
@@ -208,15 +210,25 @@ color : LightGrey;
   margin-bottom : 10px;
 }
 
+#slide-name {
+  color :white;
+}
+
+
+
+#events-label {
+  flex : 1;
+  overflow : scroll;
+}
+
+
+
 </style>
-<div onmouseenter="pluginMouseover()">
+<div id="entire-plugin" onmouseenter="pluginMouseenter();" onmouseleave="pluginMouseleave()">
 <div class="column hidden" id="settings-column">
   <div class="row">
-    Create a first slide.
-  </div>
-  <div class="row">
-  <button class='button button--primary' onclick='makeFirst(1024,768)'>1024 x 768</button>
-  <button class='button button--primary' onclick='makeFirst(1280,960)'>1280 x 960</button>
+  <button class='button button--primary' onclick='makeFirst(1024,768)'>Create slide 1024 x 768</button>
+  <button class='button button--primary' onclick='makeFirst(1280,960)'>Create slide 1280 x 960</button>
   </div>
 </div>
 
@@ -227,8 +239,8 @@ color : LightGrey;
       <div id="icon-play" class="icon icon--play"></div>
     </div>
     <div class="oddziel"> </div>
-    <select id="current-slide" class="select-menu" onchange="changeCurrentSlide(this)">
-    </select>
+    <div id="slide-name">
+    mikla </div>
   </div>
 
 
@@ -317,10 +329,10 @@ function exportWaiting(waiting) {
 function saveData(msg) {
   var url = 'http://localhost:8001';
 
-  
 
-  
-//I am doing the stringify by hand,
+
+
+  //I am doing the stringify by hand,
   //if I do JSON.stringify, then the 100th-byte is coded as "100" : "123"
   //I guess there is something wrong with my understanding
   /*
@@ -347,23 +359,30 @@ function saveData(msg) {
 */
 
 
-var body = [];
+  var body = [];
   for (const file of msg.fileList) {
-    body.push({name : file.name, file : new TextDecoder("utf-8").decode(file.file)})
+    body.push({
+      name: file.name,
+      file: new TextDecoder("utf-8").decode(file.file)
+    })
   }
 
   fetch(url, {
     method: 'POST',
-    body: JSON.stringify(body)   
+    body: JSON.stringify(body)
     //body : body
   }).
-  then(response => {if (!response.ok) {throw "not connected";} else response.text()}).
+  then(response => {
+    if (!response.ok) {
+      throw "not connected";
+    } else response.text()
+  }).
   then(x => {
     exportWaiting(false);
   }).catch((error) => {
-  alert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
-  exportWaiting(false);
-});
+    alert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
+    exportWaiting(false);
+  });
 }
 
 function exportButton() {
@@ -375,11 +394,11 @@ function exportButton() {
 
 //make first slide
 function makeFirst(width, height) {
-postMessage({
-  type: 'makeFirst',
-  width : width,
-  height : height
-})
+  postMessage({
+    type: 'makeFirst',
+    width: width,
+    height: height
+  })
 }
 
 
@@ -391,11 +410,27 @@ function changeCurrentSlide(par) {
   })
 }
 
+
+//for some reason that I do not understand, the mousenters
+//are not paired with the mouseleaves, so I pair them manually
+//using the following variable
+var cursorInsidePlugin = false;
+
 //the plugin panel has been moused over
-function pluginMouseover() {
-   postMessage({
-     type: 'mouseEnterPlugin'
-   })
+function pluginMouseenter() {
+  if (!cursorInsidePlugin) {
+    postMessage({
+      type: 'mouseEnterPlugin'
+    })
+    cursorInsidePlugin = true;
+  }
+}
+
+function pluginMouseleave() {
+ cursorInsidePlugin = false;
+  postMessage({
+      type: 'mouseLeavePlugin'
+    })
 }
 
 // **** dragging ****
@@ -445,7 +480,7 @@ document.addEventListener("drop", ({
       realtarget.after(drag_dragged);
     }
     postMessage({
-      type: 'transposition',
+      type: 'reorderEvents',
       source: dragSource,
       target: dragTarget
     });
@@ -473,11 +508,8 @@ function makeEvent(event) {
     ifcon.innerHTML = "zoom_out_map";
 
   retval.addEventListener("mouseenter", event => postMessage({
-    type: 'mouseEnter',
+    type: 'mouseEnterEvent',
     id: event.target.id
-  }));
-  retval.addEventListener("mouseleave", event => postMessage({
-    type: 'mouseLeave'
   }));
   retval.addEventListener("click", event => postMessage({
     type: 'click'
@@ -545,7 +577,6 @@ function dropDownClick(event) {
   if (event.startsWith(dropDownPrefix)) {
     // add child buttons send events
     var clickedid = event.slice(dropDownPrefix.length);
-    console.log(clickedid);
     //a child event was clicked
     postMessage({
       type: 'createEvent',
@@ -565,10 +596,6 @@ function dropDownClick(event) {
 //when the dropdown menu is hovered
 //reanable visibility, which might have been turned off after the last click
 function dropDownMouseover(event) {
-  postMessage({
-    type: 'getAllFrames',
-    me: currentSlide
-  });
   document.getElementById("dropdown-content").style.display = "";
 }
 
@@ -578,93 +605,82 @@ function dropDownMouseover(event) {
 function messageHandler(event) {
   msg = event.data.pluginMessage;
 
+
   if (msg.type === 'init') {
+    if ('slide' in msg) {
+      //there is a current slide
+      document.getElementById('slide-name').innerHTML = msg.slide;
+      document.getElementById('slide-column').classList.remove("hidden");
+      document.getElementById('settings-column').classList.add("hidden");
+      var eventListHTML = document.getElementById("event-list");
+      eventList = msg.events;
+      eventListHTML.innerHTML = "";
+      for (const event of eventList) {
+        eventListHTML.appendChild(makeEvent(event));
 
-    if ('slide' in msg)
-    {
-    //there is a current slide
-    document.getElementById('slide-column').classList.remove("hidden");
-    document.getElementById('settings-column').classList.add("hidden");
-    //load all slides into the selector of the current slide
-    var currentSlideDiv = document.getElementById("current-slide");
-    currentSlideDiv.innerHTML = "";
-    for (const slide of msg.slidelist) {
-      var item = document.createElement("option");
-      item.innerHTML =   slide.name;
-      item.value = slide.id;
-      if (msg.slideid == slide.id) {
-        item.setAttribute("selected", true);
+        if (msg.selected) {
+          document.getElementById("add-show").classList.add("selectable");
+          document.getElementById("add-show").classList.remove("disabled");
+          document.getElementById("add-hide").classList.add("selectable");
+          document.getElementById("add-hide").classList.remove("disabled");
+        } else {
+          document.getElementById("add-show").classList.remove("selectable");
+          document.getElementById("add-show").classList.add("disabled");
+          document.getElementById("add-hide").classList.remove("selectable");
+          document.getElementById("add-hide").classList.add("disabled");
+        }
+
+        var childlist = document.getElementById("child-list");
+
+        //if I iterate over children and remove them, this messes with the iterator
+        //so I first creat a copy of the children;
+        var tempchildlist = [];
+        for (const x of childlist.childNodes)
+          if (x.id != "new-child")
+            tempchildlist.push(x);
+        for (const x of tempchildlist)
+          x.remove();
+
+
+        for (const item of msg.framelist) {
+          var child = document.createElement("div");
+          child.id = dropDownPrefix + item.id;
+          child.onclick = function () {
+            dropDownClick(dropDownPrefix + item.id);
+          };
+          child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
+          child.classList.add("list-item");
+          child.classList.add("selectable");
+          childlist.appendChild(child)
+        }
       }
-      currentSlideDiv.appendChild(item);
-    }
-    }
-    else
-    {
+    } else {
       document.getElementById('slide-column').classList.add("hidden");
-    document.getElementById('settings-column').classList.remove("hidden");
+      document.getElementById('settings-column').classList.remove("hidden");
     }
+
 
 
 
 
   }
 
-  if (msg.type === 'refreshEventList') {
-    var eventListHTML = document.getElementById("event-list");
-    eventList = msg.events;
-    eventListHTML.innerHTML = "";
-    for (const event of eventList) {
-      eventListHTML.appendChild(makeEvent(event));
-    }
 
-  }
 
 
   // fill the dropdown with list of available events to create
   if (msg.type === 'framelist') {
-    if (msg.selected) {
-      document.getElementById("add-show").classList.add("selectable");
-      document.getElementById("add-show").classList.remove("disabled");
-      document.getElementById("add-hide").classList.add("selectable");
-      document.getElementById("add-hide").classList.remove("disabled");
-    } else {
-      document.getElementById("add-show").classList.remove("selectable");
-    document.getElementById("add-show").classList.add("disabled");
-    document.getElementById("add-hide").classList.remove("selectable");
-    document.getElementById("add-hide").classList.add("disabled");
+
   }
 
-  var childlist = document.getElementById("child-list");
-  
-  //if I iterate over children and remove them, this messes with the iterator
-  //so I first creat a copy of the children;
-  var tempchildlist = [];
-  for (const x of childlist.childNodes)
-  if (x.id != "new-child")
-    tempchildlist.push(x);
-  for (const x of tempchildlist)
-    x.remove();
-  
-
-  for (const item of msg.framelist) {
-    var child = document.createElement("div");
-    child.id = dropDownPrefix + item.id;
-    child.onclick = function() {dropDownClick(dropDownPrefix+item.id);};
-    child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
-    child.classList.add("list-item");
-    child.classList.add("selectable");
-    childlist.appendChild(child)
+  if (msg.type === 'selectSlide') {
+    var currentFrameDiv = document.getElementById("current-slide");
+    currentFrameDiv.innerHTML = msg.slide;
   }
-}
 
-if (msg.type === 'selectSlide') {
-  var currentFrameDiv = document.getElementById("current-slide");
-  currentFrameDiv.innerHTML = msg.slide;
-}
-
-if (msg.type === 'saveData') {
-  saveData(msg);
-}
+  if (msg.type === 'saveData') {
+    saveData(msg);
+  }
 }
 
 

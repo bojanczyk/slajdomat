@@ -172,10 +172,9 @@ function removeEvent(index) {
 }
 
 //change order of event list so that source becomes target
-function transposition(source, target) {
-    var tmp = database.events[source];
-    database.events[source] = database.events[target]
-    database.events[target] = tmp;
+function reorderEvents(source, target) {
+    var tmp = database.events.splice(source,1)[0];
+    database.events.splice(target,0,tmp);
     saveCurrentData();
 }
 
@@ -396,14 +395,7 @@ function cleanDatabase() {
 }
 
 
-//sends the current event list to the ui, with inactive events disabled
-function sendRefresh() {
-    cleanDatabase();
-    figma.ui.postMessage({
-        type: 'refreshEventList',
-        events: database.events
-    });
-}
+
 
 //select the items that are selected on the current page
 function selectedOnCurrentPage() {
@@ -416,52 +408,41 @@ function selectedOnCurrentPage() {
     return retval;
 }
 
-//returns list of candidates for a child frame, for the current slide
-//this list is all frames, except for the current slide and its already added children
-function getFrameList() {
-    const nodes = figma.root.findAll(x => isSlideNode(x) && x.id != currentSlide.id)
-    var outmsg = {
-        framelist: [],
-        type: 'framelist'
-    };
-    for (const x of nodes) {
-        var alreadyChild = false;
-        for (const e of database.events) {
-            if (e.type == "child" && e.id == x.id)
-                alreadyChild = true;
-        }
-        if (!alreadyChild)
-            outmsg.framelist.push({
-                name: x.name,
-                id: x.id
-            });
-    }
-    outmsg.selected = (selectedOnCurrentPage().length > 0);
-    figma.ui.postMessage(outmsg);
-}
-
-
 //set the current slide of the plugin
 function setCurrentSlide(slide) {
     currentSlide = slide;
 
     if (slide != null) {
         loadCurrentData();
-        var slidelist = [];
-        for (const slide of figma.root.findAll(isSlideNode))
-            slidelist.push({
-                name: slide.name,
-                id: slide.id
-            });
-
-        figma.ui.postMessage({
+        cleanDatabase();
+        var msg = {
             type: 'init',
             slide: currentSlide.name,
             slideid: currentSlide.id,
-            slidelist: slidelist,
-            root: (currentSlide.id == rootSlide)
-        });
-        sendRefresh();
+            events : database.events,
+            framelist : [],
+            selected :  (selectedOnCurrentPage().length > 0)
+        }
+            
+        const nodes = figma.root.findAll(x => isSlideNode(x) && x.id != currentSlide.id);
+
+        for (const x of nodes) {
+            var alreadyChild = false;
+            for (const e of database.events) {
+                if (e.type == "child" && e.id == x.id)
+                    alreadyChild = true;
+            }
+            if (!alreadyChild)
+                msg.framelist.push({
+                    name: x.name,
+                    id: x.id
+                });
+        }
+        
+        figma.ui.postMessage(msg);
+
+        
+        
     } else {
         figma.ui.postMessage({
             type: 'init'
@@ -482,6 +463,7 @@ function onMessage(msg) {
     //an exception is the new child event in the next function
     if (msg.type == 'createEvent') {
         createEvent(msg.id, msg.subtype);
+        setCurrentSlide(currentSlide);
     }
 
     //create a new slide, and attach it as a child to the current slide 
@@ -495,8 +477,8 @@ function onMessage(msg) {
     }
 
     //swap the order of two events
-    if (msg.type == 'transposition') {
-        transposition(msg.source, msg.target);
+    if (msg.type == 'reorderEvents') {
+        reorderEvents(msg.source, msg.target);
     }
 
     //make a first slide
@@ -505,29 +487,25 @@ function onMessage(msg) {
         figma.viewport.scrollAndZoomIntoView([currentSlide]);
     }
 
-    //change the current slide
-    if (msg.type == 'changeSlide') {
-        var newSlide = findFrame(msg.id);
-        figma.viewport.scrollAndZoomIntoView([newSlide]);
-        setCurrentSlide(newSlide);
-    }
-
     //export the files to svg's
     if (msg.type == 'saveFile')
         saveFile();
 
     if (msg.type == 'mouseEnterPlugin') {
-        if (currentSlide != null)
-            if (currentSlide.removed)
-                currentSlide = null;
-        setCurrentSlide(currentSlide);
+        reloadWindow();
+        savedSelection = figma.currentPage.selection;
+    }
+
+    if (msg.type == 'mouseLeavePlugin') {
+        figma.currentPage.selection = savedSelection;
+
     }
 
 
     //the mouse is hovering over an event
     //to highlight this event, we select the corresponding object in figma
-    if (msg.type == 'mouseEnter') {
-        savedSelection = figma.currentPage.selection;
+    if (msg.type == 'mouseEnterEvent') {
+        
         var selected = findFrame(msg.id);
         if (isSlideNode(selected))
             selected = findChildRectangle(msg.id, currentSlide);
@@ -547,10 +525,25 @@ function onMessage(msg) {
 };
 
 
+function reloadWindow() {
+    var sel = figma.currentPage.selection;
+    if (sel.length == 0)
+        setCurrentSlide(null);
+    if (sel.length >0) {
+        var node = sel[0]
+        while (!isSlideNode(node) && node!=null)        
+            node = node.parent
+        setCurrentSlide(node);
+    }
+
+
+}
 
 
 figma.showUI(__html__);
 figma.ui.resize(250, 400);
 figma.ui.onmessage = onMessage;
 
-setCurrentSlide(mostCentral());
+
+reloadWindow();
+

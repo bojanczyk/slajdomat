@@ -47,8 +47,8 @@ function nextPreviousArrows() {
 
 //update the page number in the corner
 function updatePageNumber() {
-    var countdiv = document.getElementById("page-count-text");
-    countdiv.innerHTML = currentPage + " / " + numberOfPages;
+    document.getElementById("page-count-enumerator").innerHTML = currentPage;
+    document.getElementById("page-count-denominator").innerHTML =  " / " + numberOfPages;
 }
 
 //offset the page counter
