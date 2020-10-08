@@ -1,6 +1,5 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="mystyle.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds@master/dist/figma-plugin-ds.css">
 <style>
 
@@ -329,47 +328,17 @@ function exportWaiting(waiting) {
 function saveData(msg) {
   var url = 'http://localhost:8001';
 
-
-
-
-  //I am doing the stringify by hand,
-  //if I do JSON.stringify, then the 100th-byte is coded as "100" : "123"
-  //I guess there is something wrong with my understanding
-  /*
-  console.log(msg);
-  var body = '{';
-  var first = true;
+  var retmsg = {type : 'svg', pageCount : msg.pageCount, root : msg.root,  files : []};
   for (const file of msg.fileList) {
-    if (first)
-      first = false;
-    else
-      body += ',';
-    
-    console.log(new TextDecoder("utf-8").decode(file.file));
-    var s = JSON.stringify(file.file, function (k, v) {
-      if (v instanceof Uint8Array) {
-        return Array.apply([], v);
-      }
-      return v;
-    });
-    body += '\"' + file.name + '\" : ' + s;
-  }
-
-  body += '}';
-*/
-
-
-  var body = [];
-  for (const file of msg.fileList) {
-    body.push({
-      name: file.name,
+    retmsg.files.push({
+      name: file.name+'.svg',
       file: new TextDecoder("utf-8").decode(file.file)
     })
   }
 
   fetch(url, {
     method: 'POST',
-    body: JSON.stringify(body)
+    body: JSON.stringify(retmsg)
     //body : body
   }).
   then(response => {
@@ -595,8 +564,12 @@ function dropDownClick(event) {
 
 //when the dropdown menu is hovered
 //reanable visibility, which might have been turned off after the last click
+
 function dropDownMouseover(event) {
   document.getElementById("dropdown-content").style.display = "";
+
+  //send a message to the backend, so that the selection is forgotten
+  postMessage({type : 'dropdownHover'});
 }
 
 

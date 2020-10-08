@@ -1,47 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE html>
 <html>
 
 <head>
-<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />	
+	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
 	<title>Slide-figma viewer</title>
 	<link rel="stylesheet" href="viewer.css">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
-	<link rel="icon" 
-      type="image/png" 
-      href="favicon.png">
+	<link rel="icon" type="image/png" href="favicon.png">
+
+
 </head>
 
 <body>
-	<div id="left-sensor" onmouseover="togglePanel(true)"></div>
-	<div id="control-panel" class="control-panel"
-	onmouseout="togglePanel(false)">
-		<ul id="event-stack">
-		</ul>
 
+	
+	<!-- the left panel, which rolls out, and has information about the slides -->
+	<div id="left-sensor" onmouseover="togglePanel(true)"></div>
+	<div id="control-panel" class="control-panel" onmouseout="togglePanel(false)">
+		<!-- <div id="audio-controls">
+			<i class="material-icons ">mic</i>
+			<i class="material-icons ">mic</i>
+		</div> -->
 		<div id="slide-stack" class="slide-stack">
 		</div>
 	</div>
 
+	<!-- status icons for the sound -->
+	<div id="record-icon" class="sound-icon invisible">
+		<i class="material-icons ">mic</i>
+	</div>
+	<div id="play-icon" class="sound-icon invisible">
+		<i class="material-icons ">play_arrow</i>
+	</div>
+	<div id="pause-icon" class="sound-icon invisible">
+		<i class="material-icons ">pause</i>
+	</div>
 
-
+	<!-- the panel that contains the svg with the slides -->
 	<div id="slide-panel" class="slide-panel">
 		<svg id="svg" class="svg-class"></svg></div>
 	</div>
 
+	<!-- the page counter in the lower right corner -->
 	<div id="page-count-container" class="page-count-container">
 		<i id="prev-event" class="material-icons">navigate_before</i>
 		<div>
-		<span id="page-count-enumerator"></span>
-		<span id="page-count-denominator">/12</span>
+			<span id="page-count-enumerator"></span>
+			<span id="page-count-denominator">/12</span>
 		</div>
 		<i id="next-event" class="material-icons">navigate_next</i>
 	</div>
 
-	 <!-- <object id="svgobject" class="svgclass" data="slajdy.svg" type="image/svg+xml"> </object> -->
+	
+
+	<!-- a pop-up text for alerts such as "file not found" -->
+	<div id="text-alert-box">
+		<div id="text-alert"> czesc </div>
+		<div id="text-alert-background"></div>
+	</div>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
 	<script src="viewer.js"></script>
+	<script src="sound.js"></script>
 
 </body>
 

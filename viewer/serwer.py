@@ -36,7 +36,10 @@ class RequestHandler(BaseHTTPRequestHandler):
       response["status"] = "OK"
       self.send_dict_response(response)
 
+
+
   def do_POST(self):
+      global fileToSave
       self.send_response(200)
       self._send_cors_headers()
       self.send_header("Content-Type", "application/json")
@@ -45,23 +48,48 @@ class RequestHandler(BaseHTTPRequestHandler):
 
       dataLength = int(self.headers["Content-Length"])
       raw = self.rfile.read(dataLength);
-      data = loads(raw)
-
-      def filename(id):
-          return "slides/"+id+".svg"
       
-      if not os.path.isdir("slides"):
-          os.mkdir("slides")
+      def filename(id):
+          return "slides/"+id
 
-     
-      for i in data:
-          last = i['name']
-          f = open(filename(last), "wb")
-          f.write(bytes(i['file'],'utf-8'))
-          f.close()
-      if os.path.isfile("root.svg"):
-          os.remove("root.svg")
-      os.symlink(filename(last), "root.svg")
+      if (fileToSave == None):
+        msg = loads(raw)
+
+       
+        
+        if not os.path.isdir("slides"):
+            os.mkdir("slides")
+        
+        if msg['type']=='svg':
+            for i in msg['files']:
+                f = open(filename(i['name']), "wb")
+                f.write(bytes(i['file'],'utf-8'))
+                f.close()
+            if os.path.isfile("root.svg"):
+                os.remove("root.svg")
+            os.symlink(filename(msg['files'][0]['name']), "root.svg")
+            manifest = {'pages' : msg['pageCount'], 'root' : msg['root'] }
+            f = open(filename('manifest.json'),'wb')
+            f.write(bytes(dumps(manifest),'utf-8'))
+            f.close()
+
+
+        if msg['type'] == 'wav':
+                print("wav")
+                fileToSave = msg['name']
+
+        if msg['type'] == 'sounds':
+            print(msg['body'])
+            f = open(filename('sounds.json'),'wb')
+            f.write(bytes(dumps(msg['body']),'utf-8'))
+            f.close()
+
+      else:
+        f = open(filename(fileToSave), "wb")
+        f.write(raw)
+        f.close()
+        fileToSave = None
+        
       response = {}
       response["status"] = "OK"
       self.send_dict_response(response)
@@ -79,6 +107,7 @@ def webThread(name):
     print("web: Hosting server on port 8000")
     httpd.serve_forever()    
 
+fileToSave = None
 x = threading.Thread(target=serverThread,args=(1,))
 x.start()
 y = threading.Thread(target=webThread,args=(1,))

@@ -187,3 +187,23 @@ function createSlideTree(id, parent) {
 
 
 
+
+function reloadWindow() {
+    var sel = figma.currentPage.selection;
+    //if nothing is selected, we use the previous slide,
+    //otherwise we use the slide with the first item of the selection
+    if (sel.length == 0) {
+        if (currentSlide == null)
+            setCurrentSlide(null)
+        else if (currentSlide.removed)
+            setCurrentSlide(null)
+        else
+            setCurrentSlide(currentSlide);
+    }
+    if (sel.length > 0) {
+        var node = sel[0]
+        while (!isSlideNode(node) && node != null)
+            node = node.parent
+        setCurrentSlide(node);
+    }
+}

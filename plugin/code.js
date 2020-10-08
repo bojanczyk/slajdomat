@@ -103,27 +103,31 @@ function createNewFrame(width, height) {
         //using the city metric
         i++;
         for (var j = 0; j < i && searching; j++) {
-            console.log(i,j);
-            candidate.x = currentSlide.x + (j+0.2) * width;
-            candidate.y = currentSlide.y + (i+0.2) * height;
-            if (intersectsNothing(candidate))
-                {searching = false; break;}
-            candidate.x = currentSlide.x + (i+0.2) * width;
-            candidate.y = currentSlide.y + (j+0.2) * height;
-            if (intersectsNothing(candidate))
-                {searching = false; break;}
-            candidate.x = currentSlide.x - (j+0.2) * width;
-            candidate.y = currentSlide.y + (i+0.2) * height;
-            if (intersectsNothing(candidate))
-                {searching = false; break;}
-            candidate.x = currentSlide.x - (i+0.2) * width;
-            candidate.y = currentSlide.y + (j+0.2) * height;
+            console.log(i, j);
+            candidate.x = currentSlide.x + j * width;
+            candidate.y = currentSlide.y + (i + 0.2) * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
+            }
+            candidate.x = currentSlide.x + (i + 0.2) * width;
+            candidate.y = currentSlide.y + j * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
+            }
+            candidate.x = currentSlide.x - j * width;
+            candidate.y = currentSlide.y + (i + 0.2) * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
+            }
+            candidate.x = currentSlide.x - (i + 0.2) * width;
+            candidate.y = currentSlide.y + j * height;
             if (intersectsNothing(candidate))
                 searching = false;
         }
     }
-    
-    console.log(candidate);
 
     var newframe = figma.createFrame();
     newframe.x = candidate.x;
@@ -229,19 +233,22 @@ function saveFile() {
     const nodes = figma.root.findAll(isSlideNode);
     var promiseArray = [];
     var fileNames = [];
-    var pageCount = 0;
+    
 
 
     var stack = [];
 
+    var savedCurrentSlide = currentSlide;
+    //saves and returns the number of pages
     function saveRec(node) {
-        
+        /*
         var stackString = "";
         for (const s of stack)
             stackString += s.name + ">";
         console.log(""+ pageCount+ " "+ stackString + node.name);
+        */
 
-        var savedPages = pageCount;
+        var pageCount = 1;
 
         if (stack.includes(node)) {
             var cycle = "The slides contain a cycle: \n";
@@ -253,25 +260,6 @@ function saveFile() {
             stack.push(node);
             currentSlide = node;
             loadCurrentData();
-            pageCount += 1;
-
-            for (const event of database.events)
-                if (event.type == "child" && !(event.disabled))
-                {    
-                    var childNode = findFrame(event.id);
-                    if (childNode == null)
-                    {
-                        console.log(event);
-                    }
-                    else 
-                    saveRec(childNode);
-                }
-                else if (event.type == "child")
-                figma.notify("Skipped disabled child in " + node.name);
-
-            currentSlide = node;
-            loadCurrentData();
-            database.pagecount = pageCount - savedPages;
             saveCurrentData();
             fileNames.push(node.id);
             promiseArray.push(
@@ -280,15 +268,25 @@ function saveFile() {
                     svgOutlineText: true,
                     svgIdAttribute: true
                 }));
+
+            for (const event of database.events) 
+                if (event.type == "child" && !(event.disabled)) 
+                    pageCount += saveRec(findFrame(event.id));
+            
             stack.pop();
+            return pageCount;
         }
     }
 
-    saveRec(currentSlide);
-
+    var pageCount = saveRec(currentSlide);
+    currentSlide = savedCurrentSlide;
+    loadCurrentData();
+    
     var msg = {
         type: 'saveData',
-        fileList: []
+        fileList: [],
+        root : currentSlide.id,
+        pageCount : pageCount
     };
 
 
@@ -350,6 +348,7 @@ function loadCurrentData() {
     // cut off the save prefix
     var s = rect.name.slice(saveprefix.length);
     database = JSON.parse(s);
+    cleanDatabase();
 
 }
 
@@ -439,7 +438,7 @@ function cleanDatabase() {
         }
 
         if (event.type == "show" || event.type == "hide") {
-            for (const child of  currentSlide.children) {
+            for (const child of currentSlide.children) {
                 if (child.id == event.id) {
                     event.name = child.name;
                     event.disabled = false;

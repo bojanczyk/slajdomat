@@ -1,4 +1,3 @@
-
 var slideStack = [];
 var slideTree = null;
 var slideDict = {};
@@ -28,6 +27,22 @@ function togglePanel(visible) {
 }
 
 
+//displays an alert for the user at the bottom of the screen
+function userAlert(text) {
+    var panel = document.getElementById("text-alert-box");
+    document.getElementById("text-alert").innerHTML = text;
+    let tl = gsap.timeline();
+    tl.to(panel, {
+        opacity: "100%",
+        duration: 0.1
+    }).to(panel, {
+        duration: 1
+    }).to(panel, {
+        opacity: "0",
+        duration: 1
+    });
+}
+
 
 // the "previous" arrow should be invisible at the first event of the first slide
 // analogously for the "next" arrow
@@ -48,7 +63,7 @@ function nextPreviousArrows() {
 //update the page number in the corner
 function updatePageNumber() {
     document.getElementById("page-count-enumerator").innerHTML = currentPage;
-    document.getElementById("page-count-denominator").innerHTML =  " / " + numberOfPages;
+    document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 }
 
 //offset the page counter
@@ -164,7 +179,7 @@ function pushSlide(node, dir = 1) {
         retval.classList.add("slide-list-item");
 
         var icon;
-        if ('disabled' in event) {
+        if (event.disabled) {
             retval.classList.add("disabled-event");
         }
 
@@ -174,7 +189,11 @@ function pushSlide(node, dir = 1) {
             icon = "visibility_off";
         if (event.type == "child")
             icon = "zoom_out_map";
-        retval.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
+
+        //this operation seems to solve problems with utf
+        var niceName = decodeURIComponent(escape(event.name));
+
+        retval.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + niceName;
         return retval;
     }
 
@@ -202,10 +221,10 @@ function pushSlide(node, dir = 1) {
         if (dir == -1)
             newchild.classList.add("slide-list-item-seen");
         dom.appendChild(newchild);
-        if (event.type == "child" && !("disabled" in event) && (event.node == null)) {
+        if (event.type == "child" && !(event.disabled) && (event.node == null)) {
             event.loading = true;
             newchild.classList.add("slide-list-item-loading");
-            loadSVG(node, "slides/"+event.id, newchild);
+            loadSVG(node, "slides/" + event.id, newchild);
         }
     }
 
@@ -227,17 +246,24 @@ function pushSlide(node, dir = 1) {
 //dir is +1 for next event and -1 for previous event
 function nextEvent(dir) {
     var top = slideStack.top();
+
+
     //if the current slide is exhausted
     if ((dir == 1 && top.index == top.node.events.length) || (dir == -1 && top.index == 0)) {
         if (slideStack.length != 1)
             popSlide(dir);
+        else
+        if (dir == 1 && slideStack.length == 1) { //if the slides are finished, then stop playback
+            soundStop();
+        }
 
     } else {
         if (dir == 1)
             if ('loading' in top.node.events[top.index]) {
-                console.log("still loading");
+                userAlert("still loading");
                 return;
             }
+        var event;
         if (dir == 1) {
             event = top.node.events[top.index];
             top.dom.children[top.index].classList.add("slide-list-item-seen");
@@ -246,7 +272,7 @@ function nextEvent(dir) {
             if (event.type != "child" || event.disabled)
                 top.dom.children[top.index - 1].classList.remove("slide-list-item-seen");
         }
-        if ('disabled' in event) {
+        if (event.disabled) {
             slideStack.top().index += dir;
         } else {
             if (event.type == "child")
@@ -258,7 +284,7 @@ function nextEvent(dir) {
                 else
                     opacity = 0;
 
-                gsap.to(top.node.svg.children[event.index], {
+                gsap.to(event.svg, {
                     duration: 0.3,
                     opacity: opacity
                 });
@@ -267,16 +293,43 @@ function nextEvent(dir) {
         }
     }
     nextPreviousArrows();
+    if (soundState == "record")
+        soundRecordCurrentEvent();
+
+
+    if (soundState == "play") {
+        soundPlayCurrentEvent();
+    }
 }
 
 function keyListener(event) {
     if (event.keyCode == '39') {
         //arrow right
+        if (soundState != "record")
+            soundStop();
         nextEvent(1);
+
     }
     if (event.keyCode == '37') {
         //arrow left
+        soundStop();
         nextEvent(-1);
+    }
+
+    if (event.keyCode == '32') {
+        //space bar
+        if (soundState == "play")
+            soundPause();
+        else
+            soundPlay();
+    }
+
+    if (event.keyCode == '82') {
+        // 'r'
+        if (soundState == "record")
+            soundStop();
+        else
+            soundRecord();
     }
 }
 
@@ -286,6 +339,13 @@ document.addEventListener("keydown", keyListener);
 //add a new node to the slide tree
 //the svg
 function attachToTree(parent, svg) {
+
+    //checks if an svg element matches an event
+    //for the moment the matching function is that the 
+    //svg id has the event event name as a prefix
+    function matches(svg, event) {
+        return (svg.id.startsWith(event.name))
+    }
 
     //loads the plugin data
     var retval;
@@ -303,29 +363,40 @@ function attachToTree(parent, svg) {
     //hide objects that are one of:
     //the plugin data
     //a placeholder rectangle
+    //the first event is show
     for (const child of svg.children) {
         if (child.id.startsWith(saveprefix))
             child.style.opacity = 0;
         for (const event of retval.events) {
+            var first = true;
+            if (event.type == 'show' && matches(child, event) && first) {
+                child.style.opacity = 0;
+                first = false;
+            }
+            if (event.type == 'hide' && matches(child, event) && first)
+                first = false;
+
             if (event.type == 'child' && event.id == child.id)
                 child.style.opacity = 0;
         }
     }
 
-    //hide objects where the first event is show
-    for (var i = retval.events.length-1; i >= 0; i--)
-    {   
-        var event = retval.events[i];
-        if (event.type == "show") 
-            svg.children[event.index].style.opacity = 0;
-            if (event.type == "hide") 
-            svg.children[event.index].style.opacity = 1;
+    //events by name
+    //attach each show or hide event to its corresponding svg element
+    for (const event of retval.events) {
+        if (event.type == 'show' || event.type == 'hide') {
+            for (const child of svg.children)
+                if (matches(child, event)) {
+                    event.svg = child;
+                }
+            if (event.svg == null)
+                event.disabled = true;
+        }
     }
 
     //compute the transformation with respect to the local coordinates of the parent
     if (parent == null) {
         retval.transform = idTransform();
-        numberOfPages = retval.pagecount;
     } else {
         for (const s of parent.svg.children)
             if (s.id == retval.id) {
@@ -390,4 +461,33 @@ function loadSVG(parent, name, dom) {
     };
 }
 
-loadSVG(null, "root", null);
+//so far I can make sounds work in Chrome and Firefox, and not Safari
+function soundsWork() {
+    return (navigator.userAgent.indexOf("Chrome") !== -1);
+}
+var manifest;
+
+window.onload = function() {
+fetch('slides/manifest.json').
+then(function (res) {
+    if (!(res.ok))
+        throw "not connected";
+    else
+        return res.json();
+}).
+then(j => {
+    manifest = j;
+    numberOfPages = manifest.pages;
+    loadSVG(null, "slides/"+manifest.root, null);
+    if (soundsWork()) 
+    userAlert("Press space to play/pause sound");
+    else
+    userAlert("For sounds, please use Chrome or Firefox");
+}).
+catch((error) =>
+    userAlert("could not find slide file"));
+}
+
+
+
+
