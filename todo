@@ -1,4 +1,12 @@
-- ui: improve sortable list
+Bugs:
+- when a show/hide is moved to a different slide
+
+
+Smaller features:
+- parent slide
+- when adding events, use vertical order (y coordinate)
+
+Bigger features:
 - web server on duch
 - more events (e.g. move)
 - allow inserting external animations

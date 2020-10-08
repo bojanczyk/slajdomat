@@ -1,0 +1,7 @@
+{
+  "name": "matematyk",
+  "id": "894092743983094333",
+  "api": "1.0.0",
+  "main": "matematyk-code.js",
+  "ui": "matematyk-ui.html"
+}

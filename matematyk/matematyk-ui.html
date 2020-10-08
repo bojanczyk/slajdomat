@@ -1,0 +1,163 @@
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds@master/dist/figma-plugin-ds.css">
+
+<style>
+
+p {
+  font-family : 'Inter';
+  font-size : 11px;
+  margin-left : 10px;
+}
+
+
+
+
+
+.math-button {
+  display : inline-block;
+  cursor : pointer;
+  margin : 5px;
+  font-family: 'STIXGeneral';
+}
+
+
+.math-button:hover {
+  background-color : Silver;
+}
+
+body {
+  padding-top : 10px;
+}
+#button-row {
+  align-items: center;
+}
+
+.disabled {
+  display : none;
+}
+
+button {
+  font-family : 'Inter';
+  display : flex;
+  align-items : center;
+}
+
+button div {
+  height : 30px;
+  width : 120px;
+  display : flex;
+  align-items : center;
+}
+
+#button-text {
+  flex: 1;
+}
+
+.icon--spinner {
+  display : none;
+}
+
+.active{
+  display : flex;
+}
+
+
+
+
+</style>
+<p>
+<button  onclick="latexitButton()" id="latexit" class="spinning"> 
+<div id="button-text"> Latexit selection  </div>
+<div  id="spinner" class="icon icon--spinner icon--spin"></div>  
+</button> 
+</p>
+
+
+<p> Insert character into text </p>
+<p id="button-row">
+</p>
+<script>
+
+function latexitButton () {
+parent.postMessage({ pluginMessage: { type: 'latexit'} }, '*');
+}
+
+function clickFunction (event) {
+  
+  if (event.target.classList.contains("math-button"))
+    parent.postMessage({ pluginMessage: { type: 'non-latex', symbol : event.target.innerHTML } }, '*');
+}
+
+document.addEventListener("click", clickFunction);
+
+
+function populateKeys(symboltable) {
+const keyButtons = document.getElementById("button-row");
+for (const i of symboltable) {
+  var div = document.createElement('div');
+  div.classList.add('math-button');
+  div.innerHTML=i;
+  keyButtons.appendChild(div);
+}
+
+}
+
+function sendError(text) {
+parent.postMessage({
+    pluginMessage: {
+      type: 'error',
+      text : text
+    }
+  }, '*');
+}
+function fetchLatex(url) {
+  document.getElementById("spinner").classList.add("active");
+  fetch(url).then(x => {
+    if (!x.ok) {
+      throw "nic"
+    } else return x.text()
+  }).then(x => {
+    parent.postMessage({
+      pluginMessage: {
+        type: 'svg',
+        svg: x
+      }
+    }, '*');
+    document.getElementById("spinner").classList.remove("active");
+  }).catch((error) => sendError("Could not compile latex."))
+}
+
+function selChange(decision) {
+  var button = document.getElementById("latexit");
+  if (decision == "no-latexit")
+  {
+    button.setAttribute("disabled", "disabled");
+  }
+  else 
+  {
+    button.removeAttribute("disabled");
+    if (decision == "latexit")
+      document.getElementById("button-text").innerHTML = "Latex selection"
+    else 
+      document.getElementById("button-text").innerHTML =  "De-latex selection"
+  }
+  
+}
+
+function messageHandler(event) {
+  msg = event.data.pluginMessage;
+  if (msg.type === 'symboltable') {
+    populateKeys(msg.symboltable);
+  }
+  if (msg.type === 'fetchlatex') {
+    fetchLatex(msg.url);
+  }
+  if (msg.type === 'selection') {
+    selChange(msg.subtype);
+  }
+}
+
+
+onmessage = messageHandler;
+</script>

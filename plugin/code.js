@@ -77,19 +77,57 @@ function findChildRectangle(id, slide) {
 function createNewFrame(width, height) {
     const nodes = figma.root.findAll(isSlideNode);
 
-    // the position of the new child will be at the bottom, on the left
-    var minx = 0;
-    var maxy = 0;
-    for (const n of nodes) {
-        if (n.x < minx)
-            minx = n.x;
-        if (n.y + n.height > maxy)
-            maxy = n.y + n.height;
+    //does rectangle a intersect any frame
+    function intersectsNothing(a) {
+        function intersects(a, b) {
+            if (a.x > b.x + b.width || a.x + a.width < b.x)
+                return false;
+            if (a.y > b.y + b.height || a.y + a.height < b.y)
+                return false;
+            return true;
+        }
+        for (const b of nodes)
+            if (intersects(a, b))
+                return false;
+        return true;
     }
 
+    var candidate = {
+        width: width,
+        height: height
+    };
+    var i = 0;
+    var searching = true;
+    while (searching) {
+        //search for free space below the current slide,
+        //using the city metric
+        i++;
+        for (var j = 0; j < i && searching; j++) {
+            console.log(i,j);
+            candidate.x = currentSlide.x + (j+0.2) * width;
+            candidate.y = currentSlide.y + (i+0.2) * height;
+            if (intersectsNothing(candidate))
+                {searching = false; break;}
+            candidate.x = currentSlide.x + (i+0.2) * width;
+            candidate.y = currentSlide.y + (j+0.2) * height;
+            if (intersectsNothing(candidate))
+                {searching = false; break;}
+            candidate.x = currentSlide.x - (j+0.2) * width;
+            candidate.y = currentSlide.y + (i+0.2) * height;
+            if (intersectsNothing(candidate))
+                {searching = false; break;}
+            candidate.x = currentSlide.x - (i+0.2) * width;
+            candidate.y = currentSlide.y + (j+0.2) * height;
+            if (intersectsNothing(candidate))
+                searching = false;
+        }
+    }
+    
+    console.log(candidate);
+
     var newframe = figma.createFrame();
-    newframe.x = minx;
-    newframe.y = maxy + 100;
+    newframe.x = candidate.x;
+    newframe.y = candidate.y
     newframe.resize(width, height);
     return newframe;
 }
@@ -173,8 +211,8 @@ function removeEvent(index) {
 
 //change order of event list so that source becomes target
 function reorderEvents(source, target) {
-    var tmp = database.events.splice(source,1)[0];
-    database.events.splice(target,0,tmp);
+    var tmp = database.events.splice(source, 1)[0];
+    database.events.splice(target, 0, tmp);
     saveCurrentData();
 }
 
@@ -197,23 +235,40 @@ function saveFile() {
     var stack = [];
 
     function saveRec(node) {
+        
+        var stackString = "";
+        for (const s of stack)
+            stackString += s.name + ">";
+        console.log(""+ pageCount+ " "+ stackString + node.name);
+
         var savedPages = pageCount;
-        pageCount += 1;
+
         if (stack.includes(node)) {
             var cycle = "The slides contain a cycle: \n";
             for (const n of stack)
                 cycle += (n.name + "\n");
-            alert(cycle + node.name);
+            figma.notify(cycle + node.name);
             return;
         } else {
             stack.push(node);
             currentSlide = node;
             loadCurrentData();
+            pageCount += 1;
 
             for (const event of database.events)
-                if (event.type == "child")
-                    saveRec(findFrame(event.id));
-            
+                if (event.type == "child" && !(event.disabled))
+                {    
+                    var childNode = findFrame(event.id);
+                    if (childNode == null)
+                    {
+                        console.log(event);
+                    }
+                    else 
+                    saveRec(childNode);
+                }
+                else if (event.type == "child")
+                figma.notify("Skipped disabled child in " + node.name);
+
             currentSlide = node;
             loadCurrentData();
             database.pagecount = pageCount - savedPages;
@@ -270,7 +325,6 @@ function findCurrentSaveNode() {
         rect.locked = true;
         return rect;
     }
-
 
     const nodes = currentSlide.findAll(isSaveDataNode);
     if (nodes.length > 0)
@@ -366,6 +420,8 @@ function findFrame(id) {
         return nodes[0];
 }
 
+
+
 //for each event, check if it is active
 // a child event is active if the linked frame exists
 // a show/hide event is active if the linked object exists
@@ -379,15 +435,14 @@ function cleanDatabase() {
             if (f != undefined)
                 event.name = f.name;
             if (f != undefined && findChildRectangle(event.id, currentSlide) != undefined)
-                delete event.disabled;
+                event.disabled = false;
         }
 
         if (event.type == "show" || event.type == "hide") {
-            for (var j = 0; j < currentSlide.children.length; j++) {
-                if (currentSlide.children[j].id == event.id) {
-                    event.index = j;
-                    event.name = currentSlide.children[j].name;
-                    delete event.disabled;
+            for (const child of  currentSlide.children) {
+                if (child.id == event.id) {
+                    event.name = child.name;
+                    event.disabled = false;
                 }
             }
         }
@@ -419,11 +474,11 @@ function setCurrentSlide(slide) {
             type: 'init',
             slide: currentSlide.name,
             slideid: currentSlide.id,
-            events : database.events,
-            framelist : [],
-            selected :  (selectedOnCurrentPage().length > 0)
+            events: database.events,
+            framelist: [],
+            selected: (selectedOnCurrentPage().length > 0)
         }
-            
+
         const nodes = figma.root.findAll(x => isSlideNode(x) && x.id != currentSlide.id);
 
         for (const x of nodes) {
@@ -438,11 +493,11 @@ function setCurrentSlide(slide) {
                     id: x.id
                 });
         }
-        
+
         figma.ui.postMessage(msg);
 
-        
-        
+
+
     } else {
         figma.ui.postMessage({
             type: 'init'
@@ -492,20 +547,23 @@ function onMessage(msg) {
         saveFile();
 
     if (msg.type == 'mouseEnterPlugin') {
-        reloadWindow();
         savedSelection = figma.currentPage.selection;
+        setCurrentSlide(currentSlide);
     }
 
     if (msg.type == 'mouseLeavePlugin') {
         figma.currentPage.selection = savedSelection;
+    }
 
+    if (msg.type == 'dropdownHover') {
+        figma.currentPage.selection = savedSelection;
     }
 
 
     //the mouse is hovering over an event
     //to highlight this event, we select the corresponding object in figma
     if (msg.type == 'mouseEnterEvent') {
-        
+
         var selected = findFrame(msg.id);
         if (isSlideNode(selected))
             selected = findChildRectangle(msg.id, currentSlide);
@@ -525,25 +583,26 @@ function onMessage(msg) {
 };
 
 
-function reloadWindow() {
+
+//the selection has changed
+function selChange() {
     var sel = figma.currentPage.selection;
-    if (sel.length == 0)
-        setCurrentSlide(null);
-    if (sel.length >0) {
-        var node = sel[0]
-        while (!isSlideNode(node) && node!=null)        
-            node = node.parent
-        setCurrentSlide(node);
+    if (sel.length > 0) {
+        var node = sel[0];
+        while (!isSlideNode(node) && node != null)
+            node = node.parent;
+        if (node != currentSlide) {
+            setCurrentSlide(node);
+        }
     }
-
-
 }
 
-
-figma.showUI(__html__);
-figma.ui.resize(250, 400);
+figma.on("selectionchange", selChange);
+figma.showUI(__uiFiles__.main, {
+    width: 250,
+    height: 400
+});
 figma.ui.onmessage = onMessage;
 
 
-reloadWindow();
-
+setCurrentSlide(mostCentral());
