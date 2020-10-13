@@ -1,3 +1,4 @@
+
 //*** global variables */
 //saved viewport when termporarily showing some other part
 var savedViewport;
@@ -14,9 +15,6 @@ var rootSlide;
 
 //prefix of plugin data
 const saveprefix = "habzdryg data (do not delete): ";
-
-
-
 
 // I don't know how to set the viewport, so I create a rectangle
 function setViewport(rect) {
@@ -96,36 +94,41 @@ function createNewFrame(width, height) {
         width: width,
         height: height
     };
-    var i = 0;
-    var searching = true;
-    while (searching) {
+
+    if (currentSlide == null) {
+        candidate.x = 0;
+        candidate.y = 0;
+    } else {
         //search for free space below the current slide,
         //using the city metric
-        i++;
-        for (var j = 0; j < i && searching; j++) {
-            console.log(i, j);
-            candidate.x = currentSlide.x + j * width;
-            candidate.y = currentSlide.y + (i + 0.2) * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
+        var i = 0;
+        var searching = true;
+        while (searching) {
+            i++;
+            for (var j = 0; j < i && searching; j++) {
+                candidate.x = currentSlide.x + j * width;
+                candidate.y = currentSlide.y + (i + 0.2) * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = currentSlide.x + (i + 0.2) * width;
+                candidate.y = currentSlide.y + j * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = currentSlide.x - j * width;
+                candidate.y = currentSlide.y + (i + 0.2) * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = currentSlide.x - (i + 0.2) * width;
+                candidate.y = currentSlide.y + j * height;
+                if (intersectsNothing(candidate))
+                    searching = false;
             }
-            candidate.x = currentSlide.x + (i + 0.2) * width;
-            candidate.y = currentSlide.y + j * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = currentSlide.x - j * width;
-            candidate.y = currentSlide.y + (i + 0.2) * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = currentSlide.x - (i + 0.2) * width;
-            candidate.y = currentSlide.y + j * height;
-            if (intersectsNothing(candidate))
-                searching = false;
         }
     }
 
@@ -225,31 +228,13 @@ function reorderEvents(source, target) {
 
 //send the svg file to the ui, which then sends it to the server
 function saveFile() {
-
-    //go through all descendant  nodes to and clean their databases
-    //cleaning is needed because the user might have deleted some 
-    //elements from the picture, thus making events disabled
-
-    const nodes = figma.root.findAll(isSlideNode);
-    var promiseArray = [];
-    var fileNames = [];
-    
-
-
+    //the list of slides and their svg's
+    var slideList = [];
+    //stack of the recursion, to find cycles in slides
     var stack = [];
 
-    var savedCurrentSlide = currentSlide;
-    //saves and returns the number of pages
-    function saveRec(node) {
-        /*
-        var stackString = "";
-        for (const s of stack)
-            stackString += s.name + ">";
-        console.log(""+ pageCount+ " "+ stackString + node.name);
-        */
-
-        var pageCount = 1;
-
+    
+    async function saveRec(node) {
         if (stack.includes(node)) {
             var cycle = "The slides contain a cycle: \n";
             for (const n of stack)
@@ -261,48 +246,37 @@ function saveFile() {
             currentSlide = node;
             loadCurrentData();
             saveCurrentData();
-            fileNames.push(node.id);
-            promiseArray.push(
-                node.exportAsync({
-                    format: 'SVG',
-                    svgOutlineText: true,
-                    svgIdAttribute: true
-                }));
+            var svg = await node.exportAsync({
+                format: 'SVG',
+                svgOutlineText: true,
+                svgIdAttribute: true
+            });
+            slideList.push({
+                database: database,
+                svg: svg
+            });
+            for (const event of database.events)
+                if (event.type == "child" && !(event.disabled))
+                    await saveRec(findFrame(event.id));
 
-            for (const event of database.events) 
-                if (event.type == "child" && !(event.disabled)) 
-                    pageCount += saveRec(findFrame(event.id));
-            
             stack.pop();
-            return pageCount;
         }
     }
 
-    var pageCount = saveRec(currentSlide);
-    currentSlide = savedCurrentSlide;
-    loadCurrentData();
-    
-    var msg = {
-        type: 'saveData',
-        fileList: [],
-        root : currentSlide.id,
-        pageCount : pageCount
-    };
-
-
-    Promise.all(promiseArray).then(
-        x => {
-            for (var i = 0; i < fileNames.length; i++)
-                msg.fileList.push({
-                    name: fileNames[i],
-                    file: x[i]
-                });
-            figma.ui.postMessage(msg);
-        }
-    );
+    var savedSlide = currentSlide;
+    saveRec(currentSlide).then(x => {
+        figma.ui.postMessage({
+            type: 'savePresentation',
+            presentation: figma.root.name,
+            slideList: slideList
+        });
+        currentSlide = savedSlide;
+    });
 
 }
 
+
+// this is a legacy function
 // the plugin data is stored in a rectangle of the corner of the current slide, whose prefix is saveprefix
 //the following function finds the rectangle for the current frame
 //if this rectangle does not exist, then it is created
@@ -331,23 +305,40 @@ function findCurrentSaveNode() {
         return newSaveDataNode();
 }
 
+
 // save the plugin data, for the current slide, to the file
 function saveCurrentData() {
-    var rect = findCurrentSaveNode();
-    cleanDatabase();
+    findCurrentSaveNode().remove();
     database.name = currentSlide.name;
     database.id = currentSlide.id;
-    database.root = (currentSlide.id == rootSlide);
+    currentSlide.setPluginData("database",JSON.stringify(database));
+    /*
+    //this is legacy code, which saves data to the picture
+    //it might come in useful when developing copy paste
+    var rect = findCurrentSaveNode();
     rect.name = saveprefix + JSON.stringify(database);
+    */
 }
 
 
 // the opposite of the previous function
 function loadCurrentData() {
+    /*
+    //this is legacy code, see the comments for saveCurrentData
     var rect = findCurrentSaveNode();
     // cut off the save prefix
     var s = rect.name.slice(saveprefix.length);
-    database = JSON.parse(s);
+    */
+    var s = currentSlide.getPluginData("database");
+    if (s == '') {
+        //there is no database
+        database = {
+            name: currentSlide.name,
+            id: currentSlide.id,
+            events: []
+        }
+    } else
+        database = JSON.parse(s);
     cleanDatabase();
 
 }
@@ -468,9 +459,9 @@ function setCurrentSlide(slide) {
 
     if (slide != null) {
         loadCurrentData();
-        cleanDatabase();
         var msg = {
             type: 'init',
+            docName : figma.root.name,
             slide: currentSlide.name,
             slideid: currentSlide.id,
             events: database.events,
@@ -551,10 +542,12 @@ function onMessage(msg) {
     }
 
     if (msg.type == 'mouseLeavePlugin') {
+        if (savedSelection != null)
         figma.currentPage.selection = savedSelection;
     }
 
     if (msg.type == 'dropdownHover') {
+        if (savedSelection != null)
         figma.currentPage.selection = savedSelection;
     }
 
@@ -579,6 +572,10 @@ function onMessage(msg) {
     if (msg.type == 'click') {
         savedSelection = figma.currentPage.selection;
     }
+
+    if (msg.type == 'notify') {
+        figma.notify(msg.text);
+    }
 };
 
 
@@ -593,6 +590,8 @@ function selChange() {
         if (node != currentSlide) {
             setCurrentSlide(node);
         }
+        else 
+            cleanDatabase();
     }
 }
 
@@ -605,3 +604,4 @@ figma.ui.onmessage = onMessage;
 
 
 setCurrentSlide(mostCentral());
+

@@ -1,15 +1,18 @@
 var slideStack = [];
 var slideTree = null;
-var slideDict = {};
-var rootSlide;
+
 
 var numberOfPages = 0;
 var currentPage = 0;
 
-//prefix of plugin data
-const saveprefix = "habzdryg data (do not delete): ";
+var presentationDir; //the directory where the slides are
+var presentationName; //the name of the slides
 
 
+
+function getServer() {
+    return 'http://localhost:8001';
+}
 
 
 //toggles the side panel on the left with the list of slides
@@ -190,10 +193,11 @@ function pushSlide(node, dir = 1) {
         if (event.type == "child")
             icon = "zoom_out_map";
 
+        
         //this operation seems to solve problems with utf
-        var niceName = decodeURIComponent(escape(event.name));
+        // var niceName = decodeURIComponent(escape(event.name));
 
-        retval.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + niceName;
+        retval.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
         return retval;
     }
 
@@ -224,7 +228,7 @@ function pushSlide(node, dir = 1) {
         if (event.type == "child" && !(event.disabled) && (event.node == null)) {
             event.loading = true;
             newchild.classList.add("slide-list-item-loading");
-            loadSVG(node, "slides/" + event.id, newchild);
+            loadSVG(node, event.id, newchild);
         }
     }
 
@@ -242,11 +246,20 @@ function pushSlide(node, dir = 1) {
     zoomSlide(node, speed);
 }
 
+function nextButton() {
+    if (soundState != "record")
+        soundStop();
+    nextEvent(1);
+}
+
+function prevButton() {
+    soundStop();
+    nextEvent(-1);
+}
 
 //dir is +1 for next event and -1 for previous event
 function nextEvent(dir) {
     var top = slideStack.top();
-
 
     //if the current slide is exhausted
     if ((dir == 1 && top.index == top.node.events.length) || (dir == -1 && top.index == 0)) {
@@ -298,30 +311,33 @@ function nextEvent(dir) {
 
 
     if (soundState == "play") {
+        if (currentSound() == null) {
+            console.log("stop")
+            soundStop();
+        }
+        else
+        {
         soundPlayCurrentEvent();
+        }
     }
+
+    updateSoundIcon();
 }
 
 function keyListener(event) {
     if (event.keyCode == '39') {
         //arrow right
-        if (soundState != "record")
-            soundStop();
-        nextEvent(1);
+        nextButton();
 
     }
     if (event.keyCode == '37') {
         //arrow left
-        soundStop();
-        nextEvent(-1);
+        prevButton();
     }
 
     if (event.keyCode == '32') {
         //space bar
-        if (soundState == "play")
-            soundPause();
-        else
-            soundPlay();
+        playButton();
     }
 
     if (event.keyCode == '82') {
@@ -338,24 +354,20 @@ document.addEventListener("keydown", keyListener);
 
 //add a new node to the slide tree
 //the svg
-function attachToTree(parent, svg) {
+function attachToTree(parent, svg, database) {
 
-    //checks if an svg element matches an event
-    //for the moment the matching function is that the 
+    //Checks if an svg element matches an event.
+    //For the moment the matching function is that the 
     //svg id has the event event name as a prefix
     function matches(svg, event) {
-        return (svg.id.startsWith(event.name))
+        //the name in the id uses a wrong encoding, which is repaired here
+        var niceName = decodeURIComponent(escape(svg.id));
+        return (niceName.startsWith(event.name))
     }
 
-    //loads the plugin data
-    var retval;
-    for (const child of svg.children) {
-        //if the child stores the plugin data
-        if (child.id.startsWith(saveprefix)) {
-            var s = child.id.slice(saveprefix.length);
-            retval = JSON.parse(s);
-        }
-    }
+    var retval = database;
+
+
     retval.svg = svg;
     retval.parent = parent;
     retval.localRect = getBoundRect(svg);
@@ -365,8 +377,6 @@ function attachToTree(parent, svg) {
     //a placeholder rectangle
     //the first event is show
     for (const child of svg.children) {
-        if (child.id.startsWith(saveprefix))
-            child.style.opacity = 0;
         for (const event of retval.events) {
             var first = true;
             if (event.type == 'show' && matches(child, event) && first) {
@@ -426,14 +436,20 @@ function attachToTree(parent, svg) {
 
     if (parent == null) {
         pushSlide(retval, 1);
+        nextPreviousArrows();
     }
 
 }
 
 
+function slideDirectory(name) {
+    return manifest.slideDict[name]
+}
+
 function loadSVG(parent, name, dom) {
+
     var ob = document.createElement("object");
-    ob.setAttribute("data", name + ".svg");
+    ob.setAttribute("data", fileName(name, 'image.svg'));
     ob.setAttribute("type", "image/svg+xml");
     ob.classList.add("hidden-svg");
     document.body.appendChild(ob);
@@ -443,8 +459,17 @@ function loadSVG(parent, name, dom) {
             var svg = ob.contentDocument.firstElementChild.firstElementChild;
             if (dom != null)
                 dom.classList.remove("slide-list-item-loading");
-            attachToTree(parent, svg);
+            fetchJSON(fileName(name,'events.json')).then(
+                database => {
+                    attachToTree(parent, svg, database);
+                    loadSounds(database);
+                    //after loading the first svg, we make the sound icon
+                    //visible or not depending on whether we have sounds
+                }
+            )
+
         } else {
+            // this means that the svg failed to load correctly
             dom.classList.add("disabled-event");
             dom.classList.remove("slide-list-item-loading");
             if (parent != null) {
@@ -461,33 +486,99 @@ function loadSVG(parent, name, dom) {
     };
 }
 
-//so far I can make sounds work in Chrome and Firefox, and not Safari
-function soundsWork() {
-    return (navigator.userAgent.indexOf("Chrome") !== -1);
+
+function currentEvent() {
+    if (slideStack.top().node.events.length == 0)
+        return null
+    else
+    return slideStack.top().node.events[slideStack.top().index];
 }
+
+//check the user agent for chrome
+//at the moment, this is not used
+function userAgent() {
+    if (navigator.userAgent.indexOf("Chrome") !== -1) {
+        return "Chrome";
+    }
+    if (navigator.userAgent.indexOf("Firefox") !== -1) {
+        return "Firefox";
+    }
+    if (navigator.userAgent.indexOf("Safari") !== -1) {
+        return "Safari";
+    }
+    return null;
+}
+
 var manifest;
 
-window.onload = function() {
-fetch('slides/manifest.json').
-then(function (res) {
-    if (!(res.ok))
-        throw "not connected";
-    else
-        return res.json();
-}).
-then(j => {
-    manifest = j;
-    numberOfPages = manifest.pages;
-    loadSVG(null, "slides/"+manifest.root, null);
-    if (soundsWork()) 
-    userAlert("Press space to play/pause sound");
-    else
-    userAlert("For sounds, please use Chrome or Firefox");
-}).
-catch((error) =>
-    userAlert("could not find slide file"));
+
+//gives the name for a file in a slide, in the current presentation
+//the slide parameter could be null, for top-level information in the presentation.
+function fileName(slide, file) {
+
+    if (slide == null) {
+        return presentationDir + '/' + file;
+    } else
+        return presentationDir + '/' + manifest.slideDict[slide] + '/' + file;
+}
+
+//send an object to the server
+function sendToServer(msg) {
+    msg.presentation = presentationName;
+    var json = JSON.stringify(msg);
+    return fetch('http://localhost:3000', {
+        method: 'POST',
+        body: json
+    }).
+    then(response => {
+        if (!response.ok) {
+            throw "not connected";
+        }})
+}
+
+//get a json file and parse it
+function fetchJSON(filename) {
+    return fetch(filename).
+    then(function (res) {
+        if (!(res.ok))
+            throw "not connected";
+        else
+            return res.json();
+    }).
+    catch((error) => {
+        userAlert("Could not load slide file "+filename);
+        return null;
+    });
 }
 
 
 
 
+
+    
+
+
+//startup code
+//it leads the manifest, which contains the root slide
+//and the number of slides, and then it loads the first slide
+window.onload = function () {
+    fetchJSON('presentations.json')
+            .then(j => {
+                let url = new URL(window.location.href);
+                presentationName = url.searchParams.get('slides');
+                document.title = presentationName;
+                presentationDir = j[presentationName];
+                return fetchJSON(fileName(null,'manifest.json'))
+            }).then(j => {
+                if (j == null) {
+                    throw "The manifest is missing"
+                } else {
+                    console.log(j);
+                    console.log(fileName(null,'manifest.json'))
+                    manifest = j;
+                    numberOfPages = Object.keys(manifest.slideDict).length;
+                    getSoundDatabase();
+                    loadSVG(null, manifest.root, null);
+                }
+            })//.catch((e) => userAlert(e))
+        }

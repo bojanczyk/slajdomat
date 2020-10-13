@@ -108,17 +108,28 @@ body {
     position: fixed;
     bottom : 0;
     right : 0;
-    width : 100px;
+    width : 120px;
     height : 40px; 
     /* background-color: lightgrey; */
     font-family: 'Roboto';
     font-size: 20px;
     z-index: 5;
+    display : flex; 
+    align-items: center;
 }
 
 .page-count-container i {
-    position : absolute;
-    top : 22%;
+    cursor: pointer;
+}
+
+.page-count-container div {
+  flex-grow: 1;
+}
+
+
+.page-count-container div {
+    display : flex; 
+    align-items: center;
 }
 
 #page-count-enumerator {
@@ -132,12 +143,7 @@ body {
 #next-event {
     right: 0%;
 }
-.page-count-container div {
-    position: absolute;   
-    top : 50%;
-    transform: translate(-50%, -50%);
-    left : 50%; 
-}
+
 
 .disabled-event {
     text-decoration: line-through;
@@ -172,3 +178,4 @@ path:not([fill]) {
     overflow : hidden;
     white-space: nowrap;
 }
+

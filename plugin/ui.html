@@ -303,6 +303,9 @@ var currentSlide;
 //current eventlist 
 var eventList;
 
+//name of the figma document
+var docName;
+
 
 // functions **************************
 
@@ -322,21 +325,60 @@ function exportWaiting(waiting) {
   }
 }
 
+function serverURL() {
+  return 'http://localhost:8001';
+}
+
+
+
+
+function savePresentation(msg) {
+
+
+  //for some reason, TextDecoder does not work on the plugin side
+  for (const slide of msg.slideList) {
+    slide.svg = new TextDecoder("utf-8").decode(slide.svg)
+  }
+
+  fetch('http://localhost:3000', {
+    method: 'POST',
+    body: JSON.stringify({
+      type: 'slides',
+      presentation: msg.presentation, 
+      slideList: msg.slideList
+    })
+  }).
+  then(x =>
+    exportWaiting(false))
+  .catch((error) => {
+    notify("Not connected to the slide server. Run it locally (it is called viewer/server).");
+    exportWaiting(false);
+  });
+}
+
+
 
 
 //sending data to server
 function saveData(msg) {
-  var url = 'http://localhost:8001';
 
-  var retmsg = {type : 'svg', pageCount : msg.pageCount, root : msg.root,  files : []};
+
+
+  var retmsg = {
+    type: 'svg',
+    pageCount: msg.pageCount,
+    root: msg.root,
+    files: [],
+    docName: msg.docName
+  };
   for (const file of msg.fileList) {
     retmsg.files.push({
-      name: file.name+'.svg',
+      name: file.name + '.svg',
       file: new TextDecoder("utf-8").decode(file.file)
     })
   }
 
-  fetch(url, {
+  fetch(serverURL(), {
     method: 'POST',
     body: JSON.stringify(retmsg)
     //body : body
@@ -370,6 +412,9 @@ function makeFirst(width, height) {
   })
 }
 
+function notify(text) {
+  postMessage({type : 'notify', text : text})
+}
 
 //  change the current slide 
 function changeCurrentSlide(par) {
@@ -396,10 +441,10 @@ function pluginMouseenter() {
 }
 
 function pluginMouseleave() {
- cursorInsidePlugin = false;
+  cursorInsidePlugin = false;
   postMessage({
-      type: 'mouseLeavePlugin'
-    })
+    type: 'mouseLeavePlugin'
+  })
 }
 
 // **** dragging ****
@@ -569,78 +614,75 @@ function dropDownMouseover(event) {
   document.getElementById("dropdown-content").style.display = "";
 
   //send a message to the backend, so that the selection is forgotten
-  postMessage({type : 'dropdownHover'});
+  postMessage({
+    type: 'dropdownHover'
+  });
 }
+function initPlugin(msg) {
+  docName = msg.docName;
+  if ('slide' in msg) {
+    //there is a current slide
+    document.getElementById('slide-name').innerHTML = msg.slide;
+    document.getElementById('slide-column').classList.remove("hidden");
+    document.getElementById('settings-column').classList.add("hidden");
+    var eventListHTML = document.getElementById("event-list");
+    eventList = msg.events;
+    eventListHTML.innerHTML = "";
+    for (const event of eventList) {
+      eventListHTML.appendChild(makeEvent(event));
 
+      if (msg.selected) {
+        document.getElementById("add-show").classList.add("selectable");
+        document.getElementById("add-show").classList.remove("disabled");
+        document.getElementById("add-hide").classList.add("selectable");
+        document.getElementById("add-hide").classList.remove("disabled");
+      } else {
+        document.getElementById("add-show").classList.remove("selectable");
+        document.getElementById("add-show").classList.add("disabled");
+        document.getElementById("add-hide").classList.remove("selectable");
+        document.getElementById("add-hide").classList.add("disabled");
+      }
+
+      var childlist = document.getElementById("child-list");
+
+      //if I iterate over children and remove them, this messes with the iterator
+      //so I first creat a copy of the children;
+      var tempchildlist = [];
+      for (const x of childlist.childNodes)
+        if (x.id != "new-child")
+          tempchildlist.push(x);
+      for (const x of tempchildlist)
+        x.remove();
+
+
+      for (const item of msg.framelist) {
+        var child = document.createElement("div");
+        child.id = dropDownPrefix + item.id;
+        child.onclick = function () {
+          dropDownClick(dropDownPrefix + item.id);
+        };
+        child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
+        child.classList.add("list-item");
+        child.classList.add("selectable");
+        childlist.appendChild(child)
+      }
+    }
+  } else {
+    document.getElementById('slide-column').classList.add("hidden");
+    document.getElementById('settings-column').classList.remove("hidden");
+  }
+
+}
 
 
 // handle messages coming from figma
 function messageHandler(event) {
   msg = event.data.pluginMessage;
 
-
+  //reload the window when the slide changes
   if (msg.type === 'init') {
-    if ('slide' in msg) {
-      //there is a current slide
-      document.getElementById('slide-name').innerHTML = msg.slide;
-      document.getElementById('slide-column').classList.remove("hidden");
-      document.getElementById('settings-column').classList.add("hidden");
-      var eventListHTML = document.getElementById("event-list");
-      eventList = msg.events;
-      eventListHTML.innerHTML = "";
-      for (const event of eventList) {
-        eventListHTML.appendChild(makeEvent(event));
-
-        if (msg.selected) {
-          document.getElementById("add-show").classList.add("selectable");
-          document.getElementById("add-show").classList.remove("disabled");
-          document.getElementById("add-hide").classList.add("selectable");
-          document.getElementById("add-hide").classList.remove("disabled");
-        } else {
-          document.getElementById("add-show").classList.remove("selectable");
-          document.getElementById("add-show").classList.add("disabled");
-          document.getElementById("add-hide").classList.remove("selectable");
-          document.getElementById("add-hide").classList.add("disabled");
-        }
-
-        var childlist = document.getElementById("child-list");
-
-        //if I iterate over children and remove them, this messes with the iterator
-        //so I first creat a copy of the children;
-        var tempchildlist = [];
-        for (const x of childlist.childNodes)
-          if (x.id != "new-child")
-            tempchildlist.push(x);
-        for (const x of tempchildlist)
-          x.remove();
-
-
-        for (const item of msg.framelist) {
-          var child = document.createElement("div");
-          child.id = dropDownPrefix + item.id;
-          child.onclick = function () {
-            dropDownClick(dropDownPrefix + item.id);
-          };
-          child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
-          child.classList.add("list-item");
-          child.classList.add("selectable");
-          childlist.appendChild(child)
-        }
-      }
-    } else {
-      document.getElementById('slide-column').classList.add("hidden");
-      document.getElementById('settings-column').classList.remove("hidden");
-    }
-
-
-
-
-
+    initPlugin(msg);
   }
-
-
-
-
   // fill the dropdown with list of available events to create
   if (msg.type === 'framelist') {
 
@@ -654,7 +696,16 @@ function messageHandler(event) {
   if (msg.type === 'saveData') {
     saveData(msg);
   }
+
+  if (msg.type === 'saveSlide') {
+    saveSlide(msg);
+  }
+
+  if (msg.type === 'savePresentation') {
+    savePresentation(msg);
+  }
 }
+
 
 
 // 

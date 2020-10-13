@@ -1,0 +1,24 @@
+/* for the index page */
+
+body {
+    font-family : 'Roboto'
+}
+#index-title {
+    font-size: large;
+}
+#slide-list {
+    padding : 5px;
+}
+
+a {
+    padding : 5px;
+    display : block
+}
+a:hover {
+    cursor: pointer;
+  color: red;
+}
+
+.hidden {
+    display: none;
+}
