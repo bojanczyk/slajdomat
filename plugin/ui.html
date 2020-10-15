@@ -325,9 +325,6 @@ function exportWaiting(waiting) {
   }
 }
 
-function serverURL() {
-  return 'http://localhost:8001';
-}
 
 
 
@@ -349,7 +346,8 @@ function savePresentation(msg) {
     })
   }).
   then(x =>
-    exportWaiting(false))
+    exportWaiting(false));
+    notify("Successfully exported slides to the server.")
   .catch((error) => {
     notify("Not connected to the slide server. Run it locally (it is called viewer/server).");
     exportWaiting(false);
@@ -358,43 +356,6 @@ function savePresentation(msg) {
 
 
 
-
-//sending data to server
-function saveData(msg) {
-
-
-
-  var retmsg = {
-    type: 'svg',
-    pageCount: msg.pageCount,
-    root: msg.root,
-    files: [],
-    docName: msg.docName
-  };
-  for (const file of msg.fileList) {
-    retmsg.files.push({
-      name: file.name + '.svg',
-      file: new TextDecoder("utf-8").decode(file.file)
-    })
-  }
-
-  fetch(serverURL(), {
-    method: 'POST',
-    body: JSON.stringify(retmsg)
-    //body : body
-  }).
-  then(response => {
-    if (!response.ok) {
-      throw "not connected";
-    } else response.text()
-  }).
-  then(x => {
-    exportWaiting(false);
-  }).catch((error) => {
-    alert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
-    exportWaiting(false);
-  });
-}
 
 function exportButton() {
   exportWaiting(true);
@@ -683,22 +644,10 @@ function messageHandler(event) {
   if (msg.type === 'init') {
     initPlugin(msg);
   }
-  // fill the dropdown with list of available events to create
-  if (msg.type === 'framelist') {
-
-  }
-
+  
   if (msg.type === 'selectSlide') {
     var currentFrameDiv = document.getElementById("current-slide");
     currentFrameDiv.innerHTML = msg.slide;
-  }
-
-  if (msg.type === 'saveData') {
-    saveData(msg);
-  }
-
-  if (msg.type === 'saveSlide') {
-    saveSlide(msg);
   }
 
   if (msg.type === 'savePresentation') {

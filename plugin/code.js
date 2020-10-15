@@ -184,7 +184,17 @@ function createChildEvent(id) {
 function createEvent(id, subtype) {
     if (subtype == 'show' || subtype == 'hide') {
         var selected = figma.currentPage.selection;
+        console.log(selected);
+
+        var sorted = [];
         for (const item of selected) {
+            sorted.push(item);
+        }
+
+        //the order of events is so that it progresses in the down-right direction
+        sorted.sort((a,b) => a.y + a.x >= b.y + b.x);
+
+        for (const item of sorted) {
             database.events.push({
                 type: subtype,
                 id: item.id,
@@ -384,7 +394,7 @@ function mostCentral() {
     var retval = null;
     const nodes = figma.root.findAll(isSlideNode)
     for (const x of nodes) {
-        if (centrality(x) >= maxCentrality) {
+        if (centrality(x) > maxCentrality) {
             maxCentrality = centrality(x);
             retval = x;
         }

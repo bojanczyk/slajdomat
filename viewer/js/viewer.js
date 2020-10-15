@@ -193,7 +193,7 @@ function pushSlide(node, dir = 1) {
         if (event.type == "child")
             icon = "zoom_out_map";
 
-        
+
         //this operation seems to solve problems with utf
         // var niceName = decodeURIComponent(escape(event.name));
 
@@ -314,10 +314,8 @@ function nextEvent(dir) {
         if (currentSound() == null) {
             console.log("stop")
             soundStop();
-        }
-        else
-        {
-        soundPlayCurrentEvent();
+        } else {
+            soundPlayCurrentEvent();
         }
     }
 
@@ -446,6 +444,8 @@ function slideDirectory(name) {
     return manifest.slideDict[name]
 }
 
+var debugDoc = [];
+
 function loadSVG(parent, name, dom) {
 
     var ob = document.createElement("object");
@@ -456,10 +456,14 @@ function loadSVG(parent, name, dom) {
     ob.onload = function () {
         var doc = ob.contentDocument.firstElementChild;
         if (doc.nodeName == 'svg') {
-            var svg = ob.contentDocument.firstElementChild.firstElementChild;
+            var svg = null;
+            //in principle, the right element should be the first child, but Marek Sokołowski mentioned that expressVPN changes inserts some wrong children, hence the following code
+            for (const child of ob.contentDocument.firstElementChild.children)
+                if (child.nodeName == 'g')
+                    svg = child;
             if (dom != null)
                 dom.classList.remove("slide-list-item-loading");
-            fetchJSON(fileName(name,'events.json')).then(
+            fetchJSON(fileName(name, 'events.json')).then(
                 database => {
                     attachToTree(parent, svg, database);
                     loadSounds(database);
@@ -491,7 +495,7 @@ function currentEvent() {
     if (slideStack.top().node.events.length == 0)
         return null
     else
-    return slideStack.top().node.events[slideStack.top().index];
+        return slideStack.top().node.events[slideStack.top().index];
 }
 
 //check the user agent for chrome
@@ -533,7 +537,8 @@ function sendToServer(msg) {
     then(response => {
         if (!response.ok) {
             throw "not connected";
-        }})
+        }
+    })
 }
 
 //get a json file and parse it
@@ -546,7 +551,7 @@ function fetchJSON(filename) {
             return res.json();
     }).
     catch((error) => {
-        userAlert("Could not load slide file "+filename);
+        userAlert("Could not load slide file " + filename);
         return null;
     });
 }
@@ -555,7 +560,7 @@ function fetchJSON(filename) {
 
 
 
-    
+
 
 
 //startup code
@@ -563,22 +568,22 @@ function fetchJSON(filename) {
 //and the number of slides, and then it loads the first slide
 window.onload = function () {
     fetchJSON('presentations.json')
-            .then(j => {
-                let url = new URL(window.location.href);
-                presentationName = url.searchParams.get('slides');
-                document.title = presentationName;
-                presentationDir = j[presentationName];
-                return fetchJSON(fileName(null,'manifest.json'))
-            }).then(j => {
-                if (j == null) {
-                    throw "The manifest is missing"
-                } else {
-                    console.log(j);
-                    console.log(fileName(null,'manifest.json'))
-                    manifest = j;
-                    numberOfPages = Object.keys(manifest.slideDict).length;
-                    getSoundDatabase();
-                    loadSVG(null, manifest.root, null);
-                }
-            })//.catch((e) => userAlert(e))
-        }
+        .then(j => {
+            let url = new URL(window.location.href);
+            presentationName = url.searchParams.get('slides');
+            document.title = presentationName;
+            presentationDir = j[presentationName];
+            return fetchJSON(fileName(null, 'manifest.json'))
+        }).then(j => {
+            if (j == null) {
+                throw "The manifest is missing"
+            } else {
+                console.log(j);
+                console.log(fileName(null, 'manifest.json'))
+                manifest = j;
+                numberOfPages = Object.keys(manifest.slideDict).length;
+                getSoundDatabase();
+                loadSVG(null, manifest.root, null);
+            }
+        }) //.catch((e) => userAlert(e))
+}

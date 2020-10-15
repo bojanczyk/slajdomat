@@ -3,7 +3,6 @@ Bugs:
 
 
 Smaller features:
-- setPluginData
 - parent slide
 - when adding events, use vertical order (y coordinate)
 
