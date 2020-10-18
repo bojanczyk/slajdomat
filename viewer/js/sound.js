@@ -9,9 +9,6 @@ var recordingState = false;
 var soundState = null;
 
 
-//a dictionary with the sound recordings
-//sound with index i is played immediately after event with index i
-var soundDict = {}
 
 
 
@@ -148,15 +145,14 @@ function recordSound(slide, index) {
                 const audioBlob = new Blob(audioChunks);
                 var audioURL = window.URL.createObjectURL(audioBlob);
                 slide.sounds[index] = new Audio(audioURL);
-                console.log(slide.sounds[index].duration);
                 slide.sounds[index].addEventListener('ended', function () {
                     nextEvent(1);
                 })
-                if (!(slide.id in soundDict)) {
-                    soundDict[slide.id] = {};
+                if (!(slide.id in manifest.soundDict)) {
+                    manifest.soundDict[slide.id] = {};
                 }
                 var filename = index.toString();
-                soundDict[slide.id][index] = {
+                manifest.soundDict[slide.id][index] = {
                     file: filename
                 };
                 console.log("sent sound " + filename);
@@ -196,34 +192,13 @@ function sendSoundDatabase() {
     sendToServer({
         type: 'json',
         slide: null,
-        name: 'sounds',
-        body: soundDict
+        name: 'manifest',
+        body: manifest
     }).
     catch((error) => {
         userAlert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
     });
 }
-
-function getSoundDatabase() {
-    fetchJSON(fileName(null, 'sounds.json')).then(j => {
-        if (j != null) {
-            soundDict = j
-        } else {
-            soundDict = {}
-        }
-    })
-}
-
-
-
-
-/*function currentEventSound() {
-    var top = slideStack.top();
-    if (top.node.id in soundDict)
-        if (top.index in soundDict[top.node.id])
-            return soundDict[top.node.id][top.index] + '.mp3';
-    return null;
-}*/
 
 
 function soundPlayCurrentEvent() {
@@ -259,12 +234,12 @@ function loadSounds(database) {
     for (let i = 0; i <= database.events.length; i++) {
         var soundName = null;
         database.sounds[i] = null;
-        if (database.id in soundDict)
-            if (i in soundDict[database.id]) {
+        if (database.id in manifest.soundDict)
+            if (i in manifest.soundDict[database.id]) {
                 var first = false;
                 if (database.id == manifest.root && i == 0)
                     first = true;
-                loader(soundDict[database.id][i].file, i, first);
+                loader(manifest.soundDict[database.id][i].file, i, first);
             }
     }
 }

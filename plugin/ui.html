@@ -195,9 +195,7 @@ color : LightGrey;
   filter : invert(100%);
 }
 
-.oddziel {
-  width : 10px
-}
+
 
 
 .hidden {
@@ -211,6 +209,23 @@ color : LightGrey;
 
 #slide-name {
   color :white;
+  flex : 1;
+  margin-left : 2px;
+}
+
+#slide-count {
+  color : white;
+  margin-right : 10px;
+  margin-left: 10px;
+}
+
+#parent-button {
+  color : white;
+  cursor:pointer;
+}
+
+#icon-play {
+cursor:pointer;
 }
 
 
@@ -232,15 +247,15 @@ color : LightGrey;
 </div>
 
 <div class="column hidden" id="slide-column">
-
-  <div class="top-buttons">
-    <div class="icon-button" onclick="exportButton()">
-      <div id="icon-play" class="icon icon--play"></div>
-    </div>
-    <div class="oddziel"> </div>
-    <div id="slide-name">
-    mikla </div>
+<div class="top-buttons">
+  <div class="icon-button" onclick="exportButton()">
+    <div id="icon-play" class="icon icon--play"></div>
   </div>
+  <div id="slide-name">
+    mikla </div>
+    <i id="parent-button" class="material-icons" onclick="parentButton()">arrow_upward</i>
+  <div id="slide-count"></div>
+</div>
 
 
   <div class="row" id="events-label">
@@ -300,9 +315,6 @@ const dropDownPrefix = "dropdown-prefix:";
 //the id of the currently selected slide
 var currentSlide;
 
-//current eventlist 
-var eventList;
-
 //name of the figma document
 var docName;
 
@@ -341,22 +353,28 @@ function savePresentation(msg) {
     method: 'POST',
     body: JSON.stringify({
       type: 'slides',
-      presentation: msg.presentation, 
+      presentation: msg.presentation,
       slideList: msg.slideList
     })
   }).
-  then(x =>
-    exportWaiting(false));
-    notify("Successfully exported slides to the server.")
-  .catch((error) => {
-    notify("Not connected to the slide server. Run it locally (it is called viewer/server).");
-    exportWaiting(false);
+  then(x => {
+      exportWaiting(false);
+      notify("Successfully exported slides to the server.")
+    })
+    .catch((error) => {
+      notify("Not connected to the slide server. Run it locally (it is called viewer/server).");
+      exportWaiting(false);
+    });
+}
+
+//the user has clicked the button to go to the parent slide
+function parentButton() {
+postMessage({
+    type: 'gotoParent'
   });
 }
 
-
-
-
+//the user has clicked the button to export the slides
 function exportButton() {
   exportWaiting(true);
   postMessage({
@@ -373,38 +391,30 @@ function makeFirst(width, height) {
   })
 }
 
-function notify(text) {
-  postMessage({type : 'notify', text : text})
-}
 
-//  change the current slide 
-function changeCurrentSlide(par) {
+//display a figma alert. Aparently, only the figma side can do this.
+function notify(text) {
   postMessage({
-    type: 'changeSlide',
-    id: par.value
+    type: 'notify',
+    text: text
   })
 }
 
 
-//for some reason that I do not understand, the mousenters
-//are not paired with the mouseleaves, so I pair them manually
-//using the following variable
-var cursorInsidePlugin = false;
 
 //the plugin panel has been moused over
 function pluginMouseenter() {
-  if (!cursorInsidePlugin) {
     postMessage({
       type: 'mouseEnterPlugin'
     })
-    cursorInsidePlugin = true;
   }
-}
+
 
 function pluginMouseleave() {
   cursorInsidePlugin = false;
   postMessage({
-    type: 'mouseLeavePlugin'
+    type: 'hoverEvent',
+    index : -1
   })
 }
 
@@ -465,48 +475,6 @@ document.addEventListener("drop", ({
 
 
 
-//make a list item for the list of events 
-function makeEvent(event) {
-  var retval = document.createElement('div');
-  retval.id = event.id;
-  if (event.disabled)
-    retval.classList.add("disabled");
-  retval.classList.add("list-item");
-  retval.classList.add("dropzone");
-  retval.setAttribute("draggable", true);
-  var ifcon = document.createElement('i');
-  if (event.type == "show")
-    ifcon.innerHTML = "visibility";
-  if (event.type == "hide")
-    ifcon.innerHTML = "visibility_off";
-  if (event.type == "child")
-    ifcon.innerHTML = "zoom_out_map";
-
-  retval.addEventListener("mouseenter", event => postMessage({
-    type: 'mouseEnterEvent',
-    id: event.target.id
-  }));
-  retval.addEventListener("click", event => postMessage({
-    type: 'click'
-  }));
-
-  ifcon.classList.add("material-icons");
-  ifcon.classList.add("hover-visible");
-  retval.appendChild(ifcon);
-  var label = document.createElement('div');
-  label.innerHTML = event.name;
-  label.classList.add("list-label");
-  retval.appendChild(label);
-  var buttons = document.createElement('div');
-  buttons.innerHTML = "<i class=\"material-icons\">delete_outline</i>";
-  buttons.onclick = removeClick;
-  buttons.classList.add("list-buttons");
-  retval.appendChild(buttons);
-  return retval;
-
-}
-
-
 
 //when a remove button is clicked
 function removeClick(event) {
@@ -532,9 +500,13 @@ function newChildClick(event) {
   //hide the dropdown menu
   document.getElementById("dropdown-content").style.display = "none";
   postMessage({
-    type: 'createNewChild'
-  })
+      type: 'createEvent',
+      id: null,
+      subtype: 'child'
+    })
 }
+
+
 //when an item of the dropdown menu is clicked
 function dropDownClick(event) {
   //hide the dropdown menu
@@ -570,87 +542,159 @@ function dropDownClick(event) {
 
 //when the dropdown menu is hovered
 //reanable visibility, which might have been turned off after the last click
-
 function dropDownMouseover(event) {
-  document.getElementById("dropdown-content").style.display = "";
-
   //send a message to the backend, so that the selection is forgotten
   postMessage({
-    type: 'dropdownHover'
+    type: 'hoverEvent',
+    index : -1
   });
+  //update the contents of the dropdown menu
+  postMessage({
+    type: 'requestDropDown'
+  });
+  
+  document.getElementById("dropdown-content").style.display = "";
 }
-function initPlugin(msg) {
+
+function changeSlide(msg) {
   docName = msg.docName;
   if ('slide' in msg) {
     //there is a current slide
     document.getElementById('slide-name').innerHTML = msg.slide;
     document.getElementById('slide-column').classList.remove("hidden");
     document.getElementById('settings-column').classList.add("hidden");
-    var eventListHTML = document.getElementById("event-list");
-    eventList = msg.events;
-    eventListHTML.innerHTML = "";
-    for (const event of eventList) {
-      eventListHTML.appendChild(makeEvent(event));
 
-      if (msg.selected) {
-        document.getElementById("add-show").classList.add("selectable");
-        document.getElementById("add-show").classList.remove("disabled");
-        document.getElementById("add-hide").classList.add("selectable");
-        document.getElementById("add-hide").classList.remove("disabled");
-      } else {
-        document.getElementById("add-show").classList.remove("selectable");
-        document.getElementById("add-show").classList.add("disabled");
-        document.getElementById("add-hide").classList.remove("selectable");
-        document.getElementById("add-hide").classList.add("disabled");
-      }
+//the parent button indicates if there is a parent slide
+    if (msg.parent == null)
+      document.getElementById('parent-button').classList.add("hidden")
+    else 
+      document.getElementById('parent-button').classList.remove("hidden")
 
-      var childlist = document.getElementById("child-list");
-
-      //if I iterate over children and remove them, this messes with the iterator
-      //so I first creat a copy of the children;
-      var tempchildlist = [];
-      for (const x of childlist.childNodes)
-        if (x.id != "new-child")
-          tempchildlist.push(x);
-      for (const x of tempchildlist)
-        x.remove();
-
-
-      for (const item of msg.framelist) {
-        var child = document.createElement("div");
-        child.id = dropDownPrefix + item.id;
-        child.onclick = function () {
-          dropDownClick(dropDownPrefix + item.id);
-        };
-        child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
-        child.classList.add("list-item");
-        child.classList.add("selectable");
-        childlist.appendChild(child)
-      }
-    }
   } else {
     document.getElementById('slide-column').classList.add("hidden");
     document.getElementById('settings-column').classList.remove("hidden");
   }
 
+  document.getElementById('slide-count').innerHTML = ''+msg.slideCount;
+
+}
+//get the list of events for the current slide
+function eventList(msg) {
+
+  //make a list item for the list of events 
+function makeEvent(event, index) {
+  var retval = document.createElement('div');
+  if (event.disabled)
+    retval.classList.add("disabled");
+  retval.classList.add("list-item");
+  retval.classList.add("dropzone");
+  retval.setAttribute("draggable", true);
+  var ifcon = document.createElement('i');
+  if (event.type == "show")
+    ifcon.innerHTML = "visibility";
+  if (event.type == "hide")
+    ifcon.innerHTML = "visibility_off";
+  if (event.type == "child")
+    ifcon.innerHTML = "zoom_out_map";
+
+  retval.addEventListener("mouseenter", event => {
+    postMessage({
+      type: 'hoverEvent',
+      index: index
+    })
+  });
+  retval.addEventListener("click", event => {
+    postMessage({
+      type: 'clickEvent',
+      index: index
+    })
+  });
+
+  ifcon.classList.add("material-icons");
+  ifcon.classList.add("hover-visible");
+  retval.appendChild(ifcon);
+  var label = document.createElement('div');
+  label.innerHTML = event.name;
+  label.classList.add("list-label");
+  retval.appendChild(label);
+  var buttons = document.createElement('div');
+  buttons.innerHTML = "<i class=\"material-icons\">delete_outline</i>";
+  buttons.onclick = removeClick;
+  buttons.classList.add("list-buttons");
+  retval.appendChild(buttons);
+  return retval;
+
 }
 
+
+
+  var eventListHTML = document.getElementById("event-list");
+  eventListHTML.innerHTML = "";
+  for (let i = 0; i<msg.events.length; i++) {
+    eventListHTML.appendChild(makeEvent(msg.events[i],i));
+  }
+}
+
+//get the contents for the dropdown menu 
+function dropDownContents(msg) {
+if (msg.selected) {
+      document.getElementById("add-show").classList.add("selectable");
+      document.getElementById("add-show").classList.remove("disabled");
+      document.getElementById("add-hide").classList.add("selectable");
+      document.getElementById("add-hide").classList.remove("disabled");
+    } else {
+      document.getElementById("add-show").classList.remove("selectable");
+      document.getElementById("add-show").classList.add("disabled");
+      document.getElementById("add-hide").classList.remove("selectable");
+      document.getElementById("add-hide").classList.add("disabled");
+    }
+
+    var childlist = document.getElementById("child-list");
+
+    //if I iterate over children and remove them, this messes with the iterator
+    //so I first creat a copy of the children;
+    var tempchildlist = [];
+    for (const x of childlist.childNodes)
+      if (x.id != "new-child")
+        tempchildlist.push(x);
+    for (const x of tempchildlist)
+      x.remove();
+
+
+    for (const item of msg.slides) {
+      var child = document.createElement("div");
+      child.id = dropDownPrefix + item.id;
+      child.onclick = function () {
+        dropDownClick(dropDownPrefix + item.id);
+      };
+      child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
+      child.classList.add("list-item");
+      child.classList.add("selectable");
+      childlist.appendChild(child)
+    }
+}
 
 // handle messages coming from figma
 function messageHandler(event) {
   msg = event.data.pluginMessage;
 
   //reload the window when the slide changes
-  if (msg.type === 'init') {
-    initPlugin(msg);
-  }
-  
-  if (msg.type === 'selectSlide') {
-    var currentFrameDiv = document.getElementById("current-slide");
-    currentFrameDiv.innerHTML = msg.slide;
+  if (msg.type == 'init') {
+    changeSlide(msg);
   }
 
-  if (msg.type === 'savePresentation') {
+  //get the list of events for the current slide
+  if (msg.type == 'eventList') {
+    eventList(msg);
+  }
+
+  //get the dropdown contents
+  if (msg.type == 'dropDownContents') {
+    dropDownContents(msg);
+  }
+
+  //sends the svg's to the server. Aparently this cannot be done on the plugin side, since it requires internet connectivity.
+  if (msg.type == 'savePresentation') {
     savePresentation(msg);
   }
 }
@@ -662,6 +706,5 @@ onmessage = messageHandler;
 postMessage({
   type: 'init'
 });
-
 
 </script>

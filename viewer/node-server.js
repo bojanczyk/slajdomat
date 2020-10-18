@@ -33,7 +33,7 @@ function presentationDir(presentationName) {
 
     if (!(presentationName in presentations)) {
         presentations[presentationName] = "slides/" + sanitize(presentationName);
-        writeFile(null, null, 'presentations.json', JSON.stringify(presentations));
+        writeFile(null, null, 'slides/presentations.json', JSON.stringify(presentations));
     }
     return presentations[presentationName];
 }
@@ -41,6 +41,17 @@ function presentationDir(presentationName) {
 function slideDir(slideName) {
     return sanitize(slideName)
 }
+
+function readJSON(presentation, slide, name) {
+    const filename = fileName(presentation,slide,name);
+    try {
+    const data = fs.readFileSync(filename);
+    const json =  JSON.parse(data);
+    return json;
+    }
+    catch (error) {return {}}
+}
+
 
 function writeFile(presentation, slide, name, file) {
     if (presentation != null) {
@@ -54,9 +65,10 @@ function writeFile(presentation, slide, name, file) {
             fs.mkdirSync(dir);
     }
 
-    fs.writeFile(fileName(presentation, slide, name), file, function (err) {
+    const filename = fileName(presentation, slide, name);
+    fs.writeFile(filename, file, function (err) {
         if (err) throw err;
-        console.log(dir + name + ' written.');
+        console.log(filename + ' written.');
     });
 }
 
@@ -98,9 +110,9 @@ function onGetWav(msg) {
 //we get a json file, to be stored in the root dir
 function onGetJSON(msg) {
     console.log("getting a json ");
-    var fileName = msg.docDir + msg.name + '.json';
     writeFile(msg.presentation, msg.slide, msg.name + '.json', JSON.stringify(msg.body));
 }
+
 
 
 function onGetSlide(msg) {
@@ -108,8 +120,16 @@ function onGetSlide(msg) {
     const manifest = {
         presentation: msg.presentation,
         root: msg.slideList[0].database.id,
-        slideDict: {}
+        slideDict: {},
     }
+
+    //if there were some sounds previously saved, we keep them
+    var oldmanifest = readJSON(msg.presentation,null,'manifest.json');
+    if ('soundDict' in oldmanifest) 
+        manifest.soundDict = oldmanifest.soundDict;
+    else 
+        manifest.soundDict = {};
+        
 
     var presDir = presentationDir(msg.presentation);
     for (const slide of msg.slideList) {
@@ -148,16 +168,10 @@ app.post('/', function (req, res) {
 
 var presentations;
 
-
-fs.readFile('presentations.json', (err, data) => {
-    if (err) {
-        console.log("no presentations file");
-        presentations = {};
-    } else {
-        presentations = JSON.parse(data);
-        console.log(presentations);
-    }
-})
+presentations = readJSON(null,null, 'slides/presentsations.json');
+if (presentations == {})
+    console.log("no presentations file");
+        
 
 
 app.listen(3000, () => {

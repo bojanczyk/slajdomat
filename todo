@@ -1,15 +1,12 @@
 Bugs:
 - when a show/hide is moved to a different slide
 
-
-Smaller features:
-- parent slide
-- when adding events, use vertical order (y coordinate)
-
 Bigger features:
+- go to slide from url
+- click navigation
 - web server on duch
 - more events (e.g. move)
 - allow inserting external animations
 - printing slides
-- click navigation
+
 

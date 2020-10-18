@@ -1,5 +1,5 @@
 var slideStack = [];
-var slideTree = null;
+var eventTree = null;
 
 
 var numberOfPages = 0;
@@ -347,6 +347,13 @@ function keyListener(event) {
     }
 }
 
+/*
+// I don't know why this does not work
+function scrollListener(event){
+    console.log('scroll');
+}
+document.addEventListener('scroll', scrollListener );
+*/
 document.addEventListener("keydown", keyListener);
 
 
@@ -360,7 +367,7 @@ function attachToTree(parent, svg, database) {
     function matches(svg, event) {
         //the name in the id uses a wrong encoding, which is repaired here
         var niceName = decodeURIComponent(escape(svg.id));
-        return (niceName.startsWith(event.name))
+        return (niceName == event.id)
     }
 
     var retval = database;
@@ -408,11 +415,20 @@ function attachToTree(parent, svg, database) {
     } else {
         for (const s of parent.svg.children)
             if (s.id == retval.id) {
+                //s is the child link. This could be a group, or a rectangle. We find the dimensions by searching for a rectangle, which could be s or one of its children (the latter happens when s is a group that contains other stuff).
+                var rect = null;
+                if (s.nodeName == 'rect') 
+                    rect = s;
+                else
+                    for (const c of s.children) {
+                        if (c.nodeName == 'rect')
+                            rect = c;
+                    }
                 retval.placeholder = {
-                    x: s.x.baseVal.value,
-                    y: s.y.baseVal.value,
-                    width: s.width.baseVal.value,
-                    height: s.height.baseVal.value
+                    x: rect.x.baseVal.value,
+                    y: rect.y.baseVal.value,
+                    width: rect.width.baseVal.value,
+                    height: rect.height.baseVal.value
                 };
             }
         var target = applyTransform(parent.transform, retval.placeholder);
@@ -491,6 +507,9 @@ function loadSVG(parent, name, dom) {
 }
 
 
+
+
+
 function currentEvent() {
     if (slideStack.top().node.events.length == 0)
         return null
@@ -564,10 +583,9 @@ function fetchJSON(filename) {
 
 
 //startup code
-//it leads the manifest, which contains the root slide
-//and the number of slides, and then it loads the first slide
+//it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
 window.onload = function () {
-    fetchJSON('presentations.json')
+    fetchJSON('slides/presentations.json')
         .then(j => {
             let url = new URL(window.location.href);
             presentationName = url.searchParams.get('slides');
@@ -578,11 +596,9 @@ window.onload = function () {
             if (j == null) {
                 throw "The manifest is missing"
             } else {
-                console.log(j);
-                console.log(fileName(null, 'manifest.json'))
                 manifest = j;
+                createEventTree();
                 numberOfPages = Object.keys(manifest.slideDict).length;
-                getSoundDatabase();
                 loadSVG(null, manifest.root, null);
             }
         }) //.catch((e) => userAlert(e))

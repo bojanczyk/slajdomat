@@ -2,7 +2,7 @@ const mathFont = {
   family: 'STIXGeneral',
   style: 'Regular'
 }
-const symboltable = ['∀', '∃', '∧', '∨', '¬', '⊨', '×', '⟶', '↦', '∈', '∋', '∉', '∌', '⊆', '⊇', '≤', '≥', '∅', '⇒'];
+const symboltable = ['∀', '∃', '∧', '∨', '¬', '⊨', '×', '⟶', '↦', '∈', '∋', '∉', '∌', '⊆', '⊇', '≤', '≥', '∅', '⇒', '⟺'];
 
 var latexitSelection;
 

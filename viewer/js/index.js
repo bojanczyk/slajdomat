@@ -1,6 +1,6 @@
 var manifest;
 
-fetch('presentations.json')
+fetch('slides/presentations.json')
 .then(res => { 
     if (!(res.ok))
     throw "not connected";
