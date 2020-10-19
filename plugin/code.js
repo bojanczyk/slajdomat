@@ -256,10 +256,18 @@ function reorderEvents(source, target) {
     sendEventList();
 }
 
+function allNodes(selfun) {
+    return figma.currentPage.findAll(selfun)
+}
 function repairOldFormat() {
-    const nodes = figma.root.findAll(x => x.type == "INSTANCE");
+    const nodes = allNodes(x => x.type == "RECTANGLE");
     for (const node of nodes) {
-        node.parent.setPluginData("childLink", node.mainComponent.id)
+        const slide = findSlide(node.name);
+        console.log(slide);
+        if (slide!=null)
+            node.setPluginData("childLink", slide.id)
+        else
+            node.setPluginData("childLink", '')
     }
 }
 
@@ -586,7 +594,8 @@ function onMessage(msg) {
 
             const event = database.events[msg.index];
             const link = findEventObject(event, currentSlide);
-            figma.currentPage.selection = [link];
+            if (link != null)
+                figma.currentPage.selection = [link];
         }
 
     }
@@ -639,10 +648,13 @@ function slideWithSelection() {
 function selChange() {
     if (savedSelection == null) {
         const slide = slideWithSelection();
+        {
+            console.log(slide);
         if (slide != currentSlide && slide != null)
             setCurrentSlide(slide);
         else
             sendEventList();
+        }
     }
 }
 

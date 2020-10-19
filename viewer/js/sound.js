@@ -30,13 +30,12 @@ function soundStop() {
 }
 
 function currentSound() {
-    return slideStack.top().node.sounds[slideStack.top().index];
+    return curEvent.audio;
 }
 
 function updateSoundIcon() {
     if (soundState == null) {
-
-        if (currentSound() != null)
+        if (curEvent.audio != null)
             soundIcon("play")
         else
             soundIcon(null);
@@ -44,9 +43,6 @@ function updateSoundIcon() {
 }
 
 function soundRecord() {
-    if (currentEvent() == null)
-        userAlert("There are no events in this presentation")
-    else
     if (userAgent() == "Safari") {
         userAlert("Sound recording does not work in Safari");
     } else {
@@ -117,13 +113,12 @@ function toggleSoundIcon(on) {
 
 //start recording the sound for a given event
 function soundRecordCurrentEvent() {
-    var top = slideStack.top();
-    recordSound(top.node, top.index);
+    recordSound(curEvent);
 }
 
 var mediaRecorder;
 
-function recordSound(slide, index) {
+function recordSound(event) {
     if (mediaRecorder != null) {
         if (mediaRecorder.state == "recording")
             mediaRecorder.stop();
@@ -144,47 +139,38 @@ function recordSound(slide, index) {
             mediaRecorder.addEventListener("stop", () => {
                 const audioBlob = new Blob(audioChunks);
                 var audioURL = window.URL.createObjectURL(audioBlob);
-                slide.sounds[index] = new Audio(audioURL);
-                slide.sounds[index].addEventListener('ended', function () {
-                    nextEvent(1);
+                event.audio = new Audio(audioURL);
+                event.audio.addEventListener('ended', function () {
+                    changeEvent(1);
                 })
-                if (!(slide.id in manifest.soundDict)) {
-                    manifest.soundDict[slide.id] = {};
-                }
-                var filename = index.toString();
-                manifest.soundDict[slide.id][index] = {
-                    file: filename
-                };
-                console.log("sent sound " + filename);
+                
+                const index = eventIndex(event);
+                const shortName = index;
+                const longName = fileName(event.parent.id, shortName);
+
+                manifest.soundDict[event.parent.id][index] = {file : shortName};
+                
+                console.log("sending sound " + longName);
 
                 fr = new FileReader();
                 fr.onload = function () {
                     var retmsg = {
                         type: 'wav',
-                        slide: slide.id,
-                        name: filename,
+                        slide: event.parent.id,
+                        name: shortName,
                         file: Array.from(new Uint8Array(this.result))
                     };
+                    sendToServer(retmsg).catch((e) => {
+                        userAlert("Could not send this sound to the server: "+longName)
+                    }
+                    );
 
-                    sendToServer(retmsg).then(x => {
-                        if (soundState == null) {
-                            sendSoundDatabase();
-                        }
-                    }).catch((error) => {
-                        alert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
-                    })
-
-
+                    if (soundState == null)
+                        sendSoundDatabase();
                 };
                 fr.readAsArrayBuffer(audioBlob);
-
             });
-
-            // setTimeout(() => {
-            //     mediaRecorder.stop();
-            // }, 2000);
         });
-
 }
 
 
@@ -214,33 +200,35 @@ function soundPlayCurrentEvent() {
     }
 }
 
-function loadSounds(database) {
-
-    function loader(filename, i, first = false) {
-        var longname = fileName(database.id, filename + '.mp3');
-        var audio = new Audio(longname);
-        audio.addEventListener('ended', function () {
-            nextEvent(1);
-        })
-        audio.addEventListener('loadeddata', (e) => {
-            database.sounds[i] = audio;
-            if (first) {
-                soundIcon("play");
-            }
-        })
+function soundFile(event) {
+    const parent = event.parent.id;
+    try {
+        const index = eventIndex(event);
+        const filename = manifest.soundDict[parent][index].file;
+        return fileName(parent, filename + '.mp3');
+    } catch (exception) {
+        return null;
     }
+}
 
-    database.sounds = {};
-    for (let i = 0; i <= database.events.length; i++) {
-        var soundName = null;
-        database.sounds[i] = null;
-        if (database.id in manifest.soundDict)
-            if (i in manifest.soundDict[database.id]) {
-                var first = false;
-                if (database.id == manifest.root && i == 0)
-                    first = true;
-                loader(manifest.soundDict[database.id][i].file, i, first);
-            }
+function loadSounds(node) {
+    if (!(node.id in manifest.soundDict))
+        manifest.soundDict[node.id] = {};
+
+    for (let child of node.children) {
+        const filename = soundFile(child);
+        if (filename != null) {
+            const audio = new Audio(filename);
+            audio.addEventListener('ended', function () {
+                changeEvent(1);
+            })
+            audio.addEventListener('loadeddata', (e) => {
+                child.audio = audio;
+                if (child == eventTree.children[0]) {
+                    soundIcon("play");
+                }
+            })
+        }
     }
 }
 

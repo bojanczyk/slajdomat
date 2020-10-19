@@ -79,39 +79,42 @@ function alreadySeen(event) {
     return false;
 }
 //loads the SVG for the given node in the slide tree
-function newLoadSVG(node) {
+function loadSVG(node) {
+    
+    if (node.type == 'child' && node.svg == null) {
+        loadSounds(node);
+        var ob = document.createElement("object");
+        ob.setAttribute("data", fileName(node.id, 'image.svg'));
+        ob.setAttribute("type", "image/svg+xml");
+        ob.classList.add("hidden-svg");
+        document.body.appendChild(ob);
+        ob.onload = function () {
+            try {
+                var doc = ob.contentDocument.firstElementChild;
 
-    var ob = document.createElement("object");
-    ob.setAttribute("data", fileName(node.id, 'image.svg'));
-    ob.setAttribute("type", "image/svg+xml");
-    ob.classList.add("hidden-svg");
-    document.body.appendChild(ob);
-    ob.onload = function () {
-        try {
-            var doc = ob.contentDocument.firstElementChild;
-            
-            //in principle, the right element should be the first child, but Marek Sokołowski mentioned that expressVPN changes inserts some wrong children, hence the following code
-            for (const child of ob.contentDocument.firstElementChild.children)
-            {
-                if (child.nodeName == 'g')
-                    node.svg = child;
+                //in principle, the right element should be the first child, but Marek Sokołowski mentioned that expressVPN changes inserts some wrong children, hence the following code
+                for (const child of ob.contentDocument.firstElementChild.children) {
+                    if (child.nodeName == 'g')
+                        node.svg = child;
+                }
+                if (node.div != null)
+                    node.div.classList.remove("slide-list-item-loading");
+                svgLoaded(node);
+                if (node.parent == null)
+                {
+                    pushSlide(node, 1);
+                    updatePageNumber();
+                }
+            } catch (exception) {
+                console.log(exception);
+                // this means that the svg failed to load correctly
+                if (node.div != null) {
+                    node.div.classList.add("disabled-event");
+                    node.div.classList.remove("slide-list-item-loading");
+                }
+                node.svg = null;
+                userAlert("Failed to load svg for " + node.name);
             }
-
-            if (node.div != null)
-                node.div.classList.remove("slide-list-item-loading");
-            svgLoaded(node);
-            console.log(node.svg);
-            // loadSounds(node);
-
-        } catch (exception) {
-            console.log(exception);
-            // this means that the svg failed to load correctly
-            if (node.div != null) {
-                node.div.classList.add("disabled-event");
-                node.div.classList.remove("slide-list-item-loading");
-            }
-            node.svg = null;
-            userAlert("Failed to load svg for " + node.name);
         }
     }
 }
@@ -157,22 +160,22 @@ function createEventTree() {
 
     async function createTreeRec(event) {
         addDIV(event);
+        event.audio = null;
         if (event.type == 'child') {
-            {
-                //this will be only called for show events
-                event.children = [];
-                const database = await fetchJSON(fileName(event.id, 'events.json'));
-                event.name = database.name;
-                for (const child of database.events) {
-                    child.parent = event;
-                    event.children.push(child);
-                    createTreeRec(child);
-                }
-                event.children.push({
-                    type: 'zoomout',
-                    parent : event
-                })
+            numberOfPages++;
+            //this will be only called for show events
+            event.children = [];
+            const database = await fetchJSON(fileName(event.id, 'events.json'));
+            event.name = database.name;
+            for (const child of database.events) {
+                child.parent = event;
+                event.children.push(child);
+                await createTreeRec(child);
             }
+            event.children.push({
+                type: 'finish',
+                parent: event
+            })
         }
     }
     eventTree = {
@@ -180,5 +183,138 @@ function createEventTree() {
         id: manifest.root,
         parent: null
     };
-    createTreeRec(eventTree).then(x => x);
+    return createTreeRec(eventTree);
+}
+
+
+
+
+
+
+//this tree navigation is not efficient, but I want to avoid adding extra links
+function treeSibling(node, dir) {
+    try {
+        for (let i = 0; i < node.parent.children.length; i++)
+            if (node.parent.children[i] == node)
+                return node.parent.children[i + dir]
+    } catch (exception) {
+        return null;
+    }
+}
+
+//returns the index of an event inside its parent
+function eventIndex(node) {
+    try {
+        for (let i = 0; i < node.parent.children.length; i++)
+            if (node.parent.children[i] == node)
+                return i;
+    } catch (exception) {
+        return null;
+    }
+}
+
+//enters a node from its parent
+//this is called at the beginning for the root node, and also when doing next/previous events
+function pushSlide(node, dir) {
+    if (node.svg == null) {
+        //not loaded yet
+        userAlert("Slide not loaded yet:" + node.name);
+    } else {
+        if (node.parent != null)
+            zoomSlide(node, 1);
+        else
+            zoomSlide(node, 0.1);
+
+
+        for (let child of node.children)
+        {
+            loadSVG(child);
+        }
+        if (dir == 1)
+            curEvent = node.children[0];
+        else
+            curEvent = node.children.top();
+    }
+
+}
+
+
+
+function changeEvent(dir) {
+    function showHide(event) {
+        var opacity;
+        if ((event.type == "show" && dir == 1) || (event.type == "hide" && dir == -1))
+            opacity = 1;
+        else
+            opacity = 0;
+
+        gsap.to(event.svg, {
+            duration: 0.3,
+            opacity: opacity
+        });
+    }
+
+    if (dir == 1) {
+        if (curEvent.type == 'child') {
+            pushSlide(curEvent, dir);
+            pageCounter(1);
+        } else
+        if (curEvent.type == 'show' || curEvent.type == 'hide') {
+            // hide or show
+            showHide(curEvent);
+            curEvent = treeSibling(curEvent, 1);
+        } else
+        if (curEvent.type == 'finish') {
+            if (curEvent.parent == eventTree) {
+                soundStop();
+                // userAlert("Cannot move after last event");
+            }
+            else
+            {
+            // pop the stack
+            zoomSlide(curEvent.parent.parent,1.5);
+            curEvent = treeSibling(curEvent.parent, 1);
+            }
+
+        }
+        if (soundState == "play") {
+            if (currentSound() == null) {
+                soundStop();
+            } else {
+                soundPlayCurrentEvent();
+            }
+        }
+
+        if (soundState == "record")
+        soundRecordCurrentEvent();
+    } else {
+        //direction is backward
+        const prevEvent = treeSibling(curEvent, -1);
+
+        if (prevEvent == null) {
+            //we need to pop the current slide
+            if (curEvent.parent == eventTree) {
+                // userAlert("Cannot move before first event");
+            }
+            else 
+            {
+                zoomSlide(curEvent.parent.parent,1.5);
+                curEvent = curEvent.parent;
+                pageCounter(-1);
+            }
+            // pop the stack 
+            
+        } else
+        if (prevEvent.type == 'show' || prevEvent.type == 'hide') {
+            // hide or show
+            showHide(prevEvent);
+            curEvent = treeSibling(curEvent, -1);
+        } else
+        if (prevEvent.type == 'child') {
+            pushSlide(prevEvent, dir);
+        }
+
+    }
+
+    updatePageNumber();
 }
