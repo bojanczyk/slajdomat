@@ -38,7 +38,7 @@ function outlineFrame(frame) {
         currentOutline.x = frame.x;
         currentOutline.y = frame.y;
         currentOutline.resize(frame.width, frame.height);
-        currentOutline.opacity = 0.5;
+        currentOutline.opacity = 0.2;
         currentOutline.fills = [{
             type: 'SOLID',
             color: {
@@ -181,8 +181,6 @@ function createChildEvent(id) {
     */
     const width = 100;
     const rect = figma.createRectangle();
-    rect.x = currentSlide.x
-    rect.y = currentSlide.y
     rect.resize(width, width * slide.height / slide.width);
     rect.fills = [{
         type: 'SOLID',
@@ -196,12 +194,33 @@ function createChildEvent(id) {
     rect.setPluginData("childLink", id)
     rect.name = "Link to " + slide.name;
     currentSlide.appendChild(rect);
+    rect.x = 100
+    rect.y = 100
+    console.log(rect);
+    console.log(currentSlide.name);
     return rect;
 
 }
 
 // create new event
 function createEvent(id, subtype) {
+
+
+    //returns the contents of some text node in the descendants
+    function firstText(node) {
+        if (node.type == 'TEXT') {
+            return node.name;
+        }
+        if (node.type == 'GROUP') {
+            for (let child of node.children) {
+                let text = firstText(child);
+                if (text != null)
+                    return text;
+            }
+        }
+        return null;
+    }
+
     if (subtype == 'show' || subtype == 'hide') {
         var selected = figma.currentPage.selection;
 
@@ -210,10 +229,17 @@ function createEvent(id, subtype) {
             sorted.push(item);
         }
 
+        function sortIndex(a) {return a.y + a.x};
         //the order of events is so that it progresses in the down-right direction
-        sorted.sort((a, b) => a.y + a.x >= b.y + b.x);
-
+        sorted = sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
         for (const item of sorted) {
+
+            if (item.type == 'GROUP' & item.name.startsWith('Group')) {
+                let text = firstText(item);
+                if (text != null)
+                    item.name = text;
+            }
+
             database.events.push({
                 type: subtype,
                 id: item.id,
@@ -237,6 +263,7 @@ function createEvent(id, subtype) {
 
 //remove an event from the current event list
 function removeEvent(index) {
+    console.log(index);
     var event = database.events[index];
     if (event.type = "child") {
         var rect = findEventObject(event, currentSlide);
@@ -259,12 +286,13 @@ function reorderEvents(source, target) {
 function allNodes(selfun) {
     return figma.currentPage.findAll(selfun)
 }
+
 function repairOldFormat() {
     const nodes = allNodes(x => x.type == "RECTANGLE");
     for (const node of nodes) {
         const slide = findSlide(node.name);
         console.log(slide);
-        if (slide!=null)
+        if (slide != null)
             node.setPluginData("childLink", slide.id)
         else
             node.setPluginData("childLink", '')
@@ -381,7 +409,7 @@ function loadCurrentData() {
             id: currentSlide.id,
             events: []
         }
-        
+
     }
     cleanDatabase();
 }
@@ -505,11 +533,12 @@ function selectedOnCurrentSlide() {
 
 //return any slide that points to slide as a child
 function parentSlide(slide) {
-    for (const other of figma.root.findAll(isSlideNode)) {
+    for (const other of allNodes(isSlideNode)) {
         const db = getDatabase(other);
-        for (const event of db.events)
-            if (event.type == 'child' && event.id == slide.id)
-                return other;
+        if (db != null)
+            for (const event of db.events)
+                if (event.type == 'child' && event.id == slide.id)
+                    return other;
     }
     return null;
 }
@@ -526,12 +555,16 @@ function setCurrentSlide(slide) {
             slideid: currentSlide.id,
             slideCount: figma.root.findAll(isSlideNode).length,
         }
+        /*
+        //this code runs too long and creates trouble
         const parent = parentSlide(slide);
         if (parent == null)
             msg.parent = null
-        else 
+        else
             msg.parent = parent.name;
-        
+        */
+        msg.parent = null;
+
         figma.ui.postMessage(msg);
         sendEventList();
     } else {
@@ -546,6 +579,35 @@ function gotoSlide(slide) {
     figma.viewport.scrollAndZoomIntoView([slide]);
     setCurrentSlide(slide);
 }
+
+
+//returns the slide with the currently selected object
+function slideWithSelection() {
+    var sel = figma.currentPage.selection;
+    if (sel.length > 0) {
+        var node = sel[0];
+        while (!isSlideNode(node) && node != null)
+            node = node.parent;
+        return node;
+    } else
+        return null;
+}
+
+//the selection has changed
+function selChange() {
+    if (savedSelection == null) {
+        const slide = slideWithSelection(); {
+            // console.log(slide);
+            // console.log("current:", currentSlide)
+            if (slide != currentSlide && (slide != null || currentSlide.removed))
+                setCurrentSlide(slide);
+            else
+                sendEventList();
+        }
+    }
+}
+
+
 
 //handle messages that come from the ui
 function onMessage(msg) {
@@ -585,8 +647,10 @@ function onMessage(msg) {
     //highlight an event when the mouse hovers over it. For show/hide event we change the selection to the concerned object, for child events we do this for the link.
     if (msg.type == 'hoverEvent') {
         if (msg.index == -1) {
-            if (savedSelection != null)
+            if (savedSelection != null) {
+                console.log(savedSelection);
                 figma.currentPage.selection = savedSelection;
+            }
             savedSelection = null;
         } else {
             if (savedSelection == null)
@@ -611,9 +675,7 @@ function onMessage(msg) {
 
     //if an event is clicked, then the selection stays permanent
     if (msg.type == 'clickEvent') {
-        console.log(msg.index);
         const event = database.events[msg.index];
-        console.log(event);
         if (event.type == 'child') {
             gotoSlide(findSlide(event.id));
         } else
@@ -632,31 +694,6 @@ function onMessage(msg) {
 
 };
 
-//returns the slide with the currently selected object
-function slideWithSelection() {
-    var sel = figma.currentPage.selection;
-    if (sel.length > 0) {
-        var node = sel[0];
-        while (!isSlideNode(node) && node != null)
-            node = node.parent;
-        return node;
-    } else
-        return null;
-}
-
-//the selection has changed
-function selChange() {
-    if (savedSelection == null) {
-        const slide = slideWithSelection();
-        {
-            console.log(slide);
-        if (slide != currentSlide && slide != null)
-            setCurrentSlide(slide);
-        else
-            sendEventList();
-        }
-    }
-}
 
 figma.on("selectionchange", selChange);
 figma.showUI(__uiFiles__.main, {

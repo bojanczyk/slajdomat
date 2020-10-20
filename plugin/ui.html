@@ -401,12 +401,17 @@ function notify(text) {
 }
 
 
-
+//for some reason that I do not understand, the mouseleave is not paired with mouse enter, so I do this manually using the following variable
+cursorInsidePlugin = false;
 //the plugin panel has been moused over
 function pluginMouseenter() {
+    if (!cursorInsidePlugin) {
+      cursorInsidePlugin = true;
     postMessage({
       type: 'mouseEnterPlugin'
     })
+    }
+
   }
 
 
@@ -476,16 +481,7 @@ document.addEventListener("drop", ({
 
 
 
-//when a remove button is clicked
-function removeClick(event) {
-  var child = event.target.parentElement.parentElement;
-  var index = Array.from(child.parentNode.children).indexOf(child);
-  child.remove();
-  postMessage({
-    type: 'removeEvent',
-    index: index
-  })
-}
+
 
 
 function postMessage(msg) {
@@ -578,55 +574,50 @@ function changeSlide(msg) {
   document.getElementById('slide-count').innerHTML = ''+msg.slideCount;
 
 }
+
+
+function eventIconClick(index) {
+  postMessage({
+    type: 'clickEvent',
+    index: index
+  });
+}
+
+function eventRemoveClick(index) {
+  postMessage({
+    type: 'removeEvent',
+    index: index
+  });
+}
+
+function eventHover(index) {
+  postMessage({
+    type: 'hoverEvent',
+    index: index
+  })
+}
+
 //get the list of events for the current slide
 function eventList(msg) {
 
   //make a list item for the list of events 
 function makeEvent(event, index) {
-  var retval = document.createElement('div');
+
+  let div = document.createElement('div');
+  div.innerHTML= '<div class="list-item dropzone" onmouseenter="eventHover('+ index +')" draggable="true"><i onclick="eventIconClick('+ index +')" class="material-icons"></i><div class="list-label"> </div><div class="list-buttons"><i onclick="eventRemoveClick('+ index +')" class="material-icons">delete_outline</i></div></div>'
+  const retval = div.firstChild;
+  
   if (event.disabled)
     retval.classList.add("disabled");
-  retval.classList.add("list-item");
-  retval.classList.add("dropzone");
-  retval.setAttribute("draggable", true);
-  var ifcon = document.createElement('i');
   if (event.type == "show")
-    ifcon.innerHTML = "visibility";
+    retval.childNodes[0].innerHTML = "visibility";
   if (event.type == "hide")
-    ifcon.innerHTML = "visibility_off";
+    retval.childNodes[0].innerHTML = "visibility_off";
   if (event.type == "child")
-    ifcon.innerHTML = "zoom_out_map";
-
-  retval.addEventListener("mouseenter", event => {
-    postMessage({
-      type: 'hoverEvent',
-      index: index
-    })
-  });
-  retval.addEventListener("click", event => {
-    postMessage({
-      type: 'clickEvent',
-      index: index
-    })
-  });
-
-  ifcon.classList.add("material-icons");
-  ifcon.classList.add("hover-visible");
-  retval.appendChild(ifcon);
-  var label = document.createElement('div');
-  label.innerHTML = event.name;
-  label.classList.add("list-label");
-  retval.appendChild(label);
-  var buttons = document.createElement('div');
-  buttons.innerHTML = "<i class=\"material-icons\">delete_outline</i>";
-  buttons.onclick = removeClick;
-  buttons.classList.add("list-buttons");
-  retval.appendChild(buttons);
+    retval.childNodes[0].innerHTML = "zoom_out_map";
+  retval.childNodes[1].innerHTML = event.name;
   return retval;
-
 }
-
-
 
   var eventListHTML = document.getElementById("event-list");
   eventListHTML.innerHTML = "";
@@ -699,6 +690,17 @@ function messageHandler(event) {
   }
 }
 
+function eventNumber(node) {
+  while (!(node.classList.contains('list-item')))
+    {console.log(node);
+    node = node.parentNode;}
+  return index = Array.from(node.parentNode.children).indexOf(node);
+}
+
+
+
+
+
 
 
 // 
@@ -706,5 +708,7 @@ onmessage = messageHandler;
 postMessage({
   type: 'init'
 });
+
+
 
 </script>

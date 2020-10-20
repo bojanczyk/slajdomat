@@ -80,7 +80,7 @@ function alreadySeen(event) {
 }
 //loads the SVG for the given node in the slide tree
 function loadSVG(node) {
-    
+
     if (node.type == 'child' && node.svg == null) {
         loadSounds(node);
         var ob = document.createElement("object");
@@ -97,11 +97,16 @@ function loadSVG(node) {
                     if (child.nodeName == 'g')
                         node.svg = child;
                 }
+
+                //remove the 'loading' class from the corresponding elements in the slide panel
                 if (node.div != null)
                     node.div.classList.remove("slide-list-item-loading");
+                for (let child of node.children)
+                    if (child.type == 'show' || child.type == 'hide')
+                        child.div.classList.remove("slide-list-item-loading");
+
                 svgLoaded(node);
-                if (node.parent == null)
-                {
+                if (node.parent == null) {
                     pushSlide(node, 1);
                     updatePageNumber();
                 }
@@ -126,13 +131,16 @@ function createEventTree() {
 
     //create an html item for the left panel  
     function addDIV(event) {
-        var parentDiv = null;
+
+
         if (event.parent == null) {
-            parentDiv = document.getElementById('control-panel')
+            event.subdiv = document.getElementById('slide-stack');
+            event.div = null;
         } else {
             parentDiv = event.parent.subdiv;
             event.div = document.createElement("div");
             event.div.classList.add("slide-list-item");
+            event.div.classList.add("slide-list-item-loading");
 
             var icon;
             if (event.disabled) {
@@ -148,12 +156,14 @@ function createEventTree() {
 
             event.div.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
             parentDiv.appendChild(event.div);
-        }
 
-        if (event.type == 'child') {
-            event.subdiv = document.createElement("div");
-            event.subdiv.classList.add("slide-stack");
-            parentDiv.appendChild(event.subdiv);
+
+            if (event.type == 'child') {
+                event.subdiv = document.createElement("div");
+                event.subdiv.classList.add("slide-stack");
+                event.subdiv.classList.add("slide-stack-hidden");
+                parentDiv.appendChild(event.subdiv);
+            }
         }
 
     }
@@ -226,8 +236,7 @@ function pushSlide(node, dir) {
             zoomSlide(node, 0.1);
 
 
-        for (let child of node.children)
-        {
+        for (let child of node.children) {
             loadSVG(child);
         }
         if (dir == 1)
@@ -256,11 +265,14 @@ function changeEvent(dir) {
 
     if (dir == 1) {
         if (curEvent.type == 'child') {
+            curEvent.div.classList.add('slide-list-item-seen');
+            curEvent.subdiv.classList.remove('slide-stack-hidden');
             pushSlide(curEvent, dir);
             pageCounter(1);
         } else
         if (curEvent.type == 'show' || curEvent.type == 'hide') {
             // hide or show
+            curEvent.div.classList.add('slide-list-item-seen');
             showHide(curEvent);
             curEvent = treeSibling(curEvent, 1);
         } else
@@ -268,12 +280,11 @@ function changeEvent(dir) {
             if (curEvent.parent == eventTree) {
                 soundStop();
                 // userAlert("Cannot move after last event");
-            }
-            else
-            {
-            // pop the stack
-            zoomSlide(curEvent.parent.parent,1.5);
-            curEvent = treeSibling(curEvent.parent, 1);
+            } else {
+                // pop the stack
+                curEvent.parent.subdiv.classList.add('slide-stack-hidden');
+                zoomSlide(curEvent.parent.parent, 1.5);
+                curEvent = treeSibling(curEvent.parent, 1);
             }
 
         }
@@ -286,31 +297,33 @@ function changeEvent(dir) {
         }
 
         if (soundState == "record")
-        soundRecordCurrentEvent();
+            soundRecordCurrentEvent();
     } else {
         //direction is backward
         const prevEvent = treeSibling(curEvent, -1);
 
-        if (prevEvent == null) {
+        if (prevEvent == null) //first event of its group
+        {
             //we need to pop the current slide
             if (curEvent.parent == eventTree) {
                 // userAlert("Cannot move before first event");
-            }
-            else 
-            {
-                zoomSlide(curEvent.parent.parent,1.5);
+            } else {
+                zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = curEvent.parent;
+                curEvent.subdiv.classList.add('slide-stack-hidden');
+                curEvent.div.classList.remove('slide-list-item-seen');
                 pageCounter(-1);
             }
-            // pop the stack 
-            
+
         } else
         if (prevEvent.type == 'show' || prevEvent.type == 'hide') {
             // hide or show
+            prevEvent.div.classList.remove('slide-list-item-seen');
             showHide(prevEvent);
             curEvent = treeSibling(curEvent, -1);
         } else
         if (prevEvent.type == 'child') {
+            prevEvent.subdiv.classList.remove('slide-stack-hidden');
             pushSlide(prevEvent, dir);
         }
 
