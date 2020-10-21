@@ -184,3 +184,12 @@ path:not([fill]) {
     white-space: nowrap;
 }
 
+.help {
+    font-size : 10px;
+    margin-left : 5px;
+    padding-bottom :10px;
+}
+
+.help p {
+     margin-left : 5px;
+}

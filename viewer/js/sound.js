@@ -186,10 +186,19 @@ function sendSoundDatabase() {
     });
 }
 
+playbackRate = 1;
+function playbackRateChange(d) {
+    if (playbackRate +d >0)
+        {playbackRate += d;
+            globalAudio.playbackRate = playbackRate;
+        }
+    userAlert("Playback rate is now "+playbackRate.toFixed(1)); 
+}
 
 function soundPlayCurrentEvent() {
     if (currentSound() != null) {
         globalAudio = currentSound();
+        globalAudio.playbackRate = playbackRate;
         globalAudio.play();
         return true;
     } else {

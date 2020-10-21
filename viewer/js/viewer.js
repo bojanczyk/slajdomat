@@ -172,6 +172,20 @@ function prevButton() {
 }
 
 function keyListener(event) {
+
+    console.log(event.keyCode);
+    if (event.keyCode == '190') {
+        // >
+        playbackRateChange(0.2);
+
+    }
+
+    if (event.keyCode == '188') {
+        // <
+        playbackRateChange(-0.2);
+
+    }
+
     if (event.keyCode == '39') {
         //arrow right
         nextButton();
