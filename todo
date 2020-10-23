@@ -2,8 +2,7 @@ Bugs:
 - when a show/hide is moved to a different slide
 
 Bigger features:
-- go to slide from url
-- click navigation
+- drawing on slides
 - web server on duch
 - more events (e.g. move)
 - allow inserting external animations

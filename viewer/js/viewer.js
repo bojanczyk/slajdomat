@@ -4,7 +4,6 @@ var curEvent = null;
 
 
 var numberOfPages = 0;
-var currentPage = 1;
 
 var presentationDir; //the directory where the slides are
 var presentationName; //the name of the slides
@@ -18,50 +17,66 @@ function getServer() {
 
 //toggles the side panel on the left with the list of slides
 function togglePanel(visible) {
-    if (visible)
+    if (visible) {
+        document.getElementById('left-sensor').style.display = 'none';
         gsap.to("#control-panel", {
             width: "20%",
             duration: 0.3
         });
-    else
+    } else {
+        document.getElementById('left-sensor').style.display = '';
         gsap.to("#control-panel", {
             width: "0%",
             duration: 0.3
         });
+    }
 }
 
-
-//displays an alert for the user at the bottom of the screen
-function userAlert(text) {
-    var panel = document.getElementById("text-alert-box");
-    document.getElementById("text-alert").innerHTML = text;
+//displays a panel for a short time
+function shortDisplay(panel) {
     let tl = gsap.timeline();
+    panel.style.display='inherit';
     tl.to(panel, {
         opacity: "100%",
         duration: 0.1
     }).to(panel, {
-        duration: 1
+        duration: 2
     }).to(panel, {
         opacity: "0",
         duration: 1
     });
+    tl.eventCallback("onComplete", function() {
+        panel.style.display='none';
+      });
+}
+
+//displays the help
+function helpPanel() {
+    shortDisplay(document.getElementById("help-panel"));
+}
+
+//displays an alert for the user at the bottom of the screen
+function userAlert(text) {
+    document.getElementById("text-alert").innerHTML = text;
+    shortDisplay(document.getElementById("text-alert-box"));
 }
 
 
 
 function nextPreviousArrows() {
-    
+
 
 }
 
 
+
 //update the page number in the corner
 function updatePageNumber() {
-    document.getElementById("page-count-enumerator").innerHTML = currentPage;
+    document.getElementById("page-count-enumerator").innerHTML = curEvent.pageNumber;
     document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 
     // the "previous" arrow should be invisible at the first event of the first slide
-// analogously for the "next" arrow
+    // analogously for the "next" arrow
     if (curEvent == eventTree.children[0])
         document.getElementById("prev-event").style.visibility = "hidden";
     else
@@ -73,10 +88,7 @@ function updatePageNumber() {
         document.getElementById("next-event").style.visibility = "visible";
 }
 
-//offset the page counter
-function pageCounter(dir) {
-    currentPage += dir;
-}
+
 
 //apply transform t to rectangle rect (first scale, then shift)
 function applyTransform(t, rect) {
@@ -172,12 +184,9 @@ function prevButton() {
 }
 
 function keyListener(event) {
-
-    console.log(event.keyCode);
     if (event.keyCode == '190') {
         // >
         playbackRateChange(0.2);
-
     }
 
     if (event.keyCode == '188') {
@@ -288,16 +297,31 @@ function fetchJSON(filename) {
 
 
 
+function getPathFromURL(pathstring) {
+    var path = [];
+    try {
+        const pathstring = (new URL(window.location.href)).searchParams.get('path').split('/');
+        while (pathstring.length > 0) {
+            let index = pathstring.pop();
+            if (index != '')
+                path.push(parseInt(index));
+        }
+        return path;
+
+    } catch (e) {
+        return [0]; // default path is the first event of the root
+    }
+}
 
 
-
+helpPanel();
 
 //startup code
 //it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
 window.onload = function () {
     fetchJSON('slides/presentations.json')
         .then(j => {
-            if (j == null) 
+            if (j == null)
                 throw "The manifest is missing for all presentations"
 
             let url = new URL(window.location.href);
@@ -306,13 +330,19 @@ window.onload = function () {
             presentationDir = j[presentationName];
             return fetchJSON(fileName(null, 'manifest.json'))
         }).then(j => {
-            if (j == null) 
+            if (j == null)
                 throw "The manifest is missing for the presentation"
-            
-                manifest = j;
-                createEventTree().then(x => {
-                    loadSVG(eventTree);
-                    updatePageNumber();
-                });
+
+            manifest = j;
+
+            const path = getPathFromURL();
+
+
+            createEventTree().then(x => {
+                curEvent = eventTree;
+                gotoPath(path)
+                // loadSVG(eventTree);
+                // updatePageNumber();
+            });
         }).catch((e) => userAlert(e))
 }

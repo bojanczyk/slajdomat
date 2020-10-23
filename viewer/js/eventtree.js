@@ -1,6 +1,6 @@
 //add a new node to the slide tree
 //the svg
-function svgLoaded(node) {
+function svgLoaded(node, index) {
 
     //Checks if an svg element matches an event.
     //For the moment the matching function is that the 
@@ -13,17 +13,24 @@ function svgLoaded(node) {
 
 
     node.localRect = getBoundRect(node.svg);
-
+    node.eventSVGs = [];
     //hide objects that are either a placeholder rectangle, or the first event is show
     for (const child of node.svg.children) {
         for (const event of node.children) {
-            var first = true;
-            if (event.type == 'show' && matches(child, event) && first) {
-                child.style.opacity = 0;
-                first = false;
+            if (event.type == 'show' && matches(child, event)) {
+                node.eventSVGs.push({
+                    svg: child,
+                    startVisible: false
+                });
+                break;
             }
-            if (event.type == 'hide' && matches(child, event) && first)
-                first = false;
+            if (event.type == 'hide' && matches(child, event)) {
+                node.eventSVGs.push({
+                    svg: child,
+                    startVisible: true
+                });
+                break;
+            }
 
             if (event.type == 'child' && event.id == child.id)
                 child.style.opacity = 0;
@@ -42,6 +49,7 @@ function svgLoaded(node) {
         }
     }
 
+    updateEventsSVG(node, index);
     //compute the transformation with respect to the local coordinates of the parent
     if (node.parent == null) {
         node.transform = idTransform();
@@ -72,16 +80,15 @@ function svgLoaded(node) {
     svgContainer.appendChild(node.svg);
 }
 
-
-//returns true if the event has already been performed
-function alreadySeen(event) {
-    //this is stub code
-    return false;
-}
 //loads the SVG for the given node in the slide tree
-function loadSVG(node) {
-
-    if (node.type == 'child' && node.svg == null) {
+function loadSVG(node, index = 0, callback = null) {
+    if (node.type != 'child' || node.svg != null) {
+        //there is nothing to load, so the callback can be called
+        if (node.type == 'child')
+            updateEventsSVG(node, index);
+        if (callback != null)
+            callback(true);
+    } else {
         loadSounds(node);
         var ob = document.createElement("object");
         ob.setAttribute("data", fileName(node.id, 'image.svg'));
@@ -105,10 +112,10 @@ function loadSVG(node) {
                     if (child.type == 'show' || child.type == 'hide')
                         child.div.classList.remove("slide-list-item-loading");
 
-                svgLoaded(node);
-                if (node.parent == null) {
-                    pushSlide(node, 1);
-                    updatePageNumber();
+                svgLoaded(node, index);
+
+                if (callback != null) {
+                    callback(true);
                 }
             } catch (exception) {
                 console.log(exception);
@@ -119,20 +126,45 @@ function loadSVG(node) {
                 }
                 node.svg = null;
                 userAlert("Failed to load svg for " + node.name);
+                if (callback != null) {
+                    callback(false);
+                }
             }
         }
     }
 }
 
 
+function openPanelTree(event, open) {
+    if (open) {
+        event.subdiv.classList.remove('slide-stack-hidden');
+        event.div.childNodes[0].innerHTML = 'expand_more';
+    } else {
+        event.subdiv.classList.add('slide-stack-hidden');
+        event.div.childNodes[0].innerHTML = 'chevron_right';
+    }
+}
 
 //creates the tree of slides and events, without adding the svg's yet
 function createEventTree() {
+    function addDIV(event) //create an html item for the event in the  control panel  
+    {
+        function eventClicked(e) //what happens when an event is clicked in the control panel
+        {
+            if (e.target.nodeName == 'I') {
+                //the icon was clicked
+                if (event.type == 'child') // for child events, we fold/unfold the list of child events
+                {
+                    event.divopen = !event.divopen;
+                    openPanelTree(event, event.divopen);
+                }
+            } else {
+                //the name of the event was clicked
+                gotoEvent(event);
+            }
+        }
 
-    //create an html item for the left panel  
-    function addDIV(event) {
-
-
+        event.divopen = false;
         if (event.parent == null) {
             event.subdiv = document.getElementById('slide-stack');
             event.div = null;
@@ -151,10 +183,13 @@ function createEventTree() {
                 icon = "visibility";
             if (event.type == "hide")
                 icon = "visibility_off";
-            if (event.type == "child")
-                icon = "zoom_out_map";
+            if (event.type == "child") {
+                icon = "chevron_right";
+            }
 
             event.div.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
+
+            event.div.addEventListener('click', eventClicked);
             parentDiv.appendChild(event.div);
 
 
@@ -165,12 +200,13 @@ function createEventTree() {
                 parentDiv.appendChild(event.subdiv);
             }
         }
-
     }
 
-    async function createTreeRec(event) {
+    async function createTreeRec(event)//recursive function which loads a json for each slide. I might move this to having a single json.
+     {
         addDIV(event);
         event.audio = null;
+        event.pageNumber = numberOfPages;
         if (event.type == 'child') {
             numberOfPages++;
             //this will be only called for show events
@@ -184,10 +220,12 @@ function createEventTree() {
             }
             event.children.push({
                 type: 'finish',
-                parent: event
+                parent: event,
+                pageNumber: numberOfPages
             })
         }
     }
+
     eventTree = {
         type: 'child',
         id: manifest.root,
@@ -195,11 +233,6 @@ function createEventTree() {
     };
     return createTreeRec(eventTree);
 }
-
-
-
-
-
 
 //this tree navigation is not efficient, but I want to avoid adding extra links
 function treeSibling(node, dir) {
@@ -212,43 +245,63 @@ function treeSibling(node, dir) {
     }
 }
 
-//returns the index of an event inside its parent
+//returns the index of an event inside its parent.
 function eventIndex(node) {
+    if ('index' in node)
+        return node.index
+    else
     try {
         for (let i = 0; i < node.parent.children.length; i++)
             if (node.parent.children[i] == node)
-                return i;
+                {
+                    node.index = i;
+                    return i;
+                }
     } catch (exception) {
         return null;
     }
 }
 
-//enters a node from its parent
-//this is called at the beginning for the root node, and also when doing next/previous events
-function pushSlide(node, dir) {
-    if (node.svg == null) {
-        //not loaded yet
-        userAlert("Slide not loaded yet:" + node.name);
-    } else {
-        if (node.parent != null)
-            zoomSlide(node, 1);
-        else
-            zoomSlide(node, 0.1);
-
-
-        for (let child of node.children) {
-            loadSVG(child);
+//pushes a list of slides. The root is the first slide, which is assumed to be loaded, and then path contains a list of directions (which event number), that defines a path; ordered from last to first. The after parameter is a callback to be performed once the last slide is pushed.
+function pushIndexList(root, path, after = (x) => {}) {
+    if (path.length == 0) {
+        curEvent = root;
+        if (curEvent.parent.parent == null) {
+            zoomSlide(curEvent.parent, 0)
+        } else {
+            zoomSlide(curEvent.parent)
         }
-        if (dir == 1)
-            curEvent = node.children[0];
-        else
-            curEvent = node.children.top();
+        updatePageNumber();
+        after(root);
+    } else {
+        const index = path.pop();
+        // const event = root.children[index];
+        function callback(success) {
+            if (success) {
+                for (let i = 0; i < root.children.length; i++) {
+                    const event = root.children[i];
+                    if (event.type == 'child') {
+                        if (i < index) {
+                            loadSVG(event, event.children.length);
+                        }
+                        if (i >= index) {
+                            loadSVG(event, 0);
+                        }
+                    }
+                    if (i == index)
+                        pushIndexList(event, path, after);
+                }
+            } else {
+                userAlert('Failed to push slide ' + root.name)
+            }
+        }
+        loadSVG(root, index, callback);
     }
 
 }
 
 
-
+//the move to the prev/next event, depending on whether dir is -1 or 1. One of the longer functions, because there are numerous combinations of push, pop, next sibling, etc.
 function changeEvent(dir) {
     function showHide(event) {
         var opacity;
@@ -266,9 +319,8 @@ function changeEvent(dir) {
     if (dir == 1) {
         if (curEvent.type == 'child') {
             curEvent.div.classList.add('slide-list-item-seen');
-            curEvent.subdiv.classList.remove('slide-stack-hidden');
-            pushSlide(curEvent, dir);
-            pageCounter(1);
+            openPanelTree(curEvent,true);
+            pushIndexList(curEvent.parent, [0, eventIndex(curEvent)])
         } else
         if (curEvent.type == 'show' || curEvent.type == 'hide') {
             // hide or show
@@ -282,7 +334,7 @@ function changeEvent(dir) {
                 // userAlert("Cannot move after last event");
             } else {
                 // pop the stack
-                curEvent.parent.subdiv.classList.add('slide-stack-hidden');
+                openPanelTree(curEvent.parent,false);
                 zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = treeSibling(curEvent.parent, 1);
             }
@@ -310,9 +362,8 @@ function changeEvent(dir) {
             } else {
                 zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = curEvent.parent;
-                curEvent.subdiv.classList.add('slide-stack-hidden');
+                openPanelTree(curEvent,false);
                 curEvent.div.classList.remove('slide-list-item-seen');
-                pageCounter(-1);
             }
 
         } else
@@ -323,11 +374,99 @@ function changeEvent(dir) {
             curEvent = treeSibling(curEvent, -1);
         } else
         if (prevEvent.type == 'child') {
-            prevEvent.subdiv.classList.remove('slide-stack-hidden');
-            pushSlide(prevEvent, dir);
+            openPanelTree(prevEvent,true);
+            pushIndexList(prevEvent.parent, [prevEvent.children.length - 1, eventIndex(prevEvent)])
         }
 
     }
 
     updatePageNumber();
+}
+
+
+
+function updateEventsSVG(slide, index) //makes visible or invisible the appropriate objects in the slide, so that events before (not including) index have already been performed
+{
+    if (slide.type != 'child' || slide.svg == null)
+        return;
+    
+    for (let x of slide.eventSVGs) {
+        let visible = x.startVisible;
+        for (let i = 0; i < index; i++) {
+            if (slide.children[i].svg == x.svg)
+                visible = (slide.children[i].type == 'show')
+        }
+        if (visible)
+            x.svg.style.opacity = 1;
+        else
+            x.svg.style.opacity = 0;
+    }
+
+    //call recursively for child slides
+    for (let child of slide.children) {
+        if (child.type == 'child') {
+            if (eventIndex(child) < index )
+            {
+                updateEventsSVG(child,child.children.length);
+            }
+            else 
+            {
+                updateEventsSVG(child,0)
+            }
+        }
+    }
+}
+
+function pathInURL() //puts the current path into the url
+{
+    const path = getPath(curEvent);
+    let string = '';
+    while (path.length > 0) {
+        string += path.pop() + '/';
+    }
+    history.pushState({}, null, '?slides=' + encodeURI(presentationName) + '&path=' + string);
+    }
+
+
+function gotoPath(path) //move to an event given by a list of indices, given in shallow-to-deep ordering
+{
+    soundStop();
+    //after moving to the event, we will call the following function
+    function updateSeen(event) //update the seen information for items in the slide panel, and the visibility
+    {
+        let before = true;
+
+        function updateRec(e) {
+            if (e == event)
+                before = false;
+            //update the slide column 
+            if (e.div != null) //the root has no div
+            {
+                if (before)
+                    e.div.classList.add('slide-list-item-seen')
+                else
+                    e.div.classList.remove('slide-list-item-seen')
+            }
+            if (e.type == 'child')
+                for (let child of e.children)
+                    updateRec(child);
+        }
+        updateRec(eventTree);
+        pathInURL();
+    }
+    pushIndexList(eventTree, path, updateSeen);
+}
+
+function getPath(event){
+    const path = [];
+    var ancestor = event;
+    while (ancestor.parent != null) {
+        path.push(eventIndex(ancestor));
+        ancestor = ancestor.parent;
+    }
+    return path;
+}
+function gotoEvent(event) //move directly to an event
+{   
+    gotoPath(getPath(event));    
 }

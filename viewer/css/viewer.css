@@ -3,6 +3,7 @@
 }
 
 .control-panel {
+    position : relative;
     color : black;
     display: inline-block;
     background-color:whitesmoke;
@@ -10,6 +11,7 @@
     height: 100%;
     vertical-align: top;
     z-index : +1;
+    cursor: default;
 }
 
 
@@ -39,17 +41,17 @@ body {
 .control-panel {
     font-family: 'Roboto';
     font-weight: 300;
+    position : relative;
 }
 
 
 
+
 .slide-list-item {
-    overflow: hidden;
-    
-    
+    overflow: hidden;    
     white-space: nowrap;
     display:block;
-    color : lightgrey;
+    color : darkgray;
     margin-bottom : 5px;
 }
 
@@ -65,9 +67,10 @@ body {
 
 
 .slide-list-item i {
-    font-size: 10px;
+    font-size: 12px;
     /* margin-bottom: 10px; */
     margin-right: 5px;
+    cursor : pointer;
 }
 
 .slide-stack {
@@ -81,6 +84,13 @@ body {
     display : none;
 }
 
+#slide-stack-container {
+   position: absolute;
+   top : 30px;
+   bottom : 30px;
+   overflow : scroll; 
+}
+
 #text-alert-box {
     position : fixed;
     bottom: 0;
@@ -90,7 +100,7 @@ body {
     display: flex;
     align-items: center;
     z-index: 3;
-    opacity: 0; 
+    display : none; 
 }
 
 #text-alert-background {
@@ -98,7 +108,7 @@ body {
     width : 100%;
     height : 100%;
     background-color : lightgray;
-    opacity: 0.8;
+    opacity: 90%; 
 }
 
 #text-alert {
@@ -185,11 +195,34 @@ path:not([fill]) {
 }
 
 .help {
-    font-size : 10px;
+    font-size : 12px;
+    padding-top : 10px;
     margin-left : 5px;
     padding-bottom :10px;
 }
 
 .help p {
      margin-left : 5px;
+}
+
+#close-panel {
+    position : absolute;
+    top : 3px;
+    right : 3px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#help-panel {
+    position : absolute;
+    top :30%;
+    left : 30%;
+    width : 40%;
+    z-index: 4;
+    display : none;
+}
+
+#help-panel p {
+    font-family: 'Roboto';
+    font-size: 20px;
 }

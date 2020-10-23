@@ -15,20 +15,26 @@
 
 <body>
 
+	<!-- <div id='help-panel'>
+		<p> Left and right arrows: previous and next</p>
+		<p> Space: play sound</p>
+		<p> &lt; &gt;: change sound speed</p>
+	</div> -->
+	<img id='help-panel' src="img/help.svg">
 
 	<!-- the left panel, which rolls out, and has information about the slides -->
 	<div id="left-sensor" onmouseover="togglePanel(true)"></div>
-	<div id="control-panel" class="control-panel" onmouseout="togglePanel(false)">
+	<div id="control-panel" class="control-panel">
 		<!-- <div id="audio-controls">
 			<i class="material-icons ">mic</i>
 			<i class="material-icons ">mic</i>
 		</div> -->
-		<div class="help">
-		<p> Left and right arrows: previous and next</p>
-		<p> Space: play sound</p>
-		<p> &lt; &gt;: change sound speed</p>
-		</div>
-		<div id="slide-stack" class="slide-stack">
+		<i id="close-panel" onclick="togglePanel(false)" class="material-icons">close</i>
+		<!-- <div class="help">
+		</div> -->
+		<div id='slide-stack-container'>
+			<div id="slide-stack" class="slide-stack">
+			</div>
 		</div>
 	</div>
 
@@ -64,10 +70,10 @@
 	<script src="js/eventtree.js"></script>
 
 	<template id='slide-list-template'>
-	<div class="slide-list-item">
-	<i class="material-icons">visibility</i>
-		Mikielin
-	</div>
+		<div class="slide-list-item">
+			<i class="material-icons">visibility</i>
+			Mikielin
+		</div>
 	</template>
 
 </body>
