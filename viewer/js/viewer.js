@@ -215,7 +215,10 @@ function keyListener(event) {
         if (soundState == "record")
             soundStop();
         else
+        {
+            soundStop();
             soundRecord();
+        }
     }
 }
 

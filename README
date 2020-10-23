@@ -6,10 +6,11 @@
 So far, I have only tested the non-web client
 
 2. Run the server. 
-- run "python3 serwer.py" in the viewer directory
+- run "node node-server.js" in the viewer directory
+You should install ffmpeg if you want the sounds to work properly
 
 3. Start using the plugin, when you are ready click the "play" button, which will send the data to the server. As a result, several svg files will appear in the viewer directory.
 
-4. To view the slides, open the following page in your browser: http://localhost:8000/viewer.html
+4. To view the slides, open the following page in your browser: http://localhost:8080/viewer.html
 
 

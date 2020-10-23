@@ -199,6 +199,7 @@ function soundPlayCurrentEvent() {
     if (currentSound() != null) {
         globalAudio = currentSound();
         globalAudio.playbackRate = playbackRate;
+        globalAudio.currentTime = 0;
         globalAudio.play();
         return true;
     } else {
