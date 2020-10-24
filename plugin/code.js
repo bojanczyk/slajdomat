@@ -10,8 +10,6 @@ var database = null;
 var currentSlide = null;
 
 
-
-
 // I don't know how to set the viewport, so I create a rectangle
 function setViewport(rect) {
     var viewport = figma.createRectangle();
@@ -24,6 +22,8 @@ function setViewport(rect) {
     viewport.remove();
 }
 
+
+// highlights a node by making a frame around it. Currently not used.
 var currentOutline = null;
 
 function outlineFrame(frame) {
@@ -229,7 +229,9 @@ function createEvent(id, subtype) {
             sorted.push(item);
         }
 
-        function sortIndex(a) {return a.y + a.x};
+        function sortIndex(a) {
+            return a.y + a.x
+        };
         //the order of events is so that it progresses in the down-right direction
         sorted = sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
         for (const item of sorted) {
@@ -327,12 +329,13 @@ function saveFile() {
 
     //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
     async function saveRec(slide) {
+        var retval;
         if (stack.includes(slide)) {
             var cycle = "The slides contain a cycle: \n";
             for (const n of stack)
                 cycle += (n.name + "\n");
             figma.notify(cycle + slide.name);
-            return;
+            return null;
         } else {
             stack.push(slide);
             currentSlide = slide;
@@ -353,7 +356,6 @@ function saveFile() {
                 }
             }
 
-
             var svg = await slide.exportAsync({
                 format: 'SVG',
                 svgOutlineText: true,
@@ -366,16 +368,28 @@ function saveFile() {
                 change.node.name = change.savedname;
             }
 
+            retval = {
+                type: 'child',
+                name: database.name,
+                id: database.id,
+                children: []
+            }
+
             saveCurrentData();
             slideList.push({
                 database: database,
                 svg: svg
             });
-            for (const event of database.events)
-                if (event.type == "child" && !(event.disabled))
-                    await saveRec(findSlide(event.id));
+            for (const event of database.events) {
+                if (event.type == "child" && !(event.disabled)) {
+                    retval.children.push(await saveRec(findSlide(event.id)));
+                } else
+                    retval.children.push(event);
+
+            }
 
             stack.pop();
+            return retval;
         }
     }
 
@@ -384,7 +398,8 @@ function saveFile() {
         figma.ui.postMessage({
             type: 'savePresentation',
             presentation: figma.root.name,
-            slideList: slideList
+            slideList: slideList,
+            tree : x
         });
         currentSlide = savedSlide;
     });

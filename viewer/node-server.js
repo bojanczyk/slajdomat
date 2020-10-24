@@ -109,7 +109,7 @@ function onGetWav(msg) {
 
 //we get a json file, to be stored in the root dir
 function onGetJSON(msg) {
-    console.log("getting a json ");
+    console.log("getting a json ");'slide'
     writeFile(msg.presentation, msg.slide, msg.name + '.json', JSON.stringify(msg.body));
 }
 
@@ -121,6 +121,7 @@ function onGetSlide(msg) {
         presentation: msg.presentation,
         root: msg.slideList[0].database.id,
         slideDict: {},
+        tree : msg.tree
     }
 
     //if there were some sounds previously saved, we keep them
@@ -138,7 +139,7 @@ function onGetSlide(msg) {
         writeFile(msg.presentation, slide.database.id, 'events.json', JSON.stringify(slide.database));
         writeFile(msg.presentation, slide.database.id, 'image.svg', slide.svg);
     }
-    writeFile(msg.presentation, null, 'manifest.json', JSON.stringify(manifest));
+    writeFile(msg.presentation, null, 'manifest.json', JSON.stringify(manifest,null,2));
 
 
 }

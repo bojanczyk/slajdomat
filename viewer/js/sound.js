@@ -143,13 +143,15 @@ function recordSound(event) {
                 event.audio.addEventListener('ended', function () {
                     changeEvent(1);
                 })
-                
+
                 const index = eventIndex(event);
                 const shortName = index;
                 const longName = fileName(event.parent.id, shortName);
 
-                manifest.soundDict[event.parent.id][index] = {file : shortName};
-                
+                manifest.soundDict[event.parent.id][index] = {
+                    file: shortName
+                };
+
                 console.log("sending sound " + longName);
 
                 fr = new FileReader();
@@ -161,9 +163,8 @@ function recordSound(event) {
                         file: Array.from(new Uint8Array(this.result))
                     };
                     sendToServer(retmsg).catch((e) => {
-                        userAlert("Could not send this sound to the server: "+longName)
-                    }
-                    );
+                        userAlert("Could not send this sound to the server: " + longName)
+                    });
 
                     if (soundState == null)
                         sendSoundDatabase();
@@ -187,12 +188,14 @@ function sendSoundDatabase() {
 }
 
 playbackRate = 1;
+
 function playbackRateChange(d) {
-    if (playbackRate +d >0)
-        {playbackRate += d;
-            globalAudio.playbackRate = playbackRate;
-        }
-    userAlert("Playback rate is now "+playbackRate.toFixed(1)); 
+    if (playbackRate + d > 0.1 && playbackRate + d < 8) {
+        playbackRate += d;
+        globalAudio.playbackRate = playbackRate; 
+    }
+    userAlert("Playback rate is now " + playbackRate.toFixed(1));
+
 }
 
 function soundPlayCurrentEvent() {

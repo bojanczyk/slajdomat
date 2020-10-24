@@ -354,7 +354,8 @@ function savePresentation(msg) {
     body: JSON.stringify({
       type: 'slides',
       presentation: msg.presentation,
-      slideList: msg.slideList
+      slideList: msg.slideList,
+      tree : msg.tree
     })
   }).
   then(x => {
