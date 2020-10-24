@@ -1,14 +1,27 @@
-// import {createEventTree} from "./eventtree.js"
+import {
+    createEventTree,
+    curEvent,
+    eventTree,
+    numberOfPages,
+    gotoPath,
+    changeEvent
+} from "./event-module.js"
+
+import {
+    soundStop,
+    soundState,
+    soundRecord,
+    playButton
+} from "./sound-module.js"
+
+
+export var manifest;
 
 var slideStack = [];
-var eventTree = null;
-var curEvent = null;
 
-
-var numberOfPages = 0;
 
 var presentationDir; //the directory where the slides are
-var presentationName; //the name of the slides
+export var presentationName; //the name of the slides
 
 
 
@@ -38,7 +51,7 @@ function togglePanel(visible) {
 //displays a panel for a short time
 function shortDisplay(panel) {
     let tl = gsap.timeline();
-    panel.style.display='inherit';
+    panel.style.display = 'inherit';
     tl.to(panel, {
         opacity: "100%",
         duration: 0.1
@@ -48,9 +61,9 @@ function shortDisplay(panel) {
         opacity: "0",
         duration: 1
     });
-    tl.eventCallback("onComplete", function() {
-        panel.style.display='none';
-      });
+    tl.eventCallback("onComplete", function () {
+        panel.style.display = 'none';
+    });
 }
 
 //displays the help
@@ -59,7 +72,7 @@ function helpPanel() {
 }
 
 //displays an alert for the user at the bottom of the screen
-function userAlert(text) {
+export function userAlert(text) {
     document.getElementById("text-alert").innerHTML = text;
     shortDisplay(document.getElementById("text-alert-box"));
 }
@@ -74,7 +87,7 @@ function nextPreviousArrows() {
 
 
 //update the page number in the corner
-function updatePageNumber() {
+export function updatePageNumber() {
     document.getElementById("page-count-enumerator").innerHTML = curEvent.pageNumber;
     document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 
@@ -93,79 +106,6 @@ function updatePageNumber() {
 
 
 
-//apply transform t to rectangle rect (first scale, then shift)
-function applyTransform(t, rect) {
-    retval = {};
-    retval.x = rect.x * t.scalex + t.deltax;
-    retval.y = rect.y * t.scaley + t.deltay;
-    retval.width = rect.width * t.scalex;
-    retval.height = rect.height * t.scaley;
-    return retval;
-}
-
-// the input is two rectangles, with equal proportions
-// the output is a transform that maps source to target    
-function getTransform(source, target) {
-    var retval = {};
-    retval.scalex = target.width / source.width;
-    retval.scaley = target.height / source.height;
-    retval.deltax = target.x - source.x * retval.scalex;
-    retval.deltay = target.y - source.y * retval.scaley;
-    return retval;
-}
-
-//creates a string for a transformation, to be used by gsap
-function transformToString(t) {
-    return "translate(" + t.deltax + " " + t.deltay + ") scale(" + t.scalex + " " + t.scaley + ")";
-}
-
-// get the viewport for a node in the slide tree
-function getViewPort(node) {
-    return applyTransform(node.transform, node.localRect);
-}
-
-//the identity transformation
-function idTransform() {
-    return {
-        scalex: 1,
-        scaley: 1,
-        deltax: 0,
-        deltay: 0
-    };
-}
-
-//get the bounding rect for a slide
-//deletes the background rectangle as a side effect
-function getBoundRect(svg) {
-    var firstrect = svg.firstElementChild;
-    var bounds = {};
-    bounds.width = firstrect.width.baseVal.value;
-    bounds.height = firstrect.height.baseVal.value;
-    if (firstrect.transform.baseVal.length > 0) {
-        bounds.x = firstrect.transform.baseVal[0].matrix.e;
-        bounds.y = firstrect.transform.baseVal[0].matrix.f;
-    } else {
-        bounds.x = 0;
-        bounds.y = 0;
-    }
-    firstrect.remove();
-    return bounds;
-}
-
-//do an animated zoom to the slide on the top of the stack
-function zoomSlide(node, duration = 1.5) {
-    function textRect(rect) {
-        return " " + rect.x + " " + rect.y + " " + rect.width + " " + rect.height;
-    }
-    var svgDom = document.getElementById("svg");
-    var viewBox = applyTransform(node.transform, node.localRect);
-    var tla = new TimelineMax({});
-    tla.to(svgDom, duration, {
-        attr: {
-            viewBox: textRect(viewBox)
-        }
-    });
-}
 
 //we use a top method for accessing a stack
 if (!Array.prototype.top) {
@@ -217,8 +157,7 @@ function keyListener(event) {
         // 'r'
         if (soundState == "record")
             soundStop();
-        else
-        {
+        else {
             soundStop();
             soundRecord();
         }
@@ -232,7 +171,7 @@ function scrollListener(event){
 }
 document.addEventListener('scroll', scrollListener );
 */
-document.addEventListener("keydown", keyListener);
+
 
 function slideDirectory(name) {
     return manifest.slideDict[name]
@@ -244,7 +183,7 @@ function slideDirectory(name) {
 
 //check the user agent for chrome
 //at the moment, this is not used
-function userAgent() {
+export function userAgent() {
     if (navigator.userAgent.indexOf("Chrome") !== -1) {
         return "Chrome";
     }
@@ -262,7 +201,7 @@ var manifest;
 
 //gives the name for a file in a slide, in the current presentation
 //the slide parameter could be null, for top-level information in the presentation.
-function fileName(slide, file) {
+export function fileName(slide, file) {
 
     if (slide == null) {
         return presentationDir + '/' + file;
@@ -271,7 +210,7 @@ function fileName(slide, file) {
 }
 
 //send an object to the server
-function sendToServer(msg) {
+export function sendToServer(msg) {
     msg.presentation = presentationName;
     var json = JSON.stringify(msg);
     return fetch('http://localhost:3000', {
@@ -320,11 +259,25 @@ function getPathFromURL(pathstring) {
 }
 
 
-helpPanel();
+
 
 //startup code
 //it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
 window.onload = function () {
+
+    helpPanel();
+    document.addEventListener("keydown", keyListener);
+    document.getElementById('left-sensor').addEventListener('mouseover', function () {
+        togglePanel(true)
+    });
+    document.getElementById('close-panel').addEventListener('click', function () {
+        togglePanel(false)
+    });
+    document.getElementById('prev-event').addEventListener('click', prevButton);
+    document.getElementById('next-event').addEventListener('click', nextButton);
+    document.getElementById('play-button').addEventListener('click', playButton);
+
+    
     fetchJSON('slides/presentations.json')
         .then(j => {
             if (j == null)
@@ -342,13 +295,8 @@ window.onload = function () {
             manifest = j;
 
             const path = getPathFromURL();
+            createEventTree();
+            gotoPath(path);
 
-
-            createEventTree().then(x => {
-                curEvent = eventTree;
-                gotoPath(path)
-                // loadSVG(eventTree);
-                // updatePageNumber();
-            });
-        }).catch((e) => userAlert(e))
+        }) //.catch((e) => userAlert(e))
 }

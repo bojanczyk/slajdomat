@@ -1,16 +1,29 @@
+import {
+    manifest,
+    userAgent,
+    fileName,
+    sendToServer
+} from './viewer-module.js'
+
+import {
+    curEvent,
+    eventIndex
+} from "./event-module.js"
+
+
 //there are four possible states for the sound
 //"recording" means that we are recording sound
 //"play" means that we are playing sound
 //"pause" means that we have paused playing sound
 //null means none of the above
-var soundState = null;
+export var soundState = null;
 var playbackRate = 1;
 
 
 
 
 //stop playing or recording, thus making the sound state null
-function soundStop() {
+export function soundStop() {
     if (soundState == "play") {
         globalAudio.pause();
     }
@@ -39,7 +52,7 @@ function updateSoundIcon() {
     }
 }
 
-function soundRecord() {
+export function soundRecord() {
     if (userAgent() == "Safari") {
         userAlert("Sound recording does not work in Safari");
     } else {
@@ -49,7 +62,7 @@ function soundRecord() {
     }
 }
 
-function playButton() {
+export function playButton() {
     if (soundState == "record")
         soundStop();
     else if (soundState == "play")
@@ -151,7 +164,7 @@ function recordSound(event) {
 
                 console.log("sending sound " + longName);
 
-                fr = new FileReader();
+                const fr = new FileReader();
                 fr.onload = function () {
                     var retmsg = {
                         type: 'wav',
@@ -189,7 +202,7 @@ function sendSoundDatabase() {
 function playbackRateChange(d) {
     if (playbackRate + d > 0.1 && playbackRate + d < 8) {
         playbackRate += d;
-        globalAudio.playbackRate = playbackRate; 
+        globalAudio.playbackRate = playbackRate;
     }
     userAlert("Playback rate is now " + playbackRate.toFixed(1));
 
@@ -221,7 +234,7 @@ function soundFile(event) {
     }
 }
 
-function loadSounds(node) {
+export function loadSounds(node) {
     if (!(node.id in manifest.soundDict))
         manifest.soundDict[node.id] = {};
 

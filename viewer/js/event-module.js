@@ -1,4 +1,32 @@
-// import {manifest} from './viewer.js'
+import {
+    manifest,
+    fileName,
+    userAlert,
+    updatePageNumber,
+    presentationName
+} from './viewer-module.js'
+
+import {
+    getBoundRect,
+    idTransform,
+    transformToString,
+    zoomSlide,
+    applyTransform,
+    getTransform
+} from './transform-module.js'
+
+
+import {
+    soundStop,
+    loadSounds,
+    soundState
+} from "./sound-module.js"
+
+export var eventTree = null;
+export var curEvent = null;
+export var numberOfPages = 0;
+
+
 
 //add a new node to the slide tree
 //the svg
@@ -78,8 +106,7 @@ function svgLoaded(node, index) {
         node.transform = getTransform(node.localRect, target);
     }
     node.svg.setAttribute("transform", transformToString(node.transform));
-    svgContainer = document.getElementById("svg");
-    svgContainer.appendChild(node.svg);
+    document.getElementById("svg").appendChild(node.svg);
 }
 
 //loads the SVG for the given node in the slide tree
@@ -148,7 +175,7 @@ function openPanelTree(event, open) {
 }
 
 //creates the tree of slides and events, without adding the svg's yet
-function createEventTree() {
+export function createEventTree() {
     function addDIV(event) //create an html item for the event in the  control panel  
     {
         function eventClicked(e) //what happens when an event is clicked in the control panel
@@ -171,7 +198,7 @@ function createEventTree() {
             event.subdiv = document.getElementById('slide-stack');
             event.div = null;
         } else {
-            parentDiv = event.parent.subdiv;
+            var parentDiv = event.parent.subdiv;
             event.div = document.createElement("div");
             event.div.classList.add("slide-list-item");
             event.div.classList.add("slide-list-item-loading");
@@ -204,28 +231,38 @@ function createEventTree() {
         }
     }
 
-    async function createTreeRec(event)//recursive function which loads a json for each slide. I might move this to having a single json.
-     {
-        addDIV(event);
-        event.audio = null;
-        event.pageNumber = numberOfPages;
-        if (event.type == 'child') {
+    function createTreeRec(event, parent) //recursive function which loads a json for each slide. I might move this to having a single json.
+    {
+        const retval = {
+            type: event.type,
+            id: event.id,
+            name: event.name,
+            parent: parent
+        }
+
+        addDIV(retval);
+        retval.audio = null;
+        retval.pageNumber = numberOfPages;
+        if (retval.type == 'child') {
+            retval.children = [];
             numberOfPages++;
             for (const child of event.children) {
-                child.parent = event;                
-                createTreeRec(child);
+                retval.children.push(createTreeRec(child, retval));
             }
-            event.children.push({
+            retval.children.push({
                 type: 'finish',
-                parent: event,
+                parent: retval,
                 pageNumber: numberOfPages
-            })
+            });
         }
+
+        return retval;
     }
 
     eventTree = manifest.tree;
     eventTree.parent = null;
-    return createTreeRec(eventTree);
+    eventTree = createTreeRec(manifest.tree, null);
+    curEvent = eventTree;
 }
 
 //this tree navigation is not efficient, but I want to avoid adding extra links
@@ -240,20 +277,19 @@ function treeSibling(node, dir) {
 }
 
 //returns the index of an event inside its parent.
-function eventIndex(node) {
+export function eventIndex(node) {
     if ('index' in node)
         return node.index
     else
-    try {
-        for (let i = 0; i < node.parent.children.length; i++)
-            if (node.parent.children[i] == node)
-                {
+        try {
+            for (let i = 0; i < node.parent.children.length; i++)
+                if (node.parent.children[i] == node) {
                     node.index = i;
                     return i;
                 }
-    } catch (exception) {
-        return null;
-    }
+        } catch (exception) {
+            return null;
+        }
 }
 
 //pushes a list of slides. The root is the first slide, which is assumed to be loaded, and then path contains a list of directions (which event number), that defines a path; ordered from last to first. The after parameter is a callback to be performed once the last slide is pushed.
@@ -296,7 +332,7 @@ function pushIndexList(root, path, after = (x) => {}) {
 
 
 //the move to the prev/next event, depending on whether dir is -1 or 1. One of the longer functions, because there are numerous combinations of push, pop, next sibling, etc.
-function changeEvent(dir) {
+export function changeEvent(dir) {
     function showHide(event) {
         var opacity;
         if ((event.type == "show" && dir == 1) || (event.type == "hide" && dir == -1))
@@ -313,7 +349,7 @@ function changeEvent(dir) {
     if (dir == 1) {
         if (curEvent.type == 'child') {
             curEvent.div.classList.add('slide-list-item-seen');
-            openPanelTree(curEvent,true);
+            openPanelTree(curEvent, true);
             pushIndexList(curEvent.parent, [0, eventIndex(curEvent)])
         } else
         if (curEvent.type == 'show' || curEvent.type == 'hide') {
@@ -328,7 +364,7 @@ function changeEvent(dir) {
                 // userAlert("Cannot move after last event");
             } else {
                 // pop the stack
-                openPanelTree(curEvent.parent,false);
+                openPanelTree(curEvent.parent, false);
                 zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = treeSibling(curEvent.parent, 1);
             }
@@ -356,7 +392,7 @@ function changeEvent(dir) {
             } else {
                 zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = curEvent.parent;
-                openPanelTree(curEvent,false);
+                openPanelTree(curEvent, false);
                 curEvent.div.classList.remove('slide-list-item-seen');
             }
 
@@ -368,7 +404,7 @@ function changeEvent(dir) {
             curEvent = treeSibling(curEvent, -1);
         } else
         if (prevEvent.type == 'child') {
-            openPanelTree(prevEvent,true);
+            openPanelTree(prevEvent, true);
             pushIndexList(prevEvent.parent, [prevEvent.children.length - 1, eventIndex(prevEvent)])
         }
 
@@ -383,7 +419,7 @@ function updateEventsSVG(slide, index) //makes visible or invisible the appropri
 {
     if (slide.type != 'child' || slide.svg == null)
         return;
-    
+
     for (let x of slide.eventSVGs) {
         let visible = x.startVisible;
         for (let i = 0; i < index; i++) {
@@ -399,13 +435,10 @@ function updateEventsSVG(slide, index) //makes visible or invisible the appropri
     //call recursively for child slides
     for (let child of slide.children) {
         if (child.type == 'child') {
-            if (eventIndex(child) < index )
-            {
-                updateEventsSVG(child,child.children.length);
-            }
-            else 
-            {
-                updateEventsSVG(child,0)
+            if (eventIndex(child) < index) {
+                updateEventsSVG(child, child.children.length);
+            } else {
+                updateEventsSVG(child, 0)
             }
         }
     }
@@ -419,10 +452,10 @@ function pathInURL() //puts the current path into the url
         string += path.pop() + '/';
     }
     history.pushState({}, null, '?slides=' + encodeURI(presentationName) + '&path=' + string);
-    }
+}
 
 
-function gotoPath(path) //move to an event given by a list of indices, given in shallow-to-deep ordering
+export function gotoPath(path) //move to an event given by a list of indices, given in shallow-to-deep ordering
 {
     soundStop();
     //after moving to the event, we will call the following function
@@ -451,7 +484,7 @@ function gotoPath(path) //move to an event given by a list of indices, given in 
     pushIndexList(eventTree, path, updateSeen);
 }
 
-function getPath(event){
+function getPath(event) {
     const path = [];
     var ancestor = event;
     while (ancestor.parent != null) {
@@ -460,7 +493,8 @@ function getPath(event){
     }
     return path;
 }
+
 function gotoEvent(event) //move directly to an event
-{   
-    gotoPath(getPath(event));    
+{
+    gotoPath(getPath(event));
 }

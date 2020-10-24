@@ -136,7 +136,7 @@ function onGetSlide(msg) {
     for (const slide of msg.slideList) {
         var dir = slideDir(slide.database.id)
         manifest.slideDict[slide.database.id] = dir;
-        writeFile(msg.presentation, slide.database.id, 'events.json', JSON.stringify(slide.database));
+        // writeFile(msg.presentation, slide.database.id, 'events.json', JSON.stringify(slide.database));
         writeFile(msg.presentation, slide.database.id, 'image.svg', slide.svg);
     }
     writeFile(msg.presentation, null, 'manifest.json', JSON.stringify(manifest,null,2));

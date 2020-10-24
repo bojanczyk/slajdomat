@@ -14,22 +14,16 @@
 </head>
 
 <body>
-
-	<!-- <div id='help-panel'>
-		<p> Left and right arrows: previous and next</p>
-		<p> Space: play sound</p>
-		<p> &lt; &gt;: change sound speed</p>
-	</div> -->
 	<img id='help-panel' src="img/help.svg">
 
 	<!-- the left panel, which rolls out, and has information about the slides -->
-	<div id="left-sensor" onmouseover="togglePanel(true)"></div>
+	<div id="left-sensor"></div>
 	<div id="control-panel" class="control-panel">
 		<!-- <div id="audio-controls">
 			<i class="material-icons ">mic</i>
 			<i class="material-icons ">mic</i>
 		</div> -->
-		<i id="close-panel" onclick="togglePanel(false)" class="material-icons">close</i>
+		<i id="close-panel" class="material-icons">close</i>
 		<!-- <div class="help">
 		</div> -->
 		<div id='slide-stack-container'>
@@ -45,15 +39,15 @@
 
 	<!-- the page counter in the lower right corner -->
 	<div id="page-count-container" class="page-count-container">
-		<i id="prev-event" onclick="prevButton()" class="material-icons">navigate_before</i>
+		<i id="prev-event" class="material-icons">navigate_before</i>
 		<div></div>
 		<div>
 			<span id="page-count-enumerator"></span>
 			<span id="page-count-denominator">loading...</span>
 		</div>
 		<div></div>
-		<i id="next-event" onclick="nextButton()" class="material-icons">navigate_next</i>
-		<i id="play-button" onclick="playButton()" class="material-icons ">play_arrow</i>
+		<i id="next-event" class="material-icons">navigate_next</i>
+		<i id="play-button" class="material-icons ">play_arrow</i>
 	</div>
 
 
@@ -65,9 +59,7 @@
 	</div>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
-	<script src="js/viewer.js"></script>
-	<script src="js/sound.js"></script>
-	<script src="js/eventtree.js"></script>
+	<script type="module" src="js/viewer-module.js"></script>
 
 	<template id='slide-list-template'>
 		<div class="slide-list-item">

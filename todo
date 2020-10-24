@@ -1,6 +1,10 @@
 Bugs:
 - when a show/hide is moved to a different slide
 
+Interface:
+- tooltips
+- scroll as next event
+
 Bigger features:
 - drawing on slides
 - web server on duch
