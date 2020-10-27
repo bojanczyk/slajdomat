@@ -32,6 +32,8 @@ function sanitize(s) {
 function presentationDir(presentationName) {
 
     if (!(presentationName in presentations)) {
+        console.log('adding')
+        console.log(presentations);
         presentations[presentationName] = "slides/" + sanitize(presentationName);
         writeFile(null, null, 'slides/presentations.json', JSON.stringify(presentations));
     }
@@ -94,7 +96,8 @@ function fileName(presentation, slide, name) {
 }
 //we get a single sound, in the wav format
 function onGetWav(msg) {
-    var buffer = new Uint8Array(msg.file)
+    // console.log('dupa')
+    var buffer =  new Uint8Array(msg.file)
     var fileName = presentationDir(msg.presentation) + '/' + slideDir(msg.slide) + '/' + msg.name;
     writeFile(msg.presentation, msg.slide, msg.name + '.wav', buffer);
 
@@ -169,7 +172,7 @@ app.post('/', function (req, res) {
 
 var presentations;
 
-presentations = readJSON(null,null, 'slides/presentsations.json');
+presentations = readJSON(null,null, 'slides/presentations.json');
 if (presentations == {})
     console.log("no presentations file");
         

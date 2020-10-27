@@ -24,6 +24,7 @@
 }
 
 .slide-panel {
+    position: relative;
     display: flex;
     flex-grow: 1;
 }
@@ -226,3 +227,19 @@ path:not([fill]) {
     font-family: 'Roboto';
     font-size: 20px;
 }
+
+
+#iframe {
+    position: absolute;
+    left : 0px;
+    bottom : 40px;
+    right : 0px;
+    top : 0px;
+    z-index: 5;
+  }
+  
+  #canvas {
+    position: absolute;
+    width : 100%;
+    height : 100%;
+  }
