@@ -3,6 +3,7 @@
     "outDir": "./built",
     "module": "es2015",
     "target": "es2015",
+    "sourceMap": true
     // "moduleResolution": "node",
   },
   "include": ["./src/**/*"]

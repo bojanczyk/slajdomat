@@ -67,3 +67,4 @@ export function zoomSlide(node, duration = 1.5) {
         }
     });
 }
+//# sourceMappingURL=transform.js.map

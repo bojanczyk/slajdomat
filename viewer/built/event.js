@@ -204,6 +204,7 @@ function createEventTree() {
         };
         addDIV(retval);
         if (retval.type == 'child') {
+            console.log(retval.name);
             numberOfPages++;
             for (const child of event.children) {
                 retval.children.push(createTreeRec(child, retval));
@@ -430,3 +431,4 @@ function getPath(event) {
 function gotoEvent(event) {
     gotoPath(getPath(event));
 }
+//# sourceMappingURL=event.js.map

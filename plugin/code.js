@@ -381,10 +381,12 @@ function saveFile() {
                 svg: svg
             });
             for (const event of database.events) {
-                if (event.type == "child" && !(event.disabled)) {
-                    retval.children.push(await saveRec(findSlide(event.id)));
-                } else
-                    retval.children.push(event);
+                if (!event.disabled) {
+                    if (event.type == "child") {
+                        retval.children.push(await saveRec(findSlide(event.id)));
+                    } else
+                        retval.children.push(event);
+                }
 
             }
 
@@ -399,7 +401,7 @@ function saveFile() {
             type: 'savePresentation',
             presentation: figma.root.name,
             slideList: slideList,
-            tree : x
+            tree: x
         });
         currentSlide = savedSlide;
     });
@@ -511,6 +513,7 @@ function findSlide(id) {
 // a show/hide event is active if the linked object exists
 // for the active show/hide events, store the index of the corresponding item
 function cleanDatabase() {
+    database.name = currentSlide.name;
     for (var event of database.events) {
         event.disabled = true;
         const node = findEventObject(event, currentSlide);

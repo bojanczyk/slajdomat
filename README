@@ -3,7 +3,7 @@
 - select "Create Plugin" from the "In Development Column"
 - select "Click to choose a manifest.json file"
 - select the manifest.json file from the plugin directory
-So far, I have only tested the non-web client
+So far, I have only tested the osx non-web client
 
 2. Run the server. 
 - run "node node-server.js" in the viewer directory

@@ -205,3 +205,4 @@ function loadSounds(node) {
 }
 //we begin by loading the sound database
 soundIcon(null);
+//# sourceMappingURL=sound.js.map

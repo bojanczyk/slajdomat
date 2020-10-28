@@ -260,6 +260,7 @@ function createEventTree() {
         addDIV(retval);
 
         if (retval.type == 'child') {
+            console.log(retval.name);
             numberOfPages++;
             for (const child of event.children) {
                 retval.children.push(createTreeRec(child, retval));

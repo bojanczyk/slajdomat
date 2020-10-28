@@ -240,3 +240,4 @@ window.onload = function () {
         // toggleSketchpad(eventTree);
     }); //.catch((e) => userAlert(e))
 };
+//# sourceMappingURL=viewer.js.map

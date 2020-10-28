@@ -19,3 +19,4 @@ fetch('slides/presentations.json')
         console.log(i);
     }
 }).catch((e) => document.getElementById('no-pre').classList.remove('hidden'));
+//# sourceMappingURL=index.js.map
