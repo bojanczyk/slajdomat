@@ -1,6 +1,0 @@
-viewer/slides/*
-viewer/presentations.json
-viewer/node_modules/
-package-lock.json
-rubbish.js
-wyslij.sh
