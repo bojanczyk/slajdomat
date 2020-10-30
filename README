@@ -1,3 +1,8 @@
+This is a program for making zooming slides in figma.
+It consists of (a) a figma plugin; (b) a viewer page in html; (c) a server program that mediates between the first two.
+
+Instructions.
+
 1. Install the plugin in figma. The steps for this:
 - to "Manage Plugins" from the "Plugins" menu
 - select "Create Plugin" from the "In Development Column"
