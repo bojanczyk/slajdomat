@@ -31,7 +31,7 @@ import {
     loadSounds,
     soundState,
     soundPlayCurrentEvent,
-    soundRecordCurrentEvent
+    soundRecord
 } from "./sound.js"
 
 // const { gsap } = require("./gsap.min.js");
@@ -260,7 +260,6 @@ function createEventTree() {
         addDIV(retval);
 
         if (retval.type == 'child') {
-            console.log(retval.name);
             numberOfPages++;
             for (const child of event.children) {
                 retval.children.push(createTreeRec(child, retval));
@@ -391,7 +390,7 @@ function changeEvent(dir) {
         }
 
         if (soundState == "record")
-            soundRecordCurrentEvent();
+            soundRecord();
     } else {
         //direction is backward
         const prevEvent = treeSibling(curEvent, -1);

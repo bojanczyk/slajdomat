@@ -5,7 +5,6 @@ export {
     soundRecord,
     loadSounds,
     soundPlayCurrentEvent,
-    soundRecordCurrentEvent,
     soundState,
     playbackRateChange
 }
@@ -69,13 +68,18 @@ function updateSoundIcon() {
 }
 
 function soundRecord() {
-    if (userAgent() == "Safari") {
-        userAlert("Sound recording does not work in Safari");
-    } else {
+    recordSound(curEvent).then(x => {
         soundIcon("record");
-        soundRecordCurrentEvent();
         soundState = "record";
-    }
+    }).catch((error) => {
+        soundState = null;
+        soundIcon(null);
+        if (userAgent() == "Safari") {
+            userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
+        }
+        else 
+            userAlert(error)
+    })
 }
 
 var globalAudio;
@@ -128,10 +132,6 @@ function toggleSoundIcon(on) {
 
 
 
-//start recording the sound for a given event
-function soundRecordCurrentEvent() {
-    recordSound(curEvent);
-}
 
 var mediaRecorder;
 
@@ -141,7 +141,7 @@ function recordSound(event) {
             mediaRecorder.stop();
     }
 
-    navigator.mediaDevices.getUserMedia({
+    return navigator.mediaDevices.getUserMedia({
             audio: true
         })
         .then(stream => {
@@ -173,7 +173,7 @@ function recordSound(event) {
 
                 const fr = new FileReader();
                 fr.onload = function (e) {
-                    var x = e.target.result as ArrayBuffer; 
+                    var x = e.target.result as ArrayBuffer;
                     var y = new Uint8Array(x);
                     var retmsg = {
                         type: 'wav',

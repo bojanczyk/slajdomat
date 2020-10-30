@@ -363,7 +363,7 @@ function savePresentation(msg) {
       notify("Successfully exported slides to the server.")
     })
     .catch((error) => {
-      notify("Not connected to the slide server. Run it locally (it is called viewer/server).");
+      notify("Not connected to the slide server. Run it locally, it is in the viewer directory.");
       exportWaiting(false);
     });
 }

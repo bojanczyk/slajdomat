@@ -1,4 +1,4 @@
-export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundRecordCurrentEvent, soundState, playbackRateChange };
+export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundState, playbackRateChange };
 import { manifest, userAgent, fileName, sendToServer, userAlert } from './viewer.js';
 import { curEvent, eventIndex, eventTree, changeEvent } from "./event.js";
 //there are four possible states for the sound
@@ -35,14 +35,18 @@ function updateSoundIcon() {
     }
 }
 function soundRecord() {
-    if (userAgent() == "Safari") {
-        userAlert("Sound recording does not work in Safari");
-    }
-    else {
+    recordSound(curEvent).then(x => {
         soundIcon("record");
-        soundRecordCurrentEvent();
         soundState = "record";
-    }
+    }).catch((error) => {
+        soundState = null;
+        soundIcon(null);
+        if (userAgent() == "Safari") {
+            userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
+        }
+        else
+            userAlert(error);
+    });
 }
 var globalAudio;
 function soundPlay() {
@@ -86,17 +90,13 @@ function toggleSoundIcon(on) {
     else
         document.getElementById("play-button").style.opacity = '1';
 }
-//start recording the sound for a given event
-function soundRecordCurrentEvent() {
-    recordSound(curEvent);
-}
 var mediaRecorder;
 function recordSound(event) {
     if (mediaRecorder != null) {
         if (mediaRecorder.state == "recording")
             mediaRecorder.stop();
     }
-    navigator.mediaDevices.getUserMedia({
+    return navigator.mediaDevices.getUserMedia({
         audio: true
     })
         .then(stream => {

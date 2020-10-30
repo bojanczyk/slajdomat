@@ -1,7 +1,7 @@
 export { eventTree, curEvent, numberOfPages, changeEvent, gotoPath, createEventTree, eventIndex };
 import { manifest, fileName, userAlert, updatePageNumber, presentationName } from './viewer.js';
 import { getBoundRect, idTransform, transformToString, zoomSlide, applyTransform, getTransform } from './transform.js';
-import { soundStop, loadSounds, soundState, soundPlayCurrentEvent, soundRecordCurrentEvent } from "./sound.js";
+import { soundStop, loadSounds, soundState, soundPlayCurrentEvent, soundRecord } from "./sound.js";
 // const { gsap } = require("./gsap.min.js");
 // import {gsap} from 'gsap'
 var eventTree = null;
@@ -204,7 +204,6 @@ function createEventTree() {
         };
         addDIV(retval);
         if (retval.type == 'child') {
-            console.log(retval.name);
             numberOfPages++;
             for (const child of event.children) {
                 retval.children.push(createTreeRec(child, retval));
@@ -329,7 +328,7 @@ function changeEvent(dir) {
             soundPlayCurrentEvent();
         }
         if (soundState == "record")
-            soundRecordCurrentEvent();
+            soundRecord();
     }
     else {
         //direction is backward

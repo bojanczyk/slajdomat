@@ -2,12 +2,15 @@
 - to "Manage Plugins" from the "Plugins" menu
 - select "Create Plugin" from the "In Development Column"
 - select "Click to choose a manifest.json file"
-- select the manifest.json file from the plugin directory
+- select the manifest.json file from the slajdomat directory
 So far, I have only tested the osx non-web client
+(There is another plugin, very raw, called "matematyk", which does some latex support.)
 
 2. Run the server. 
 - run "node node-server.js" in the viewer directory
-You should install ffmpeg if you want the sounds to work properly
+You will need the following software: node.js and ffmpeg.
+Also, you will probably need to install some modules in node.js
+I will try to create a distribution bundle which means that you will not need to install all of this software.
 
 3. Start using the plugin, when you are ready click the "play" button, which will send the data to the server. As a result, several svg files will appear in the viewer directory.
 
