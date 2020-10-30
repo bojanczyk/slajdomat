@@ -20,7 +20,7 @@ var serveStatic = require('serve-static');
 
 connect()
     .use(serveStatic(__dirname))
-    .listen(8080, () => console.log('Server running on 8080...'));
+    .listen(8080, () => console.log('To view your slides, open http://localhost:8080'));
 
 
 
@@ -177,7 +177,6 @@ if (presentations == {})
     console.log("no presentations file");
         
 
-
-app.listen(3000, () => {
-    console.log('server is listening on port 3000');
+console.log('This is the server side of slajdomat. The figma plugin and sound recording will talk to this server, so do not quit it while you are using these features.');
+app.listen(3000, () => {    
 });
