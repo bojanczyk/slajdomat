@@ -12,7 +12,7 @@ fetch('slides/presentations.json')
     var ul = document.getElementById("slide-list");
     for (const i of Object.keys(manifest)) {
         var li = document.createElement("a");
-        li.href = "viewer.html?slides=" + encodeURI(i);
+        li.href = "viewer.html?slides=" + manifest[i];
         li.id = i;
         li.innerHTML = i;
         ul.appendChild(li);

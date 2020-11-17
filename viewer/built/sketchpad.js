@@ -1,57 +1,50 @@
 export { toggleSketchpad };
-// works out the X, Y position of the click inside the canvas from the X, Y position on the page
-function getPosition(mouseEvent, sigCanvas) {
-    if (is_touch_device) {
-        // get the touch coordinates.  Using the first touch in case of multi-touch
-        var coors = {
-            x: mouseEvent.targetTouches[0].pageX,
-            y: mouseEvent.targetTouches[0].pageY
-        };
-        // Now we need to get the offset of the canvas location
-        var obj = sigCanvas;
-        if (obj.offsetParent) {
-            // Every time we find a new object, we add its offsetLeft and offsetTop to curleft and curtop.
-            do {
-                coors.x -= obj.offsetLeft;
-                coors.y -= obj.offsetTop;
-            } while ((obj = obj.offsetParent) != null);
-        }
-        // pass the coordinates to the appropriate handler
-        return coors;
-    }
-    else {
-        var rect = sigCanvas.getBoundingClientRect();
-        return {
-            x: ratio * (mouseEvent.clientX - rect.left),
-            y: ratio * (mouseEvent.clientY - rect.top)
-        };
-    }
-}
 var is_touch_device;
 var isDrawing = false;
 var sigCanvas;
-var context;
 var curPath;
 var curPathText;
-var ratio;
+var selectedColor = null;
+var matrix;
+var punkt;
+var undoStack = [];
+var undoIndex = -1;
 function draw(event) {
-    var coors = getPosition(event, sigCanvas);
+    if (event.type == 'touchstart' || event.type == 'mousedown') {
+        if (selectedColor != null) {
+            matrix = sigCanvas.getScreenCTM().inverse();
+            isDrawing = true;
+        }
+    }
+    if (isDrawing) {
+        if (is_touch_device) {
+            punkt.x = event.targetTouches[0].pageX;
+            punkt.y = event.targetTouches[0].pageY;
+        }
+        else {
+            punkt.x = event.clientX;
+            punkt.y = event.clientY;
+        }
+        punkt = punkt.matrixTransform(matrix);
+    }
+    // getPosition(event, sigCanvas);
     function addPoint() {
-        // context.lineTo(coors.x, coors.y);
-        // context.stroke();
-        curPathText += ' L ' + coors.x + ' ' + coors.y;
+        curPathText += ' L ' + punkt.x + ' ' + punkt.y;
         curPath.setAttributeNS(null, 'd', curPathText);
     }
     if (event.type == 'touchstart' || event.type == 'mousedown') {
         // context.beginPath();
         // context.moveTo(coors.x, coors.y);
-        console.log(coors);
         curPath = document.createElementNS('http://www.w3.org/2000/svg', "path");
-        curPathText = 'M ' + coors.x + ' ' + coors.y;
+        curPathText = 'M ' + punkt.x + ' ' + punkt.y;
         curPath.setAttributeNS(null, 'd', curPathText);
-        curPath.setAttributeNS(null, 'stroke', 'red');
+        curPath.setAttributeNS(null, 'stroke', selectedColor);
+        curPath.setAttributeNS(null, 'stroke-width', matrix.a);
         sigCanvas.appendChild(curPath);
-        isDrawing = true;
+        undoStack.splice(undoIndex + 1);
+        undoStack.push(curPath);
+        undoIndex += 1;
+        undoButtons();
     }
     if (event.type == 'touchmove' || event.type == 'mousemove') {
         if (isDrawing) {
@@ -59,7 +52,6 @@ function draw(event) {
         }
     }
     if (event.type == 'touchend' || event.type == 'mouseup' || event.type == 'mouseout') {
-        console.log('finish ' + event.type);
         if (isDrawing) {
             addPoint();
             isDrawing = false;
@@ -67,29 +59,19 @@ function draw(event) {
     }
 }
 var sketchpadVisible = false;
-function toggleSketchpad(node) {
+function toggleSketchpad() {
+    sigCanvas = document.getElementById('svg');
+    punkt = sigCanvas.createSVGPoint();
+    var frame = document.getElementById('slide-panel');
     if (sketchpadVisible) {
-        document.getElementById('iframe').style.display = 'none';
         sketchpadVisible = !sketchpadVisible;
+        document.getElementById('sketch-panel').style.display = 'none';
+        selectTool(null);
     }
     else {
-        document.getElementById('iframe').style.display = '';
         sketchpadVisible = !sketchpadVisible;
-        // get references to the canvas element as well as the 2D drawing context
-        sigCanvas = document.getElementById('svg');
-        ratio = 1280 / sigCanvas.getBoundingClientRect().width;
-        // console.log(sigCanvas.getBoundingClientRect());
-        // console.log(sigCanvas);
-        // sigCanvas.setAttribute('viewBox','0 0 600 600');
-        // const boundRect = sigCanvas.getBoundingClientRect();
-        // sigCanvas.width = boundRect.width;
-        // sigCanvas.height = boundRect.height;
-        // // sigCanvas.width=700;
-        // context = sigCanvas.getContext("2d");
-        // context.strokeStyle = "blue";
-        // context.lineJoin = "round";
-        // context.lineWidth = 3;
-        var frame = document.getElementById('iframe');
+        selectTool('red');
+        document.getElementById('sketch-panel').style.display = 'flex';
         // This will be defined on a TOUCH device such as iPad or Android, etc.
         is_touch_device = 'ontouchstart' in document.documentElement;
         if (is_touch_device) {
@@ -109,9 +91,81 @@ function toggleSketchpad(node) {
             // frame.addEventListener('mouseout', draw,false);
         }
     }
+    undoButtons();
 }
 // Clear the canvas context using the canvas width and height
 function clearCanvas(canvas, ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+function undo() {
+    if (undoIndex >= 0) {
+        let top = undoStack[undoIndex];
+        top.remove();
+        undoIndex -= 1;
+    }
+    undoButtons();
+}
+function redo() {
+    if (undoIndex < undoStack.length - 1) {
+        undoIndex += 1;
+        let top = undoStack[undoIndex];
+        sigCanvas.appendChild(top);
+    }
+    undoButtons();
+}
+function undoButtons() {
+    if (undoIndex >= 0)
+        document.getElementById('sketch-undo').classList.remove('disabled');
+    else
+        document.getElementById('sketch-undo').classList.add('disabled');
+    if (undoIndex < undoStack.length - 1)
+        document.getElementById('sketch-redo').classList.remove('disabled');
+    else
+        document.getElementById('sketch-redo').classList.add('disabled');
+}
+// the main event dispatcher
+function keyListener(event) {
+    if (event.keyCode == '68') {
+        //c
+        toggleSketchpad();
+    }
+    if (event.keyCode == '85') {
+        //u
+        console.log('undo');
+        undo();
+    }
+    if (event.keyCode == '73') {
+        //i
+        console.log('redo');
+        redo();
+    }
+}
+function selectTool(tool) {
+    document.getElementById('sketch-red').classList.remove('selected');
+    document.getElementById('sketch-blue').classList.remove('selected');
+    //the red or blue pencil was chosen
+    if (tool == 'red' || tool == 'blue') {
+        document.getElementById('sketch-' + tool).classList.add('selected');
+        selectedColor = tool;
+    }
+    else
+        selectedColor = null;
+}
+function buttonClicked(event) {
+    console.log(event.target.id);
+    if (event.target.id == 'sketch-undo') {
+        undo();
+    }
+    if (event.target.id == 'sketch-redo') {
+        redo();
+    }
+    if (event.target.id == 'sketch-red') {
+        selectTool('red');
+    }
+    if (event.target.id == 'sketch-blue') {
+        selectTool('blue');
+    }
+}
+document.getElementById('sketch-panel').addEventListener('click', buttonClicked);
+document.addEventListener("keydown", keyListener);
 //# sourceMappingURL=sketchpad.js.map

@@ -1,5 +1,5 @@
 export { eventTree, curEvent, numberOfPages, changeEvent, gotoPath, createEventTree, eventIndex };
-import { manifest, fileName, userAlert, updatePageNumber, presentationName } from './viewer.js';
+import { manifest, fileName, userAlert, updatePageNumber, presentationURL } from './viewer.js';
 import { getBoundRect, idTransform, transformToString, zoomSlide, applyTransform, getTransform } from './transform.js';
 import { soundStop, loadSounds, soundState, soundPlayCurrentEvent, soundRecord } from "./sound.js";
 // const { gsap } = require("./gsap.min.js");
@@ -94,7 +94,8 @@ function loadSVG(node, index = 0, callback = null) {
     else {
         loadSounds(node);
         var ob = document.createElement("object");
-        ob.setAttribute("data", fileName(node.id, 'image.svg'));
+        const file = fileName(node.id, 'image.svg');
+        ob.setAttribute("data", file);
         ob.setAttribute("type", "image/svg+xml");
         ob.classList.add("hidden-svg");
         document.body.appendChild(ob);
@@ -192,6 +193,7 @@ function createEventTree() {
             }
         }
     }
+    var totalDuration = 0;
     function createTreeRec(event, parent) {
         const retval = {
             type: event.type,
@@ -199,6 +201,7 @@ function createEventTree() {
             name: event.name,
             parent: parent,
             audio: null,
+            duration: null,
             pageNumber: numberOfPages,
             children: []
         };
@@ -213,12 +216,23 @@ function createEventTree() {
                 parent: retval,
                 pageNumber: numberOfPages
             });
+            //add the durations for the sound events
+            for (let i = 0; i < retval.children.length; i++) {
+                try {
+                    retval.children[i].duration = manifest.soundDict[retval.id][i].duration;
+                    totalDuration += retval.children[i].duration;
+                }
+                catch (e) {
+                    // retval.children[i].duration = null;
+                }
+            }
         }
         return retval;
     }
     eventTree = manifest.tree;
     eventTree.parent = null;
     eventTree = createTreeRec(manifest.tree, null);
+    console.log("total sound is " + totalDuration / 60);
     curEvent = eventTree;
 }
 //this tree navigation is not efficient, but I want to avoid adding extra links
@@ -391,7 +405,7 @@ function pathInURL() {
     while (path.length > 0) {
         string += path.pop() + '/';
     }
-    history.pushState({}, null, '?slides=' + encodeURI(presentationName) + '&path=' + string);
+    history.pushState({}, null, '?slides=' + encodeURI(presentationURL) + '&path=' + string);
 }
 function gotoPath(path) {
     soundStop();

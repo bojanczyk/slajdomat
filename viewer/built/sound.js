@@ -133,13 +133,16 @@ function recordSound(event) {
                 sendToServer(retmsg).catch((e) => {
                     userAlert("Could not send this sound to the server: " + longName);
                 });
+                /*
                 if (soundState == null)
                     sendSoundDatabase();
+                    */
             };
             fr.readAsArrayBuffer(audioBlob);
         });
     });
 }
+/*
 function sendSoundDatabase() {
     sendToServer({
         type: 'json',
@@ -147,10 +150,11 @@ function sendSoundDatabase() {
         name: 'manifest',
         body: manifest
     }).
-        catch((error) => {
+    catch((error) => {
         userAlert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
     });
 }
+*/
 function playbackRateChange(d) {
     if (playbackRate + d > 0.1 && playbackRate + d < 8) {
         playbackRate += d;
@@ -200,9 +204,25 @@ function loadSounds(node) {
                     soundIcon("play");
                 }
             });
+            audio.addEventListener('timeupdate', (e) => {
+                // console.log(audio.currentTime, audio.duration);
+                document.getElementById('sound-range').value = 100 * audio.currentTime / audio.duration;
+            });
         }
     }
 }
+document.getElementById('sound-range').addEventListener('input', function (event) {
+    if (globalAudio != null) {
+        globalAudio.currentTime = globalAudio.duration * (event.target.value / 100);
+    }
+});
+document.getElementById('back-ten').addEventListener('click', function (event) {
+    if (globalAudio.currentTime > 10) {
+        globalAudio.currentTime -= 10;
+    }
+    else
+        globalAudio.currentTime = 0;
+});
 //we begin by loading the sound database
 soundIcon(null);
 //# sourceMappingURL=sound.js.map

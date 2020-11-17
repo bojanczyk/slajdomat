@@ -238,8 +238,96 @@ path:not([fill]) {
     z-index: 5;
   }
   
-  #canvas {
-    position: absolute;
-    width : 100%;
-    height : 100%;
+
+  /* the sketch panel *********** */
+  .tool-panel {
+      position: fixed;
+      display : none;
+      bottom: 0;
+      height : 40px;
+      left : 50%;
+      transform: translate(-50%, 0);
+      /* width : 40%; */
+      /* left : 30%; */
+      padding-left : 20px;
+      padding-right : 20px;
+      padding-top : 5px;
+      border-top-left-radius: 25px;
+      border-top-right-radius: 25px;
+      background-color:lightcyan;
+      align-items: center;
+      justify-content: center;
+      z-index : 10;
+      /* border : 1px solid black; */
   }
+
+  .tool-panel div {
+      font-family: Roboto;
+      margin : 5px;
+      padding : 2px;
+  }
+
+  .noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+  }
+
+  .tool-panel i {
+      margin : 5px;
+      cursor : pointer;
+      border-radius : 5px;
+      padding : 2px;
+      font-size: 18px;
+  }
+
+  .tool-panel .disabled {
+    color : lightgrey;
+    cursor : default;
+  }
+
+  .tool-panel .selected {
+      border : 1px solid grey
+  }
+
+  #sketch-red {
+      color :red;
+  }
+
+  #sketch-blue {
+    color :blue;
+}
+
+
+/* ***** sound panel *******/
+
+#sound-panel {
+    display: none;
+}
+
+.slider {
+    height : 5px;
+}
+
+/* ***** progress panel ***/
+#progress-panel {
+    position : fixed;
+    bottom : 0;
+    width : 100%;
+    height : 50px;
+    display : flex;
+    background-color:grey;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-box {
+    height : 30px;
+    background-color: red;
+    /* width : 50px; */
+    border-right : 1px solid black;
+}

@@ -13,7 +13,7 @@ import {
     fileName,
     userAlert,
     updatePageNumber,
-    presentationName
+    presentationURL
 } from './viewer.js'
 
 import {
@@ -133,7 +133,8 @@ function loadSVG(node, index = 0, callback = null) {
     } else {
         loadSounds(node);
         var ob = document.createElement("object");
-        ob.setAttribute("data", fileName(node.id, 'image.svg'));
+        const file = fileName(node.id, 'image.svg');
+        ob.setAttribute("data", file);
         ob.setAttribute("type", "image/svg+xml");
         ob.classList.add("hidden-svg");
         document.body.appendChild(ob);
@@ -187,6 +188,7 @@ function openPanelTree(event, open) {
         event.div.childNodes[0].innerHTML = 'chevron_right';
     }
 }
+
 
 //creates the tree of slides and events, without adding the svg's yet
 function createEventTree() {
@@ -245,6 +247,7 @@ function createEventTree() {
         }
     }
 
+    var totalDuration = 0;
     function createTreeRec(event, parent) //recursive function which loads a json for each slide. I might move this to having a single json.
     {
         const retval = {
@@ -253,9 +256,13 @@ function createEventTree() {
             name: event.name,
             parent: parent,
             audio: null,
+            duration : null,
             pageNumber: numberOfPages,
             children: []
         }
+
+        
+
 
         addDIV(retval);
 
@@ -269,14 +276,27 @@ function createEventTree() {
                 parent: retval,
                 pageNumber: numberOfPages
             });
+
+            //add the durations for the sound events
+            for (let i = 0; i < retval.children.length; i++)
+            {
+             try {
+                 retval.children[i].duration = manifest.soundDict[retval.id][i].duration;
+                 totalDuration += retval.children[i].duration;
+             } catch (e) {
+                // retval.children[i].duration = null;
+             }
+            }
         }
 
         return retval;
     }
 
+
     eventTree = manifest.tree;
     eventTree.parent = null;
     eventTree = createTreeRec(manifest.tree, null);
+    console.log("total sound is "+ totalDuration/ 60 )
     curEvent = eventTree;
 }
 
@@ -462,7 +482,7 @@ function pathInURL() //puts the current path into the url
     while (path.length > 0) {
         string += path.pop() + '/';
     }
-    history.pushState({}, null, '?slides=' + encodeURI(presentationName) + '&path=' + string);
+    history.pushState({}, null, '?slides=' + encodeURI(presentationURL) + '&path=' + string);
 }
 
 

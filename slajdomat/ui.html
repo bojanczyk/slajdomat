@@ -7,6 +7,7 @@
 :root {
   --grafitowy : #2c2c2c;
   --select-color : #daebf7;
+  --disabled-color : Silver;
 }
 
 
@@ -21,7 +22,6 @@ body {
 
 .material-icons {
   font-size : 16px;
-  color : Silver;
 }
 
 .list-buttons {
@@ -114,7 +114,7 @@ color : LightGrey;
   display: none;
   position: absolute;
   background-color: #f9f9f9;
-  min-width: 220px;
+  min-width: 210px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
   z-index: 1;
   padding-top : 8px;
@@ -185,18 +185,29 @@ color : LightGrey;
   margin-bottom : 5px;
 }
 
+
+/* buttons on the top panel *********** */
+
 .top-buttons {
   display : flex;
   background-color: var(--grafitowy);
   align-items : center;
+  padding-right : 5px;
 }
 
 .top-buttons div div {
   filter : invert(100%);
 }
 
+.top-buttons i {
+  color : white;
+  cursor : pointer;
+}
 
-
+.top-buttons i:hover {
+  /*background-color : var(--select-color);
+  color : var(--grafitowy);*/
+}
 
 .hidden {
   display : none;
@@ -228,75 +239,216 @@ color : LightGrey;
 cursor:pointer;
 }
 
-
-
 #events-label {
   flex : 1;
   overflow : scroll;
 }
 
 
+/* matematyk -------------------- */
+
+#matematyk {
+  background-color: LightGrey;
+  padding-top : 5px;
+  padding-bottom : 5px;
+}
+
+.matematyk-row {
+  padding-left : 4px;
+  padding-right : 4px;
+  padding-right : 4px;
+  display : flex;
+  align-items : center;
+  color : var(--grafitowy);
+  cursor : pointer;
+  height : 32px;
+}
+
+.matematyk-row.disabled {
+  cursor : default;
+}
+
+.matematyk-row:hover:not(.disabled) {
+background-color : var(--select-color);
+}
+
+#matematyk-words {
+  margin-left : 8px;
+  display : flex;
+  align-items : top;
+  overflow : scroll;
+  height : 30px;
+}
+
+.spacer {
+  flex : 1;
+}
+
+.sigma-button {
+  margin-left : 5px;
+  margin-right : 10px;
+}
+
+#matematyk input {
+  margin : 5px;
+  width : 25px;
+  font-face : STIXGeneral;
+}
+
+.word-button {
+  padding : 5px;
+  margin-top : 2px;
+  margin-bottom : 2px;
+  cursor : default;
+}
+
+#matematyk-words:not(.disabled) .word-button:hover {
+  background-color : var(--select-color);
+  cursor : pointer;
+}
+
+.disabled {
+  color : var(--disabled-color)
+}
+
+.disabled input {
+  color : LightGrey;
+}
+
+
+
+.myspinner {
+		-webkit-animation: rotation 2s infinite linear;
+}
+
+@-webkit-keyframes rotation {
+		from {
+				-webkit-transform: rotate(0deg);
+		}
+		to {
+				-webkit-transform: rotate(359deg);
+		}
+}
+
+/* settings column ************ */
+
+#close-settings {
+  position: absolute;
+  right : 5px;
+  top : 5px;
+  cursor : pointer;
+}
+
+/* no-slide column ****** */
+
+#no-slide-column i {
+  position: absolute;
+  right : 5px;
+  top : 5px;
+  cursor : pointer;
+}
+
+
 
 </style>
 <div id="entire-plugin" onmouseenter="pluginMouseenter();" onmouseleave="pluginMouseleave()">
-<div class="column hidden" id="settings-column">
-  <div class="row">
-  <button class='button button--primary' onclick='makeFirst(1024,768)'>Create slide 1024 x 768</button>
-  <button class='button button--primary' onclick='makeFirst(1280,960)'>Create slide 1280 x 960</button>
+  <div class="column hidden" id="settings-column">
+  <i id="close-settings" class="material-icons" onclick="settingsPanel(false)">close</i>
+  <div class= "row">
+  Settings
   </div>
-</div>
-
-<div class="column hidden" id="slide-column">
-<div class="top-buttons">
-  <div class="icon-button" onclick="exportButton()">
-    <div id="icon-play" class="icon icon--play"></div>
-  </div>
-  <div id="slide-name">
-    mikla </div>
-    <i id="parent-button" class="material-icons" onclick="parentButton()">arrow_upward</i>
-  <div id="slide-count"></div>
-</div>
-
-
-  <div class="row" id="events-label">
-    <div class="dropdown">
-      <div class="dropbtn" onmouseover="dropDownMouseover(this)">
-        Events
-        <i class="material-icons">add</i>
-      </div>
-      <div class="dropdown-content" id="dropdown-content">
-        <div class="list-item">
-          <div class="list-label no-pointer" id="add-event">Add event for selected objects</div>
-        </div>
-        <div class="event-list">
-          <div class="list-item" id="add-show" onclick="dropDownClick('show')">
-            <i class="material-icons">visibility</i>
-            <div class="list-label" id="add-show">Add show event for selection</div>
-          </div>
-          <div class="list-item" id="add-hide" onclick="dropDownClick('hide')">
-            <i class="material-icons">visibility_off</i>
-            <div class="list-label" id="add-hide">Add hide event for selection</div>
-          </div>
-        </div>
-
-        <div class="separator"> </div>
-
-        <div class="list-item">
-          <div class="list-label no-pointer" id="add-child">Add child slide</div>
-        </div>
-        <div class="event-list" id="child-list">
-          <div class="list-item selectable" id="new-child" onclick="newChildClick()">
-            <i class="material-icons">add</i>
-            <div class="list-label">Create new child slide</div>
-          </div>
-        </div>
+  
+    <div class="row">
+      <div class="switch" id="matematyk-toggle">
+        <input class="switch__toggle" type="checkbox" id="matematyk-checkbox">
+        <label class="switch__label" for="uniqueIdA">Latex and math extension</label>
       </div>
     </div>
-    <div id="event-list" class="event-list"> </div>
+  </div>
+
+
+  <div class="column hidden" id="no-slide-column">
+  <i  class="material-icons" onclick="settingsPanel(true)">settings</i>
+  <div class="row">
+  No slide is selected. 
+  </div>
+    <div class="row">
+      <button class='button button--primary' onclick='makeFirst(1024,768)'>Create slide 1024 x 768</button>
+      <button class='button button--primary' onclick='makeFirst(1280,960)'>Create slide 1280 x 960</button>
+    </div>
+
+  </div>
+
+  <div class="column hidden" id="slide-column">
+    <div class="top-buttons">
+      <div class="icon-button" onclick="exportButton()">
+        <div id="icon-play" class="icon icon--play"></div>
+      </div>
+      <div id="slide-name">
+        mikla </div>
+      <i id="parent-button" class="material-icons" onclick="parentButton()">arrow_upward</i>
+      <div id="slide-count"></div>
+      <i  class="material-icons" onclick="settingsPanel(true)">settings</i>
+    </div>
+
+    <div class="row" id="events-label">
+      <div class="dropdown">
+        <div class="dropbtn" onmouseover="dropDownMouseover(this)">
+          Events
+          <i class="material-icons">add</i>
+        </div>
+        <div class="dropdown-content" id="dropdown-content">
+          <div class="list-item">
+            <div class="list-label no-pointer" id="add-event">Add event for selection</div>
+          </div>
+          <div class="event-list">
+            <div class="list-item" id="add-show" onclick="dropDownClick('show')">
+              <i class="material-icons">visibility</i>
+              <div class="list-label" id="add-show">Show event for selection</div>
+            </div>
+            <div class="list-item" id="add-hide" onclick="dropDownClick('hide')">
+              <i class="material-icons">visibility_off</i>
+              <div class="list-label" id="add-hide">Hide event for selection</div>
+            </div>
+          </div>
+
+          <div class="separator"> </div>
+
+          <div class="list-item">
+            <div class="list-label no-pointer" id="add-child">Add child slide</div>
+          </div>
+          <div class="event-list" id="child-list">
+            <div class="list-item selectable" id="new-child" onclick="newChildClick()">
+              <i class="material-icons">add</i>
+              <div class="list-label">Create new child slide</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="event-list" class="event-list"> </div>
+    </div>
+
+    <div id='matematyk'>
+      <div class="matematyk-row" id='matematyk-latex'>
+        <i id="latexit-icon" class="material-icons sigma-button">
+          functions
+        </i>
+        <div id='latex-button'> Latex selection </div>
+        <div class="spacer"> </div>
+      </div>
+      <div class="matematyk-row" id='matematyk-insert'>
+        <i class="material-icons sigma-button">
+          functions
+        </i>
+        <div> Insert </div>
+        <input type="input" id='matematyk-input' placeholder="Σ">
+        <div> in math font </div>
+      </div>
+      <div id="matematyk-words">
+      </div>
+    </div>
   </div>
 </div>
-</div>
-
 
 
 <script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
@@ -322,6 +474,36 @@ var docName;
 // functions **************************
 
 
+//columns are the alternative views for the plugin ui: 
+//slide-column for editing a slide
+//no-slide-column which allows making a new slide
+//settings-column for the settings
+
+var savedColumn //the previous column before entering settings. 
+
+function showColumn(column) 
+{
+  if (column != 'settings-column')
+    savedColumn = column;
+  
+  //first hide the other columns
+  for (let p of document.getElementsByClassName("column"))
+    p.classList.add("hidden");
+
+  document.getElementById(column).classList.remove("hidden");
+}
+
+// the settings panel ****************
+
+
+function settingsPanel(visible) {
+  if (visible)
+    showColumn('settings-column')
+  else
+    showColumn(savedColumn)
+
+
+}
 
 //toggle the play button between "spinner" and "play"
 function exportWaiting(waiting) {
@@ -340,16 +522,14 @@ function exportWaiting(waiting) {
 
 
 
-
+//send the presentation to the server
 function savePresentation(msg) {
-
-
   //for some reason, TextDecoder does not work on the plugin side
   for (const slide of msg.slideList) {
     slide.svg = new TextDecoder("utf-8").decode(slide.svg)
   }
 
-  fetch('http://localhost:3000', {
+  fetch('http://localhost:8001', {
     method: 'POST',
     body: JSON.stringify({
       type: 'slides',
@@ -401,7 +581,6 @@ function notify(text) {
   })
 }
 
-
 //for some reason that I do not understand, the mouseleave is not paired with mouse enter, so I do this manually using the following variable
 cursorInsidePlugin = false;
 //the plugin panel has been moused over
@@ -424,7 +603,7 @@ function pluginMouseleave() {
   })
 }
 
-// **** dragging ****
+// reordering events in the event list. I use a manual implementation of reordering via dragging, which is probably quite buggy.
 
 let drag_dragged;
 let dragSource;
@@ -477,14 +656,14 @@ document.addEventListener("drop", ({
     });
   }
 });
+// ******* end of dragging code
 
 
 
 
 
 
-
-
+//shortcut for posting a message, so that I don't need to write the '*' each time
 function postMessage(msg) {
   parent.postMessage({
     pluginMessage: msg
@@ -492,7 +671,7 @@ function postMessage(msg) {
 }
 
 
-//
+//when the user has clicked 'add a new child slide'
 function newChildClick(event) {
   //hide the dropdown menu
   document.getElementById("dropdown-content").style.display = "none";
@@ -530,13 +709,6 @@ function dropDownClick(event) {
   }
 }
 
-
-
-
-
-
-
-
 //when the dropdown menu is hovered
 //reanable visibility, which might have been turned off after the last click
 function dropDownMouseover(event) {
@@ -549,31 +721,28 @@ function dropDownMouseover(event) {
   postMessage({
     type: 'requestDropDown'
   });
-  
   document.getElementById("dropdown-content").style.display = "";
 }
+
 
 function changeSlide(msg) {
   docName = msg.docName;
   if ('slide' in msg) {
     //there is a current slide
+    showColumn('slide-column');
     document.getElementById('slide-name').innerHTML = msg.slide;
-    document.getElementById('slide-column').classList.remove("hidden");
-    document.getElementById('settings-column').classList.add("hidden");
 
-//the parent button indicates if there is a parent slide
+    //display the number of slides (frames) in the presentation
+    document.getElementById('slide-count').innerHTML = '' + msg.slideCount;
+    //the parent button indicates if there is a parent slide
     if (msg.parent == null)
       document.getElementById('parent-button').classList.add("hidden")
-    else 
+    else
       document.getElementById('parent-button').classList.remove("hidden")
 
   } else {
-    document.getElementById('slide-column').classList.add("hidden");
-    document.getElementById('settings-column').classList.remove("hidden");
+    showColumn('no-slide-column');
   }
-
-  document.getElementById('slide-count').innerHTML = ''+msg.slideCount;
-
 }
 
 
@@ -666,6 +835,148 @@ if (msg.selected) {
     }
 }
 
+
+function eventNumber(node) {
+  while (!(node.classList.contains('list-item')))
+    {console.log(node);
+    node = node.parentNode;}
+  return index = Array.from(node.parentNode.children).indexOf(node);
+}
+
+
+
+//functions for the matematyk plugin 
+function matematykSendWord(w) {
+  postMessage({
+          type : 'matematykWord',
+          word : w
+        })
+}
+
+
+
+document.getElementById('matematyk-toggle').addEventListener('click',
+function (event)   {
+  console.log('dupa');
+  const checkbox = document.getElementById('matematyk-checkbox');
+  checkbox.checked = !checkbox.checked;
+  if (checkbox.checked)
+    {
+      document.getElementById('matematyk').style.display = '';
+    }
+    else 
+    {
+      document.getElementById('matematyk').style.display = 'none'
+    }
+  postMessage({
+          type : 'matematykToggle',
+          active : checkbox.checked
+        })
+}
+)
+
+//the user has clicked the latex / delatx button
+document.getElementById('matematyk-latex').addEventListener('click',
+  function (event) {
+    postMessage({
+      type : 'latexit'
+    })
+  }
+)
+
+
+
+//the user has filled in the math field, which should insert the contents of the math field into the currently selected text, in the font STIXGeneral
+document.getElementById('matematyk-input').addEventListener('keyup',
+  function (event) {
+    if (event.key == 'Enter') 
+    {
+      matematykSendWord(event.target.value)
+    }
+    
+  }
+)
+
+
+
+function fetchLatex(url) {
+  document.getElementById("latexit-icon").classList.add("myspinner");
+  fetch(url).then(x => {
+    if (!x.ok) {
+      throw "nic"
+    } else return x.text()
+  }).then(x => {
+    parent.postMessage({
+      pluginMessage: {
+        type: 'svg',
+        svg: x
+      }
+    }, '*');
+    document.getElementById("latexit-icon").classList.remove("myspinner");
+  }).catch((error) => 
+  {notify("Could not compile latex.");
+  document.getElementById("latexit-icon").classList.remove("myspinner");
+  })
+}
+
+
+//create the matematyk panel, which allows to make latex and math symbols
+function matematyk(msg) {
+
+  
+
+  if (msg.canInsert) {
+    document.getElementById('matematyk-insert').classList.remove('disabled');
+    document.getElementById('matematyk-words').classList.remove('disabled');
+    document.getElementById('matematyk-input').disabled = false;
+  }
+  else
+  {
+    document.getElementById('matematyk-words').classList.add('disabled');
+    document.getElementById('matematyk-insert').classList.add('disabled');
+    document.getElementById('matematyk-input').disabled = true;
+  }
+    
+  if (msg.latexState == null)  //no object is selected, so the latex button should be disabled
+  { 
+    document.getElementById('matematyk-latex').classList.add('disabled')
+  }
+
+  if (msg.latexState == 'latex')  //a text object is selected
+  { 
+    document.getElementById('matematyk-latex').classList.remove('disabled');
+    document.getElementById('latex-button').innerHTML = 'Latex selection';
+  }
+
+  if (msg.latexState == 'delatex')  //a text object is selected
+  { 
+    document.getElementById('matematyk-latex').classList.remove('disabled');
+    document.getElementById('latex-button').innerHTML = 'Delatex selection';
+  }
+  
+   if (msg.active) {
+     document.getElementById('matematyk').style.display = '';
+     document.getElementById('matematyk-checkbox').checked = true;
+   }
+   else
+   {
+     document.getElementById('matematyk').style.display = 'none';
+     document.getElementById('matematyk-checkbox').checked = false;
+   }
+
+  if (!msg.selChange) {
+      document.getElementById('matematyk-words').innerHTML = '';
+  for (let word of msg.words) {
+      const button = document.createElement('div');
+      button.classList.add('word-button');
+      button.innerHTML = word;
+      button.addEventListener('click', e => matematykSendWord(e.target.innerHTML));
+      document.getElementById('matematyk-words').prepend(button);
+  }
+  }
+}
+
+
 // handle messages coming from figma
 function messageHandler(event) {
   msg = event.data.pluginMessage;
@@ -674,6 +985,15 @@ function messageHandler(event) {
   if (msg.type == 'init') {
     changeSlide(msg);
   }
+
+  if (msg.type == 'matematyk') {
+    matematyk(msg);
+  }
+
+  if (msg.type === 'fetchlatex') {
+    fetchLatex(msg.url);
+  }
+
 
   //get the list of events for the current slide
   if (msg.type == 'eventList') {
@@ -690,19 +1010,6 @@ function messageHandler(event) {
     savePresentation(msg);
   }
 }
-
-function eventNumber(node) {
-  while (!(node.classList.contains('list-item')))
-    {console.log(node);
-    node = node.parentNode;}
-  return index = Array.from(node.parentNode.children).indexOf(node);
-}
-
-
-
-
-
-
 
 // 
 onmessage = messageHandler;

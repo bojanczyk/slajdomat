@@ -16,6 +16,25 @@
 <body>
 	<img id='help-panel' src="img/help.svg">
 
+	<!-- <div id="progress-panel">
+		<div class="progress-box" ></div>
+		<div class="progress-box" ></div>
+	</div> -->
+	<div id="sound-panel" display="none" class="noselect tool-panel">
+		<i id="back-ten" class="material-icons">replay_10</i>
+		<i id="forward-ten" class="material-icons">play_arrow</i>
+		<input type="range" min="1" max="100" value="0" class="slider" id="sound-range">
+		<div id="speed-one">×1</div>		
+	</div>
+
+	
+	<div id="sketch-panel" class="noselect tool-panel">
+		<i id="sketch-red" class="material-icons selected">edit</i>
+		<i id="sketch-blue" class="material-icons">edit</i>
+		<i id="sketch-undo" class="material-icons disabled">undo</i>
+		<i id="sketch-redo" class="material-icons">redo</i>
+	</div>
+
 	<!-- the left panel, which rolls out, and has information about the slides -->
 	<div id="left-sensor"></div>
 	<div id="control-panel" class="control-panel">
@@ -35,10 +54,6 @@
 	<!-- the panel that contains the svg with the slides -->
 	<div id="slide-panel" class="slide-panel">
 		<svg id="svg" class="svg-class"></svg>
-		<!-- <div id="iframe">
-			<svg id="canvas">
-			</svg>
-		</div> -->
 	</div>
 
 	<!-- the page counter in the lower right corner -->
@@ -64,6 +79,12 @@
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
 	<script type="module" src="built/viewer.js"></script>
+	<script type="module" src="built/sketchpad.js"></script>
+	
+	<script>
+		import('./built/event.js').then(m => events = m)
+		import('./built/sound.js').then(m => sounds = m)
+	</script>
 
 	<template id='slide-list-template'>
 		<div class="slide-list-item">

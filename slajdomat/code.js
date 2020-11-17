@@ -196,8 +196,6 @@ function createChildEvent(id) {
     currentSlide.appendChild(rect);
     rect.x = 100
     rect.y = 100
-    console.log(rect);
-    console.log(currentSlide.name);
     return rect;
 
 }
@@ -617,14 +615,228 @@ function selChange() {
         const slide = slideWithSelection(); {
             // console.log(slide);
             // console.log("current:", currentSlide)
-            if (slide != currentSlide && (slide != null || currentSlide.removed))
+
+
+            //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
+            if ((currentSlide != null && currentSlide.removed) || (slide != currentSlide && slide != null))
                 setCurrentSlide(slide);
-            else
+            else if (currentSlide != null)
                 sendEventList();
+        }
+    }
+
+    matematykSelChange();
+
+}
+
+
+
+// functions for matematyk **************
+//inserts the word in the font STIXGeneral
+
+var matematykStorage = null;
+
+const mathFont = {
+    family: 'STIXGeneral',
+    style: 'Regular'
+}
+
+var latexitSelection;
+
+
+//initialize the matematyk part
+function initMatematyk() {
+
+    figma.clientStorage.getAsync('matematyk').then(
+        x => {
+            try {
+                matematykStorage = JSON.parse(x);
+            } catch (e) {
+                console.log('failed');
+                matematykStorage = {
+                    words: [],
+                    active: false,
+                }
+            }
+
+            matematykSendWords();
+            matematykSelChange();
+
+        }
+    )
+
+}
+
+
+//updates the selection for the matematyk plugin
+function matematykSelChange() {
+    //code for matematyk
+    var sel = figma.currentPage.selection;
+    const msg = {
+        type: 'matematyk',
+        words: matematykStorage.words,
+        active: matematykStorage.active,
+        selChange: true,
+        latexState: null,
+        canInsert: false
+    };
+
+    if (sel.length == 1) {
+        if (sel[0].type == "TEXT") //the selected object can be latexed
+            msg.latexState = "latex";
+        if (matematykData(sel[0]) != null) //the selected object can be delatexed
+            msg.latexState = "delatex";
+    }
+
+    if (figma.currentPage.selectedTextRange != null)
+        msg.canInsert = true;
+
+    figma.ui.postMessage(msg)
+}
+
+
+//the first stage of latexit, when we find the object to be latexed
+function latexitOne() {
+    if (figma.currentPage.selection.length > 0) {
+        latexitSelection = figma.currentPage.selection[0];
+        let data = matematykData(latexitSelection);
+
+        if (latexitSelection.type == 'TEXT') {
+            var url = "https://latex.codecogs.com/svg.latex?" + encodeURIComponent(latexitSelection.characters);
+            figma.ui.postMessage({
+                type: 'fetchlatex',
+                url: url
+            });
+
+
+        } else
+        if (data != null) {
+            var text = figma.createText();
+            latexitSelection.parent.appendChild(text);
+            figma.loadFontAsync(text.fontName).then(x => {
+                try {
+                    text.name = latexitSelection.name;
+                    text.characters = data.code;
+                    text.fontSize = data.fontsize;
+                    text.x = latexitSelection.x;
+                    text.y = latexitSelection.y;
+                    latexitSelection.remove();
+                    figma.currentPage.selection = [text];
+                } catch (error) {
+                    figma.notify("Could not delatex.");
+                    console.log(error)
+                }
+            })
         }
     }
 }
 
+//function returns the matematyk data for a node
+function matematykData(node) {
+    try {
+        const str = node.getPluginData('matematyk');
+        return JSON.parse(str)
+    } catch (e) {
+        return null;
+    }
+}
+
+//the second state of latexit, when we got the svg
+function latexitTwo(svg) {
+    var node = figma.createNodeFromSvg(svg);
+
+    const parent = figma.currentPage.selection[0].parent;
+    parent.appendChild(node);
+
+
+    var latexdata = {
+        fontsize: latexitSelection.getRangeFontSize(0, 1),
+        code: latexitSelection.characters
+    }
+    node.setPluginData("matematyk", JSON.stringify(latexdata));
+
+    node.name = latexdata.code;
+    node.rescale(latexdata.fontsize * 0.065);
+    node.x = latexitSelection.x;
+    node.y = latexitSelection.y;
+
+    latexitSelection.remove();
+    figma.currentPage.selection = [node];
+
+}
+
+//inserts the word w after the caret, using the font STIXregular, in a slightly smaller font size than the present font
+function matematykWord(addedstring) {
+
+    //figma requires me to load lots of fonts before changing anything in the text field
+    function loadFonts(node) {
+
+
+        let len = node.characters.length;
+        const fontArray = [figma.loadFontAsync(mathFont)];
+
+        if (typeof node.fontName != 'symbol') //there is more than one font
+        {
+            fontArray.push(figma.loadFontAsync(node.fontName))
+        } else {
+            for (let i = 0; i < len; i++) {
+                fontArray.push(figma.loadFontAsync(node.getRangeFontName(i, i + 1)))
+            }
+        }
+        return Promise.all(fontArray);
+    }
+
+    //the added string should be at the front of the cache, so if it is present in the cache, then we delete it
+    let index = matematykStorage.words.indexOf(addedstring)
+    if (index != -1) // if it is in the cache
+        matematykStorage.words.splice(index, 1);
+    matematykStorage.words.push(addedstring);
+    matematykSendWords();
+    figma.clientStorage.setAsync('matematyk', JSON.stringify(matematykStorage));
+
+
+    //add the word after the selected range 
+    var range = figma.currentPage.selectedTextRange;
+    if (range != null) {
+        loadFonts(range.node).then(x => {
+            range.node.insertCharacters(range.start, addedstring + " ");
+            var size = range.node.getRangeFontSize(range.start, range.start + 1);
+            range.node.setRangeFontName(range.start, range.start + addedstring.length, mathFont);
+            range.node.setRangeFontSize(range.start, range.start + addedstring.length, size * 0.75);
+            //range.end = range.start +1;          
+            figma.currentPage.selectedTextRange = {
+                node: range.node,
+                start: range.start + addedstring.length + 1,
+                end: range.start + addedstring.length + 1
+            };
+        });
+        // 
+
+    }
+}
+
+//send cached words to the ui; these words will get their own buttons
+function matematykSendWords() {
+    figma.ui.postMessage({
+        type: 'matematyk',
+        words: matematykStorage.words,
+        active: matematykStorage.active,
+        latexState: null,
+        canInsert: true,
+        selChange: false
+    });
+}
+
+function matematykToggle(active) {
+    matematykStorage.active = active;
+    console.log(matematykStorage);
+    figma.clientStorage.setAsync('matematyk', JSON.stringify(matematykStorage));
+}
+
+
+
+
+//***************** end of matematyk */
 
 
 //handle messages that come from the ui
@@ -709,17 +921,35 @@ function onMessage(msg) {
         figma.notify(msg.text);
     }
 
+    //functions for the matematyk plugin ******
+
+    if (msg.type == 'matematykWord') {
+        matematykWord(msg.word);
+    }
+
+    if (msg.type == 'latexit')
+        latexitOne();
+
+    if (msg.type == 'svg')
+        latexitTwo(msg.svg);
+
+    if (msg.type == 'matematykToggle')
+        matematykToggle(msg.active);
+
+    //end of functions for the matematyk plugin ******
+
 
 };
 
 
 figma.on("selectionchange", selChange);
 figma.showUI(__uiFiles__.main, {
-    width: 250,
-    height: 400
+    width: 230,
+    height: 500
 });
 figma.ui.onmessage = onMessage;
 
 
 setCurrentSlide(slideWithSelection());
+initMatematyk();
 // repairOldFormat();

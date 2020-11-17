@@ -2,7 +2,7 @@ export {
     manifest,
     userAlert,
     updatePageNumber,
-    presentationName,
+    presentationURL,
     userAgent,
     fileName,
     sendToServer
@@ -17,7 +17,7 @@ import {
     changeEvent
 } from "./event.js"
 
-import { toggleSketchpad } from "./sketchpad.js";
+// import { toggleSketchpad } from "./sketchpad.js";
 
 import {
     soundStop,
@@ -41,7 +41,7 @@ var slideStack = [];
 
 var presentationDir; //the directory where the slides are
 var presentationName; //the name of the slides
-
+var presentationURL;
 
 
 
@@ -156,49 +156,6 @@ function prevButton() {
     changeEvent(-1);
 }
 
-function keyListener(event) {
-    if (event.keyCode == '190') {
-        // >
-        playbackRateChange(0.2);
-    }
-
-    if (event.keyCode == '188') {
-        // <
-        playbackRateChange(-0.2);
-
-    }
-
-    if (event.keyCode == '39') {
-        //arrow right
-        nextButton();
-
-    }
-    if (event.keyCode == '37') {
-        //arrow left
-        prevButton();
-    }
-
-    if (event.keyCode == '32') {
-        //space bar
-        playButton();
-    }
-
-    if (event.keyCode == '68') {
-        //space bar
-        // toggleSketchpad(curEvent);
-    }
-
-
-    if (event.keyCode == '82') {
-        // 'r'
-        if (soundState == "record")
-            soundStop();
-        else {
-            soundStop();
-            soundRecord();
-        }
-    }
-}
 
 /*
 // I don't know why this does not work
@@ -249,14 +206,16 @@ function fileName(slide, file) {
 function sendToServer(msg) {
     msg.presentation = presentationName;
     var json = JSON.stringify(msg);
-    return fetch('http://localhost:3000', {
+    return fetch('http://localhost:8001', {
         method: 'POST',
         body: json
     }).
     then(response => {
+        console.log(response);
         if (!response.ok) {
             throw "not connected";
         }
+        else return response;
     })
 }
 
@@ -295,6 +254,47 @@ function getPathFromURL() {
 }
 
 
+// the main event dispatcher
+function keyListener(event) {
+    if (event.keyCode == '190') {
+        // >
+        playbackRateChange(0.2);
+    }
+
+    if (event.keyCode == '188') {
+        // <
+        playbackRateChange(-0.2);
+
+    }
+
+    if (event.keyCode == '39') {
+        //arrow right
+        nextButton();
+
+    }
+    if (event.keyCode == '37') {
+        //arrow left
+        prevButton();
+    }
+
+    if (event.keyCode == '32') {
+        //space bar
+        playButton();
+    }
+
+    
+
+
+    if (event.keyCode == '82') {
+        // 'r'
+        if (soundState == "record")
+            soundStop();
+        else {
+            soundStop();
+            soundRecord();
+        }
+    }
+}
 
 
 //startup code
@@ -314,21 +314,17 @@ window.onload = function () {
     document.getElementById('play-button').addEventListener('click', playButton);
 
     
-    fetchJSON('slides/presentations.json')
-        .then(j => {
-            if (j == null)
-                throw "The manifest is missing for all presentations"
-
-            let url = new URL(window.location.href);
-            presentationName = url.searchParams.get('slides');
-            document.title = presentationName;
-            presentationDir = j[presentationName];
-            return fetchJSON(fileName(null, 'manifest.json'))
-        }).then(j => {
+    let url = new URL(window.location.href);
+    presentationURL= url.searchParams.get('slides')
+    presentationDir = 'slides/'+ presentationURL;
+    fetchJSON(presentationDir + '/manifest.json').then(j => {
             if (j == null)
                 throw "The manifest is missing for the presentation"
 
             manifest = j;
+            presentationName = manifest.presentation;
+            document.title = presentationName;
+            
 
             const path = getPathFromURL();
             createEventTree();
