@@ -1,6 +1,7 @@
-export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundState, playbackRateChange };
+export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundState, playbackRateChange, gotoAudio, updateSoundIcon };
 import { manifest, userAgent, fileName, sendToServer, userAlert } from './viewer.js';
 import { curEvent, eventIndex, eventTree, changeEvent } from "./event.js";
+import { audioPlaying, updateEventDuration } from './html.js';
 //there are four possible states for the sound
 //"recording" means that we are recording sound
 //"play" means that we are playing sound
@@ -130,7 +131,13 @@ function recordSound(event) {
                     name: shortName,
                     file: Array.from(y)
                 };
-                sendToServer(retmsg).catch((e) => {
+                sendToServer(retmsg)
+                    .then(r => r.json())
+                    .then(r => {
+                    event.duration = r.duration;
+                    updateEventDuration(event);
+                }).catch((e) => {
+                    console.log(e);
                     userAlert("Could not send this sound to the server: " + longName);
                 });
                 /*
@@ -142,19 +149,6 @@ function recordSound(event) {
         });
     });
 }
-/*
-function sendSoundDatabase() {
-    sendToServer({
-        type: 'json',
-        slide: null,
-        name: 'manifest',
-        body: manifest
-    }).
-    catch((error) => {
-        userAlert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
-    });
-}
-*/
 function playbackRateChange(d) {
     if (playbackRate + d > 0.1 && playbackRate + d < 8) {
         playbackRate += d;
@@ -204,25 +198,23 @@ function loadSounds(node) {
                     soundIcon("play");
                 }
             });
-            audio.addEventListener('timeupdate', (e) => {
-                // console.log(audio.currentTime, audio.duration);
-                document.getElementById('sound-range').value = 100 * audio.currentTime / audio.duration;
-            });
+            audio.addEventListener('timeupdate', audioPlaying);
         }
     }
 }
-document.getElementById('sound-range').addEventListener('input', function (event) {
+function gotoAudio(ratio) {
+    console.log(ratio);
     if (globalAudio != null) {
-        globalAudio.currentTime = globalAudio.duration * (event.target.value / 100);
+        globalAudio.currentTime = globalAudio.duration * ratio;
     }
-});
-document.getElementById('back-ten').addEventListener('click', function (event) {
-    if (globalAudio.currentTime > 10) {
-        globalAudio.currentTime -= 10;
-    }
-    else
-        globalAudio.currentTime = 0;
-});
+}
+// document.getElementById('back-ten').addEventListener('click', function (event) {
+//     if (globalAudio.currentTime > 10) {
+//         globalAudio.currentTime -= 10;
+//     }
+//     else
+//         globalAudio.currentTime =0;
+// });
 //we begin by loading the sound database
 soundIcon(null);
 //# sourceMappingURL=sound.js.map

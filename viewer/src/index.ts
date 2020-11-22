@@ -10,7 +10,7 @@ else
 .then(j => {
     document.getElementById('index-title').classList.remove('hidden');
     manifest = j;
-    var ul = document.getElementById("slide-list");
+    var ul = document.getElementById("tree-view");
 for (const i of Object.keys(manifest)) 
 {
     var li = document.createElement("a");

@@ -65,7 +65,7 @@ class RequestHandler(BaseHTTPRequestHandler):
       
       manifest = None
       response = {}
-      response["status"] = "OK"
+      response["status"] = "OKejos"
 
       # the returns the proper directory for presentation/slide/file
       # the slide parameter can be None
@@ -149,6 +149,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                   os.remove(file+'.wav')
                   duration = os.popen('ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 '+file+'.mp3').read()
                   duration = float(duration)
+                  response['duration']=duration
                   print("Successfully converted sound to mp3, of duration "+str(duration))
                   manifest['soundDict'][msg['slide']][msg['name']] = {'file' : str(msg['name']), 'duration' : duration}
             
@@ -158,7 +159,7 @@ class RequestHandler(BaseHTTPRequestHandler):
       f.close()
 
       
-      
+      # self.wfile.write(bytes('kolasinski','utf-8'))
       self.send_dict_response(response)
 
 

@@ -6,7 +6,9 @@ export {
     loadSounds,
     soundPlayCurrentEvent,
     soundState,
-    playbackRateChange
+    playbackRateChange,
+    gotoAudio,
+    updateSoundIcon
 }
 
 import {
@@ -23,6 +25,12 @@ import {
     eventTree,
     changeEvent
 } from "./event.js"
+
+import {
+    audioPlaying, 
+    makeTimeline,
+    updateEventDuration
+} from './html.js'
 
 
 
@@ -58,6 +66,7 @@ function currentSound() {
     return curEvent.audio;
 }
 
+
 function updateSoundIcon() {
     if (soundState == null) {
         if (curEvent.audio != null)
@@ -76,8 +85,7 @@ function soundRecord() {
         soundIcon(null);
         if (userAgent() == "Safari") {
             userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
-        }
-        else 
+        } else
             userAlert(error)
     })
 }
@@ -161,7 +169,7 @@ function recordSound(event) {
                     changeEvent(1);
                 })
 
-                
+
 
                 const index = eventIndex(event);
                 const shortName = index;
@@ -183,7 +191,11 @@ function recordSound(event) {
                         name: shortName,
                         file: Array.from(y)
                     };
-                    sendToServer(retmsg).catch((e) => {
+                    sendToServer(retmsg)
+                    .then(r => r.json())
+                    .then(r => {event.duration = r.duration;
+                        updateEventDuration(event);}).catch((e) => {
+                            console.log(e);
                         userAlert("Could not send this sound to the server: " + longName)
                     });
 
@@ -197,20 +209,6 @@ function recordSound(event) {
         });
 }
 
-
-/*
-function sendSoundDatabase() {
-    sendToServer({
-        type: 'json',
-        slide: null,
-        name: 'manifest',
-        body: manifest
-    }).
-    catch((error) => {
-        userAlert("Not connected to the slide server. Run it locally (it is called viewer/server.py).");
-    });
-}
-*/
 
 
 function playbackRateChange(d) {
@@ -266,29 +264,27 @@ function loadSounds(node) {
                 }
             })
 
-            audio.addEventListener('timeupdate', (e) => {
-                // console.log(audio.currentTime, audio.duration);
-                document.getElementById('sound-range').value = 100 * audio.currentTime / audio.duration;
-            })
+            audio.addEventListener('timeupdate', audioPlaying)
         }
     }
 }
 
-
-document.getElementById('sound-range').addEventListener('input', function (event) {
-    if (globalAudio != null)
-    {
-        globalAudio.currentTime = globalAudio.duration * (event.target.value / 100);
+function gotoAudio(ratio) {
+    console.log(ratio);
+    if (globalAudio != null) {
+        globalAudio.currentTime = globalAudio.duration * ratio;
     }
-});
+}
 
-document.getElementById('back-ten').addEventListener('click', function (event) {
-    if (globalAudio.currentTime > 10) {
-        globalAudio.currentTime -= 10;
-    }
-    else
-        globalAudio.currentTime =0;
-});
+
+
+// document.getElementById('back-ten').addEventListener('click', function (event) {
+//     if (globalAudio.currentTime > 10) {
+//         globalAudio.currentTime -= 10;
+//     }
+//     else
+//         globalAudio.currentTime =0;
+// });
 
 //we begin by loading the sound database
 soundIcon(null);

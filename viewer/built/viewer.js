@@ -15,15 +15,13 @@ function getServer() {
 //toggles the side panel on the left with the list of slides
 function togglePanel(visible) {
     if (visible) {
-        document.getElementById('left-sensor').style.display = 'none';
-        gsap.to("#control-panel", {
+        gsap.to("#left-panel", {
             width: "20%",
             duration: 0.3
         });
     }
     else {
-        document.getElementById('left-sensor').style.display = '';
-        gsap.to("#control-panel", {
+        gsap.to("#left-panel", {
             width: "0%",
             duration: 0.3
         });
@@ -214,8 +212,9 @@ function keyListener(event) {
 window.onload = function () {
     // helpPanel();
     document.addEventListener("keydown", keyListener);
-    document.getElementById('left-sensor').addEventListener('mouseover', function () {
-        togglePanel(true);
+    document.addEventListener('mousemove', function (e) {
+        if (e.clientX < 20)
+            togglePanel(true);
     });
     document.getElementById('close-panel').addEventListener('click', function () {
         togglePanel(false);

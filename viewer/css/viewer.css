@@ -1,27 +1,8 @@
 :root {
-    --control-panel-width : 20%
-}
-
-.control-panel {
-    position : relative;
-    color : black;
-    display: inline-block;
-    background-color:whitesmoke;
-    width : 0%;
-    height: 100%;
-    vertical-align: top;
-    z-index : +1;
-    cursor: default;
+    --left-panel-width : 20%
 }
 
 
-
-#left-sensor {
-    position : absolute;
-    width : 5%;
-    height : 100%;
-    z-index : +2;
-}
 
 .slide-panel {
     position: relative;
@@ -39,58 +20,11 @@ body {
     display : flex;
 }
 
-.control-panel {
-    font-family: 'Roboto';
-    font-weight: 300;
-    position : relative;
-}
 
 
 
 
-.slide-list-item {
-    overflow: hidden;    
-    white-space: nowrap;
-    display:block;
-    color : darkgray;
-    margin-bottom : 5px;
-}
 
-.slide-list-item-seen {    
-    color: black;
-}
-
-.slide-list-item-loading {
-    color : red;
-}
-
-
-
-
-.slide-list-item i {
-    font-size: 12px;
-    /* margin-bottom: 10px; */
-    margin-right: 5px;
-    cursor : pointer;
-}
-
-.slide-stack {
-    font-size: 10px;
-    margin-top : 5px;
-    margin-left: 1.5em;
-    overflow: scroll;
-}
-
-.slide-stack-hidden {
-    display : none;
-}
-
-#slide-stack-container {
-   position: absolute;
-   top : 30px;
-   bottom : 30px;
-   overflow : scroll; 
-}
 
 #text-alert-box {
     position : fixed;
@@ -120,50 +54,10 @@ body {
 
 
 
-.page-count-container {
-    position: fixed;
-    bottom : 0;
-    right : 0;
-    width : 120px;
-    height : 40px; 
-    /* background-color: lightgrey; */
-    font-family: 'Roboto';
-    font-size: 20px;
-    z-index: 5;
-    display : flex; 
-    align-items: center;
-}
-
-.page-count-container i {
-    cursor: pointer;
-}
-
-.page-count-container div {
-  flex-grow: 1;
-}
 
 
-.page-count-container div {
-    display : flex; 
-    align-items: center;
-}
-
-#page-count-enumerator {
-    font-size: 15px;
-}
-
-#page-count-denominator {
-    font-size: 12px;
-    color :darkgray;
-}
-#next-event {
-    right: 0%;
-}
 
 
-.disabled-event {
-    text-decoration: line-through;
-}
 
 .hidden-svg {
     position: absolute;
@@ -176,6 +70,7 @@ body {
     width :100%;
 }
 
+/* this counters a display bug in figma */
 path:not([fill]) {
     fill : transparent;
 }
@@ -190,29 +85,10 @@ path:not([fill]) {
     display: none;
 }
 
-#control-panel {
-    overflow : hidden;
-    white-space: nowrap;
-}
 
-.help {
-    font-size : 12px;
-    padding-top : 10px;
-    margin-left : 5px;
-    padding-bottom :10px;
-}
 
-.help p {
-     margin-left : 5px;
-}
 
-#close-panel {
-    position : absolute;
-    top : 3px;
-    right : 3px;
-    font-size: 15px;
-    cursor: pointer;
-}
+
 
 #help-panel {
     position : absolute;
@@ -228,106 +104,3 @@ path:not([fill]) {
     font-size: 20px;
 }
 
-
-#iframe {
-    position: absolute;
-    left : 0px;
-    bottom : 40px;
-    right : 0px;
-    top : 0px;
-    z-index: 5;
-  }
-  
-
-  /* the sketch panel *********** */
-  .tool-panel {
-      position: fixed;
-      display : none;
-      bottom: 0;
-      height : 40px;
-      left : 50%;
-      transform: translate(-50%, 0);
-      /* width : 40%; */
-      /* left : 30%; */
-      padding-left : 20px;
-      padding-right : 20px;
-      padding-top : 5px;
-      border-top-left-radius: 25px;
-      border-top-right-radius: 25px;
-      background-color:lightcyan;
-      align-items: center;
-      justify-content: center;
-      z-index : 10;
-      /* border : 1px solid black; */
-  }
-
-  .tool-panel div {
-      font-family: Roboto;
-      margin : 5px;
-      padding : 2px;
-  }
-
-  .noselect {
-    -webkit-touch-callout: none; /* iOS Safari */
-      -webkit-user-select: none; /* Safari */
-       -khtml-user-select: none; /* Konqueror HTML */
-         -moz-user-select: none; /* Old versions of Firefox */
-          -ms-user-select: none; /* Internet Explorer/Edge */
-              user-select: none; /* Non-prefixed version, currently
-                                    supported by Chrome, Edge, Opera and Firefox */
-  }
-
-  .tool-panel i {
-      margin : 5px;
-      cursor : pointer;
-      border-radius : 5px;
-      padding : 2px;
-      font-size: 18px;
-  }
-
-  .tool-panel .disabled {
-    color : lightgrey;
-    cursor : default;
-  }
-
-  .tool-panel .selected {
-      border : 1px solid grey
-  }
-
-  #sketch-red {
-      color :red;
-  }
-
-  #sketch-blue {
-    color :blue;
-}
-
-
-/* ***** sound panel *******/
-
-#sound-panel {
-    display: none;
-}
-
-.slider {
-    height : 5px;
-}
-
-/* ***** progress panel ***/
-#progress-panel {
-    position : fixed;
-    bottom : 0;
-    width : 100%;
-    height : 50px;
-    display : flex;
-    background-color:grey;
-    align-items: center;
-    justify-content: center;
-}
-
-.progress-box {
-    height : 30px;
-    background-color: red;
-    /* width : 50px; */
-    border-right : 1px solid black;
-}

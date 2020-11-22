@@ -5,8 +5,16 @@ export {
     changeEvent,
     gotoPath,
     createEventTree,
-    eventIndex
+    eventIndex,
+    openPanelTree,
+    gotoEvent
 }
+
+import {
+    createTreeHTML,
+    makeTimeline,
+    markSeen
+} from './html.js'
 
 import {
     manifest,
@@ -31,7 +39,8 @@ import {
     loadSounds,
     soundState,
     soundPlayCurrentEvent,
-    soundRecord
+    soundRecord,
+    updateSoundIcon
 } from "./sound.js"
 
 // const { gsap } = require("./gsap.min.js");
@@ -147,14 +156,17 @@ function loadSVG(node, index = 0, callback = null) {
                     if (child.nodeName == 'g')
                         node.svg = child;
                 }
-                
+
 
                 //remove the 'loading' class from the corresponding elements in the slide panel
                 if (node.div != null)
-                    node.div.classList.remove("slide-list-item-loading");
+                {
+                    console.log('removing loading')
+                    node.div.classList.remove("tree-view-item-loading");
+                }
                 for (let child of node.children)
                     if (child.type == 'show' || child.type == 'hide')
-                        child.div.classList.remove("slide-list-item-loading");
+                        child.div.classList.remove("tree-view-item-loading");
 
                 svgLoaded(node, index);
 
@@ -166,7 +178,7 @@ function loadSVG(node, index = 0, callback = null) {
                 // this means that the svg failed to load correctly
                 if (node.div != null) {
                     node.div.classList.add("disabled-event");
-                    node.div.classList.remove("slide-list-item-loading");
+                    node.div.classList.remove("tree-view-item-loading");
                 }
                 node.svg = null;
                 userAlert("Failed to load svg for " + node.name);
@@ -179,75 +191,13 @@ function loadSVG(node, index = 0, callback = null) {
 }
 
 
-function openPanelTree(event, open) {
-    if (open) {
-        event.subdiv.classList.remove('slide-stack-hidden');
-        event.div.childNodes[0].innerHTML = 'expand_more';
-    } else {
-        event.subdiv.classList.add('slide-stack-hidden');
-        event.div.childNodes[0].innerHTML = 'chevron_right';
-    }
-}
+
+
 
 
 //creates the tree of slides and events, without adding the svg's yet
 function createEventTree() {
-    function addDIV(event) //create an html item for the event in the  control panel  
-    {
-        function eventClicked(e) //what happens when an event is clicked in the control panel
-        {
-            if (e.target.nodeName == 'I') {
-                //the icon was clicked
-                if (event.type == 'child') // for child events, we fold/unfold the list of child events
-                {
-                    event.divopen = !event.divopen;
-                    openPanelTree(event, event.divopen);
-                }
-            } else {
-                //the name of the event was clicked
-                gotoEvent(event);
-            }
-        }
 
-        event.divopen = false;
-        if (event.parent == null) {
-            event.subdiv = document.getElementById('slide-stack');
-            event.div = null;
-        } else {
-            var parentDiv = event.parent.subdiv;
-            event.div = document.createElement("div");
-            event.div.classList.add("slide-list-item");
-            event.div.classList.add("slide-list-item-loading");
-
-            var icon;
-            if (event.disabled) {
-                event.div.classList.add("disabled-event");
-            }
-
-            if (event.type == "show")
-                icon = "visibility";
-            if (event.type == "hide")
-                icon = "visibility_off";
-            if (event.type == "child") {
-                icon = "chevron_right";
-            }
-
-            event.div.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
-
-            event.div.addEventListener('click', eventClicked);
-            parentDiv.appendChild(event.div);
-
-
-            if (event.type == 'child') {
-                event.subdiv = document.createElement("div");
-                event.subdiv.classList.add("slide-stack");
-                event.subdiv.classList.add("slide-stack-hidden");
-                parentDiv.appendChild(event.subdiv);
-            }
-        }
-    }
-
-    var totalDuration = 0;
     function createTreeRec(event, parent) //recursive function which loads a json for each slide. I might move this to having a single json.
     {
         const retval = {
@@ -256,16 +206,10 @@ function createEventTree() {
             name: event.name,
             parent: parent,
             audio: null,
-            duration : null,
+            duration: null,
             pageNumber: numberOfPages,
             children: []
         }
-
-        
-
-
-        addDIV(retval);
-
         if (retval.type == 'child') {
             numberOfPages++;
             for (const child of event.children) {
@@ -276,17 +220,6 @@ function createEventTree() {
                 parent: retval,
                 pageNumber: numberOfPages
             });
-
-            //add the durations for the sound events
-            for (let i = 0; i < retval.children.length; i++)
-            {
-             try {
-                 retval.children[i].duration = manifest.soundDict[retval.id][i].duration;
-                 totalDuration += retval.children[i].duration;
-             } catch (e) {
-                // retval.children[i].duration = null;
-             }
-            }
         }
 
         return retval;
@@ -296,7 +229,8 @@ function createEventTree() {
     eventTree = manifest.tree;
     eventTree.parent = null;
     eventTree = createTreeRec(manifest.tree, null);
-    console.log("total sound is "+ totalDuration/ 60 )
+    createTreeHTML();
+    makeTimeline();
     curEvent = eventTree;
 }
 
@@ -382,14 +316,13 @@ function changeEvent(dir) {
     }
 
     if (dir == 1) {
+        markSeen(curEvent, true);
         if (curEvent.type == 'child') {
-            curEvent.div.classList.add('slide-list-item-seen');
             openPanelTree(curEvent, true);
             pushIndexList(curEvent.parent, [0, eventIndex(curEvent)])
         } else
         if (curEvent.type == 'show' || curEvent.type == 'hide') {
             // hide or show
-            curEvent.div.classList.add('slide-list-item-seen');
             showHide(curEvent);
             curEvent = treeSibling(curEvent, 1);
         } else
@@ -413,6 +346,7 @@ function changeEvent(dir) {
             soundRecord();
     } else {
         //direction is backward
+        markSeen(curEvent,false);
         const prevEvent = treeSibling(curEvent, -1);
 
         if (prevEvent == null) //first event of its group
@@ -424,27 +358,38 @@ function changeEvent(dir) {
                 zoomSlide(curEvent.parent.parent, 1.5);
                 curEvent = curEvent.parent;
                 openPanelTree(curEvent, false);
-                curEvent.div.classList.remove('slide-list-item-seen');
+                markSeen(curEvent, false);
             }
 
         } else
         if (prevEvent.type == 'show' || prevEvent.type == 'hide') {
             // hide or show
-            prevEvent.div.classList.remove('slide-list-item-seen');
+            markSeen(prevEvent, false);
             showHide(prevEvent);
             curEvent = treeSibling(curEvent, -1);
         } else
         if (prevEvent.type == 'child') {
             openPanelTree(prevEvent, true);
-            pushIndexList(prevEvent.parent, [prevEvent.children.length - 1, eventIndex(prevEvent)])
+            pushIndexList(prevEvent.parent, [prevEvent.children.length - 1, eventIndex(prevEvent)]);
+            markSeen(curEvent, false);
         }
 
     }
 
     updatePageNumber();
+    updateSoundIcon();
 }
 
 
+function openPanelTree(event, open) {
+    if (open) {
+        event.subdiv.classList.remove('slide-stack-hidden');
+        event.div.childNodes[0].innerHTML = 'expand_more';
+    } else {
+        event.subdiv.classList.add('slide-stack-hidden');
+        event.div.childNodes[0].innerHTML = 'chevron_right';
+    }
+}
 
 function updateEventsSVG(slide, index) //makes visible or invisible the appropriate objects in the slide, so that events before (not including) index have already been performed
 {
@@ -497,14 +442,9 @@ function gotoPath(path) //move to an event given by a list of indices, given in 
         function updateRec(e) {
             if (e == event)
                 before = false;
-            //update the slide column 
-            if (e.div != null) //the root has no div
-            {
-                if (before)
-                    e.div.classList.add('slide-list-item-seen')
-                else
-                    e.div.classList.remove('slide-list-item-seen')
-            }
+            //update the colour of the timeline and tree view
+            if (e.parent != null) // the root has no divs in the tree view or timeline
+                markSeen(e,before);
             if (e.type == 'child')
                 for (let child of e.children)
                     updateRec(child);
