@@ -161,7 +161,6 @@ function loadSVG(node, index = 0, callback = null) {
                 //remove the 'loading' class from the corresponding elements in the slide panel
                 if (node.div != null)
                 {
-                    console.log('removing loading')
                     node.div.classList.remove("tree-view-item-loading");
                 }
                 for (let child of node.children)
@@ -372,6 +371,10 @@ function changeEvent(dir) {
             openPanelTree(prevEvent, true);
             pushIndexList(prevEvent.parent, [prevEvent.children.length - 1, eventIndex(prevEvent)]);
             markSeen(curEvent, false);
+        }
+
+        if (soundState == "play") {
+            soundPlayCurrentEvent(-1);
         }
 
     }

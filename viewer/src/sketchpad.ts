@@ -89,7 +89,8 @@ var sketchpadVisible = false;
 function toggleSketchpad() {
     sigCanvas = document.getElementById('svg');
     punkt = sigCanvas.createSVGPoint();
-    var frame = document.getElementById('slide-panel');
+    
+    
 
 
     if (sketchpadVisible) {
@@ -105,18 +106,18 @@ function toggleSketchpad() {
         is_touch_device = 'ontouchstart' in document.documentElement;
         if (is_touch_device) {
             // attach the touchstart, touchmove, touchend event listeners.
-            frame.addEventListener('touchstart', draw, false);
-            frame.addEventListener('touchmove', draw, false);
-            frame.addEventListener('touchend', draw, false);
+            sigCanvas.addEventListener('touchstart', draw, false);
+            sigCanvas.addEventListener('touchmove', draw, false);
+            sigCanvas.addEventListener('touchend', draw, false);
             // prevent elastic scrolling
-            frame.addEventListener('touchmove', function (event) {
+            sigCanvas.addEventListener('touchmove', function (event) {
                 event.preventDefault();
             }, false);
         } else {
-            frame.addEventListener('mousedown', draw, false);
-            frame.addEventListener('mousemove', draw, false);
-            frame.addEventListener('mouseup', draw, false);
-            // frame.addEventListener('mouseout', draw,false);
+            sigCanvas.addEventListener('mousedown', draw, false);
+            sigCanvas.addEventListener('mousemove', draw, false);
+            sigCanvas.addEventListener('mouseup', draw, false);
+            // sigCanvas.addEventListener('mouseout', draw,false);
         }
     }
     undoButtons();

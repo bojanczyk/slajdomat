@@ -1,7 +1,8 @@
-export { createTreeHTML, makeTimeline, markSeen, audioPlaying, updateEventDuration };
+export { createTreeHTML, makeTimeline, markSeen, audioPlaying, updateEventDuration, timelineButtons, totalSoundDuration, initPanels };
 import { openPanelTree, gotoEvent, eventTree, curEvent } from './event.js';
-import { manifest } from './viewer.js';
-import { gotoAudio } from './sound.js';
+import { manifest, playButton, prevButton, nextButton } from './viewer.js';
+import { gotoAudio, playbackRateChange, soundState } from './sound.js';
+var totalSoundDuration = 0;
 //create the tree list of the slides and event that is in the unfolding side panel on the left
 function createTreeHTML() {
     function createTreeHTMLRec(event) {
@@ -76,13 +77,14 @@ function makeTimeline() {
     //for each element, find the duration of its audio
     function computeDuration(event) {
         for (let i = 0; i < event.children.length; i++) {
+            event.children[i].soundOffset = totalSoundDuration;
             try {
                 event.children[i].duration = manifest.soundDict[event.id][i].duration;
-                totalDuration += event.children[i].duration;
+                totalSoundDuration += event.children[i].duration;
             }
             catch (e) {
                 event.children[i].duration = null;
-                totalDuration += noSoundDuration;
+                totalSoundDuration += noSoundDuration;
             }
             if (event.children[i].type == 'child')
                 computeDuration(event.children[i]);
@@ -109,11 +111,9 @@ function makeTimeline() {
             for (let child of event.children)
                 makeTimelineRec(child);
     }
-    var totalDuration = 0;
     const timeLine = document.getElementById('progress-line');
     computeDuration(eventTree);
     makeTimelineRec(eventTree);
-    console.log("total sound is " + totalDuration / 60);
 }
 //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
 function timelineClicked(event, e) {
@@ -124,11 +124,11 @@ function timelineClicked(event, e) {
     var a = e.offsetX;
     var b = target.offsetWidth;
     if (event == curEvent) {
-        console.log('curevent', a, b);
+        // console.log('curevent',a,b);
         gotoAudio(a / b);
     }
     else {
-        console.log('other event');
+        // console.log('other event');
         gotoEvent(event);
     }
 }
@@ -147,10 +147,62 @@ function markSeen(event, seen) {
         event.timeline.classList.remove('seen');
     }
 }
+//inputs number of seconds and formats it in mm:ss format
+function formatTime(time) {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time) % 60;
+    if (seconds < 10)
+        return minutes + ':0' + seconds;
+    else
+        return minutes + ':' + seconds;
+}
 //this function is called periodically when the audio is playing, and it updates the position of the slider
 function audioPlaying(e) {
-    // console.log(audio.currentTime, audio.duration);
+    const curTime = e.target.currentTime + curEvent.soundOffset;
+    document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
     curEvent.timeline.firstChild.style.width = (100 * e.target.currentTime / e.target.duration) + '%';
-    // document.getElementById('sound-range').value = ;
+}
+// the timeline uses two kinds of disply, depending on the whether the sound is playing, or not
+function timelineButtons() {
+    if (soundState == 'play') {
+        document.getElementById('progress-panel').classList.add('playing');
+        /*document.getElementById('prev-event').innerHTML='fast_rewind';
+        document.getElementById('next-event').innerHTML='fast_forward';*/
+    }
+    else {
+        document.getElementById('progress-panel').classList.remove('playing');
+        /*document.getElementById('prev-event').innerHTML='navigate_before';
+        document.getElementById('next-event').innerHTML='navigate_next'
+        */
+    }
+}
+//toggles the side panel on the left with the list of slides
+function togglePanel(visible) {
+    if (visible) {
+        gsap.to("#left-panel", {
+            width: "20%",
+            duration: 0.3
+        });
+    }
+    else {
+        gsap.to("#left-panel", {
+            width: "0%",
+            duration: 0.3
+        });
+    }
+}
+//initialise the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
+function initPanels() {
+    document.addEventListener('mousemove', function (e) {
+        if (e.clientX < 20)
+            togglePanel(true);
+    });
+    document.getElementById('close-panel').addEventListener('click', function () {
+        togglePanel(false);
+    });
+    document.getElementById('prev-event').addEventListener('click', prevButton);
+    document.getElementById('next-event').addEventListener('click', nextButton);
+    document.getElementById('play-button').addEventListener('click', playButton);
+    document.getElementById('sound-speed').addEventListener('click', playbackRateChange);
 }
 //# sourceMappingURL=html.js.map

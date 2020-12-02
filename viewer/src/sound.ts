@@ -8,7 +8,8 @@ export {
     soundState,
     playbackRateChange,
     gotoAudio,
-    updateSoundIcon
+    updateSoundIcon,
+    soundAdvance
 }
 
 import {
@@ -27,10 +28,12 @@ import {
 } from "./event.js"
 
 import {
-    audioPlaying, 
+    audioPlaying,
     makeTimeline,
-    updateEventDuration
+    updateEventDuration,
+    timelineButtons
 } from './html.js'
+import { glob } from 'glob';
 
 
 
@@ -40,8 +43,7 @@ import {
 //"pause" means that we have paused playing sound
 //null means none of the above
 var soundState = null;
-var playbackRate = 1;
-
+var globalAudio;
 
 
 
@@ -60,11 +62,10 @@ function soundStop() {
     }
     soundState = null;
     updateSoundIcon();
+    timelineButtons();
 }
 
-function currentSound() {
-    return curEvent.audio;
-}
+
 
 
 function updateSoundIcon() {
@@ -76,10 +77,12 @@ function updateSoundIcon() {
     }
 }
 
+//start recoreding sound
 function soundRecord() {
     recordSound(curEvent).then(x => {
         soundIcon("record");
         soundState = "record";
+        timelineButtons();
     }).catch((error) => {
         soundState = null;
         soundIcon(null);
@@ -87,24 +90,32 @@ function soundRecord() {
             userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
         } else
             userAlert(error)
+        timelineButtons();
+
     })
 }
 
-var globalAudio;
 
 
+//start playing the sound
 function soundPlay() {
-    if (soundState == "pause") {
+    if (soundState == "pause")
+     {
+         //if the current state is paused, then resume playing
         soundIcon("pause");
         globalAudio.play();
         soundState = "play";
     } else {
-        soundStop();
+        // if the current state is not paused, then start playing the sound for the current event
+
+        soundStop(); //I don't remember this is used, maybe  in case we are recording?
         if (soundPlayCurrentEvent()) {
             soundState = "play";
             soundIcon("pause");
         }
     }
+    timelineButtons();
+
 
 }
 
@@ -112,9 +123,12 @@ function soundPause() {
     soundIcon("play");
     globalAudio.pause();
     soundState = "pause";
+    timelineButtons();
 }
 
 
+
+//set 
 function soundIcon(icon) {
     if (icon != null) {
         document.getElementById("play-button").style.opacity = '1';
@@ -129,6 +143,9 @@ function soundIcon(icon) {
         }
     } else
         document.getElementById("play-button").style.opacity = '0';
+
+    
+    
 }
 
 function toggleSoundIcon(on) {
@@ -192,12 +209,14 @@ function recordSound(event) {
                         file: Array.from(y)
                     };
                     sendToServer(retmsg)
-                    .then(r => r.json())
-                    .then(r => {event.duration = r.duration;
-                        updateEventDuration(event);}).catch((e) => {
+                        .then(r => r.json())
+                        .then(r => {
+                            event.duration = r.duration;
+                            updateEventDuration(event);
+                        }).catch((e) => {
                             console.log(e);
-                        userAlert("Could not send this sound to the server: " + longName)
-                    });
+                            userAlert("Could not send this sound to the server: " + longName)
+                        });
 
                     /*
                     if (soundState == null)
@@ -210,21 +229,37 @@ function recordSound(event) {
 }
 
 
+const playbackRates = [1,1.5,2,0.7];
+var playbackRateIndex = 0;
+//the possible values are 1, 1.5, 2
+function playbackRateChange() {
 
-function playbackRateChange(d) {
-    if (playbackRate + d > 0.1 && playbackRate + d < 8) {
-        playbackRate += d;
-        globalAudio.playbackRate = playbackRate;
-    }
-    userAlert("Playback rate is now " + playbackRate.toFixed(1));
-
+    playbackRateIndex = (playbackRateIndex + 1) % playbackRates.length;
+    globalAudio.playbackRate = playbackRates[playbackRateIndex];
+    document.getElementById('sound-speed').innerHTML= '×'+playbackRates[playbackRateIndex];
 }
 
-function soundPlayCurrentEvent() {
+
+
+function soundPlayCurrentEvent(time = 0) {
+
+    function currentSound() {
+        return curEvent.audio;
+    }
+
     if (currentSound() != null) {
         globalAudio = currentSound();
-        globalAudio.playbackRate = playbackRate;
-        globalAudio.currentTime = 0;
+        globalAudio.playbackRate = playbackRates[playbackRateIndex];
+        if (time < 0)
+        {
+            //negative time is counted from the end of the audio
+            globalAudio.currentTime = Math.max(0,globalAudio.duration - time);
+        }
+        else 
+        {
+            //non-negative time is counted in the usual way
+            globalAudio.currentTime = time;
+        }
         globalAudio.play();
         return true;
     } else {
@@ -276,15 +311,26 @@ function gotoAudio(ratio) {
     }
 }
 
+const soundIncrement = 10;
+//advance the sound by 10 second if t=1 and by -10 seconds otherwise
+function soundAdvance(t) {
+    if (t < 0) {
+        if (globalAudio.currentTime < 1) 
+        {//if we are close to the beginning then we move to the previous event
+            globalAudio.pause();
+            changeEvent(-1);
+        }
+        else 
+        {
+            globalAudio.currentTime = Math.max(0, globalAudio.currentTime - soundIncrement );
+        }
+    }
+    else
+    {
+        globalAudio.currentTime = Math.min(globalAudio.duration, globalAudio.currentTime + soundIncrement );
+    }
+}
 
-
-// document.getElementById('back-ten').addEventListener('click', function (event) {
-//     if (globalAudio.currentTime > 10) {
-//         globalAudio.currentTime -= 10;
-//     }
-//     else
-//         globalAudio.currentTime =0;
-// });
 
 //we begin by loading the sound database
 soundIcon(null);

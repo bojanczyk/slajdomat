@@ -1,14 +1,14 @@
-export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundState, playbackRateChange, gotoAudio, updateSoundIcon };
+export { soundStop, soundPlay, soundPause, soundRecord, loadSounds, soundPlayCurrentEvent, soundState, playbackRateChange, gotoAudio, updateSoundIcon, soundAdvance };
 import { manifest, userAgent, fileName, sendToServer, userAlert } from './viewer.js';
 import { curEvent, eventIndex, eventTree, changeEvent } from "./event.js";
-import { audioPlaying, updateEventDuration } from './html.js';
+import { audioPlaying, updateEventDuration, timelineButtons } from './html.js';
 //there are four possible states for the sound
 //"recording" means that we are recording sound
 //"play" means that we are playing sound
 //"pause" means that we have paused playing sound
 //null means none of the above
 var soundState = null;
-var playbackRate = 1;
+var globalAudio;
 //stop playing or recording, thus making the sound state null
 function soundStop() {
     if (soundState == "play") {
@@ -23,9 +23,7 @@ function soundStop() {
     }
     soundState = null;
     updateSoundIcon();
-}
-function currentSound() {
-    return curEvent.audio;
+    timelineButtons();
 }
 function updateSoundIcon() {
     if (soundState == null) {
@@ -35,10 +33,12 @@ function updateSoundIcon() {
             soundIcon(null);
     }
 }
+//start recoreding sound
 function soundRecord() {
     recordSound(curEvent).then(x => {
         soundIcon("record");
         soundState = "record";
+        timelineButtons();
     }).catch((error) => {
         soundState = null;
         soundIcon(null);
@@ -47,28 +47,34 @@ function soundRecord() {
         }
         else
             userAlert(error);
+        timelineButtons();
     });
 }
-var globalAudio;
+//start playing the sound
 function soundPlay() {
     if (soundState == "pause") {
+        //if the current state is paused, then resume playing
         soundIcon("pause");
         globalAudio.play();
         soundState = "play";
     }
     else {
-        soundStop();
+        // if the current state is not paused, then start playing the sound for the current event
+        soundStop(); //I don't remember this is used, maybe  in case we are recording?
         if (soundPlayCurrentEvent()) {
             soundState = "play";
             soundIcon("pause");
         }
     }
+    timelineButtons();
 }
 function soundPause() {
     soundIcon("play");
     globalAudio.pause();
     soundState = "pause";
+    timelineButtons();
 }
+//set 
 function soundIcon(icon) {
     if (icon != null) {
         document.getElementById("play-button").style.opacity = '1';
@@ -149,18 +155,29 @@ function recordSound(event) {
         });
     });
 }
-function playbackRateChange(d) {
-    if (playbackRate + d > 0.1 && playbackRate + d < 8) {
-        playbackRate += d;
-        globalAudio.playbackRate = playbackRate;
-    }
-    userAlert("Playback rate is now " + playbackRate.toFixed(1));
+const playbackRates = [1, 1.5, 2, 0.7];
+var playbackRateIndex = 0;
+//the possible values are 1, 1.5, 2
+function playbackRateChange() {
+    playbackRateIndex = (playbackRateIndex + 1) % playbackRates.length;
+    globalAudio.playbackRate = playbackRates[playbackRateIndex];
+    document.getElementById('sound-speed').innerHTML = '×' + playbackRates[playbackRateIndex];
 }
-function soundPlayCurrentEvent() {
+function soundPlayCurrentEvent(time = 0) {
+    function currentSound() {
+        return curEvent.audio;
+    }
     if (currentSound() != null) {
         globalAudio = currentSound();
-        globalAudio.playbackRate = playbackRate;
-        globalAudio.currentTime = 0;
+        globalAudio.playbackRate = playbackRates[playbackRateIndex];
+        if (time < 0) {
+            //negative time is counted from the end of the audio
+            globalAudio.currentTime = Math.max(0, globalAudio.duration - time);
+        }
+        else {
+            //non-negative time is counted in the usual way
+            globalAudio.currentTime = time;
+        }
         globalAudio.play();
         return true;
     }
@@ -208,13 +225,22 @@ function gotoAudio(ratio) {
         globalAudio.currentTime = globalAudio.duration * ratio;
     }
 }
-// document.getElementById('back-ten').addEventListener('click', function (event) {
-//     if (globalAudio.currentTime > 10) {
-//         globalAudio.currentTime -= 10;
-//     }
-//     else
-//         globalAudio.currentTime =0;
-// });
+const soundIncrement = 10;
+//advance the sound by 10 second if t=1 and by -10 seconds otherwise
+function soundAdvance(t) {
+    if (t < 0) {
+        if (globalAudio.currentTime < 1) { //if we are close to the beginning then we move to the previous event
+            globalAudio.pause();
+            changeEvent(-1);
+        }
+        else {
+            globalAudio.currentTime = Math.max(0, globalAudio.currentTime - soundIncrement);
+        }
+    }
+    else {
+        globalAudio.currentTime = Math.min(globalAudio.duration, globalAudio.currentTime + soundIncrement);
+    }
+}
 //we begin by loading the sound database
 soundIcon(null);
 //# sourceMappingURL=sound.js.map

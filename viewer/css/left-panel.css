@@ -1,21 +1,22 @@
 /* style sheet for the panel on the left, which contains the tree view of the slides */
 
+
 #left-panel {
     position : relative;
     color : black;
     display: inline-block;
     background-color:whitesmoke;
     width : 0%;
-    height: 100%;
+    /* height: 100%; */
     vertical-align: top;
     z-index : +1;
     cursor: default;
     font-family: 'Roboto';
     font-weight: 300;
-    position : relative;
     overflow : hidden;
     white-space: nowrap;
 }
+
 
 .tree-view-item {
     overflow: hidden;    

@@ -1,7 +1,8 @@
-export { manifest, userAlert, updatePageNumber, presentationURL, userAgent, fileName, sendToServer };
+export { manifest, userAlert, updatePageNumber, presentationURL, userAgent, fileName, sendToServer, playButton, nextButton, prevButton };
 import { createEventTree, curEvent, eventTree, numberOfPages, gotoPath, changeEvent } from "./event.js";
+import { initPanels } from "./html.js";
 // import { toggleSketchpad } from "./sketchpad.js";
-import { soundStop, soundState, soundPlay, soundPause, soundRecord, playbackRateChange } from "./sound.js";
+import { soundStop, soundState, soundPlay, soundPause, soundRecord, soundAdvance } from "./sound.js";
 // const { gsap } = require("./gsap.min.js");
 // import {gsap} from "gsap"
 var manifest;
@@ -11,21 +12,6 @@ var presentationName; //the name of the slides
 var presentationURL;
 function getServer() {
     return 'http://localhost:8001';
-}
-//toggles the side panel on the left with the list of slides
-function togglePanel(visible) {
-    if (visible) {
-        gsap.to("#left-panel", {
-            width: "20%",
-            duration: 0.3
-        });
-    }
-    else {
-        gsap.to("#left-panel", {
-            width: "0%",
-            duration: 0.3
-        });
-    }
 }
 //displays a panel for a short time
 function shortDisplay(panel) {
@@ -69,32 +55,6 @@ function updatePageNumber() {
         document.getElementById("next-event").style.visibility = "hidden";
     else
         document.getElementById("next-event").style.visibility = "visible";
-}
-/*
-
-//we use a top method for accessing a stack
-if (!Array.prototype.top) {
-    Array.prototype.top = function () {
-        return this[this.length - 1];
-    };
-};
-*/
-function playButton() {
-    if (soundState == "record")
-        soundStop();
-    else if (soundState == "play")
-        soundPause();
-    else
-        soundPlay();
-}
-function nextButton() {
-    if (soundState != "record")
-        soundStop();
-    changeEvent(1);
-}
-function prevButton() {
-    soundStop();
-    changeEvent(-1);
 }
 /*
 // I don't know why this does not work
@@ -175,16 +135,35 @@ function getPathFromURL() {
         return [0]; // default path is the first event of the root
     }
 }
+function playButton() {
+    if (soundState == "record")
+        soundStop();
+    else if (soundState == "play")
+        soundPause();
+    else
+        soundPlay();
+}
+function nextButton() {
+    if (soundState == 'play') {
+        soundAdvance(1);
+    }
+    else {
+        if (soundState == "pause")
+            soundStop();
+        changeEvent(1);
+    }
+}
+function prevButton() {
+    if (soundState == 'play') {
+        soundAdvance(-1);
+    }
+    else {
+        soundStop();
+        changeEvent(-1);
+    }
+}
 // the main event dispatcher
 function keyListener(event) {
-    if (event.keyCode == '190') {
-        // >
-        playbackRateChange(0.2);
-    }
-    if (event.keyCode == '188') {
-        // <
-        playbackRateChange(-0.2);
-    }
     if (event.keyCode == '39') {
         //arrow right
         nextButton();
@@ -212,16 +191,7 @@ function keyListener(event) {
 window.onload = function () {
     // helpPanel();
     document.addEventListener("keydown", keyListener);
-    document.addEventListener('mousemove', function (e) {
-        if (e.clientX < 20)
-            togglePanel(true);
-    });
-    document.getElementById('close-panel').addEventListener('click', function () {
-        togglePanel(false);
-    });
-    document.getElementById('prev-event').addEventListener('click', prevButton);
-    document.getElementById('next-event').addEventListener('click', nextButton);
-    document.getElementById('play-button').addEventListener('click', playButton);
+    initPanels();
     let url = new URL(window.location.href);
     presentationURL = url.searchParams.get('slides');
     presentationDir = 'slides/' + presentationURL;
