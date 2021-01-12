@@ -82,6 +82,8 @@ function svgLoaded(node, index) {
     }
     node.svg.setAttribute("transform", transformToString(node.transform));
     document.getElementById("svg").appendChild(node.svg);
+    if (node.svgdefs != null)
+        document.getElementById("svg").appendChild(node.svgdefs);
 }
 //loads the SVG for the given node in the slide tree
 function loadSVG(node, index = 0, callback = null) {
@@ -102,11 +104,15 @@ function loadSVG(node, index = 0, callback = null) {
         document.body.appendChild(ob);
         ob.onload = function () {
             try {
-                var doc = ob.contentDocument.firstElementChild;
                 //in principle, the right element should be the first child, but Marek Sokołowski mentioned that expressVPN changes inserts some wrong children, hence the following code
                 for (const child of ob.contentDocument.firstElementChild.children) {
                     if (child.nodeName == 'g')
                         node.svg = child;
+                    //the svg has also some definitions, which will contain images
+                    if (child.nodeName == 'defs') {
+                        node.svgdefs = child;
+                        cleanDefs(node.svgdefs); // this function is a hack, it removes clip masks from the definitions
+                    }
                 }
                 //remove the 'loading' class from the corresponding elements in the slide panel
                 if (node.div != null) {
@@ -134,6 +140,13 @@ function loadSVG(node, index = 0, callback = null) {
                 }
             }
         };
+    }
+}
+//this function is an ugly hack. In the current situation, clip masks are mis-applied. This could be because their coordinates are not localized, but for the moment I just delete all clip masks
+function cleanDefs(svg) {
+    for (const c of svg.childNodes) {
+        if (c.nodeName == 'clipPath')
+            c.remove();
     }
 }
 //creates the tree of slides and events, without adding the svg's yet

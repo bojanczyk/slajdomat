@@ -6,6 +6,7 @@
 
 :root {
   --grafitowy : #2c2c2c;
+	--niebieski : #18A0FB;
   --select-color : #daebf7;
   --disabled-color : Silver;
 }
@@ -13,6 +14,14 @@
 
 body {
     font-family: 'Inter';
+    font-size: 11px;
+    letter-spacing : 0.2;
+    font-weight : 400;
+    letter-spacing : 0.055px;
+}
+
+input {
+	font-family: 'Inter';
     font-size: 11px;
     letter-spacing : 0.2;
     font-weight : 400;
@@ -62,7 +71,7 @@ padding-right : 8px;
   align-items : center;
 }
 
-.event-list .list-item {
+#event-list .list-item {
    padding-left : 10px;
 }
 
@@ -91,96 +100,10 @@ color : LightGrey;
   padding : 10px;
 }
 
-
-/* dropdown */ 
-
-.dropbtn {
-  //background-color: #4CAF50;
-  //color: white;
-  font-family : 'Roboto';
-  font-weight : 500;
-  border: none;
-  cursor: pointer;
-  vertical-align : 40%;
-  padding-bottom : 5px;
-}
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 210px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-  padding-top : 8px;
-  padding-bottom : 8px;
-  height : 300px;
-  overflow : scroll;
-}
-
-.dropdown-content .list-item {
-  color: black;
-  text-decoration: none;
-  display: block;
-}
-
-.dropdown-content {
-}
-
-.dropdown-content .selectable:hover, .child-item:hover  {background-color: var(--select-color)}
-
-.dropdown-content .list-item {
-  padding-left : 10px;
-}
-
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-.dropdown:hover .dropbtn {
-  
-}
-
-.dropbtn .dropdown-up {
-  display: none;
-}
-
-.dropdown:hover .dropbtn .dropdown-down  {
-  display: none;
-}
-
-.dropdown:hover .dropbtn .dropdown-up  {
-  display: inline;
-}
-
-.dropbtn i {
-  color : black;
-  vertical-align : -20%;
-}
-
-.dropdown-content .list-item {
-  cursor: default;
-}
-
-
-#add-show.disabled, #add-hide.disabled { 
-  color : LightGrey;
-}
-
-#add-show.selectable, #add-hide.selectable {
-  color : black;
-}
-
 .separator {
   border-style : solid;
-  border-width : 0.5px;
-  border-color : LightGrey;
+  border-width : 1px;
+  border-color :Grey;
   margin-top : 5px;
   margin-bottom : 5px;
 }
@@ -190,7 +113,7 @@ color : LightGrey;
 
 .top-buttons {
   display : flex;
-  background-color: var(--grafitowy);
+  background-color: black;
   align-items : center;
   padding-right : 5px;
 }
@@ -239,7 +162,8 @@ color : LightGrey;
 cursor:pointer;
 }
 
-#events-label {
+#event-list {
+	margin-top : 8px;
   flex : 1;
   overflow : scroll;
 }
@@ -349,105 +273,207 @@ background-color : var(--select-color);
 }
 
 
+/* toolbar for events */
+#event-toolbar {
+	display : flex;
+	height : 35px;
+  background-color: var(--grafitowy);
+	align-items: center;
+	padding-left: 8px;
+}
+
+#event-toolbar .disabled {
+	color: darkgray;
+}
+
+.event-toolbar-element {
+	user-select: none;
+  color : white;
+  cursor: pointer;
+	height: 100%;
+	display : flex;
+	align-items: center;
+	padding : 5px;
+	padding-right : 8px;
+}
+
+.dropping-arrow {
+	margin-left: 4px;
+}
+
+.dropping-arrow:hover  {
+  margin-top: 10px;
+}
+
+#event-toolbar .labelrow {
+	padding : 10px;
+}
+
+#event-toolbar .row {
+	display : flex;
+}
+
+.event-toolbar-element:hover:not(.disabled) {
+	background-color: Black;
+}
+.row i {
+	padding-right: 7px;
+}
+
+.row .label {
+	padding-left : 7px;
+}
+
+.toolbar-dropdown .row:hover:not(.disabled) {
+	background-color:var(--niebieski) ;
+}
+
+.toolbar-triangle {
+	opacity: 0;
+	position: relative;
+	top : 20px;
+	left : -13px;
+	width: 0; 
+  height: 0; 
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  
+  border-bottom: 6px solid var(--grafitowy);
+}
+
+.unfolded .toolbar-triangle {
+	display: block;
+	opacity : 100%
+}
+
+.toolbar-dropdown {
+	display : none;
+	border-radius: 2px;
+  position: absolute;
+  background-color: var(--grafitowy);
+  min-width: 210px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+	left : 10px;
+  top : 72px;
+  overflow : scroll;
+	max-height: 400px;
+}
+
+.unfolded .toolbar-dropdown {
+	display : inline-block;
+}
 
 </style>
 <div id="entire-plugin" onmouseenter="pluginMouseenter();" onmouseleave="pluginMouseleave()">
-  <div class="column hidden" id="settings-column">
-  <i id="close-settings" class="material-icons" onclick="settingsPanel(false)">close</i>
-  <div class= "row">
-  Settings
-  </div>
-  
-    <div class="row">
-      <div class="switch" id="matematyk-toggle">
-        <input class="switch__toggle" type="checkbox" id="matematyk-checkbox">
-        <label class="switch__label" for="uniqueIdA">Latex and math extension</label>
-      </div>
-    </div>
-  </div>
+	<div class="column hidden" id="settings-column">
+		<i id="close-settings" class="material-icons" onclick="settingsPanel(false)">close</i>
+		<div class="row">
+			Settings
+		</div>
+
+		<div class="row">
+			<div class="switch" id="matematyk-toggle">
+				<input class="switch__toggle" type="checkbox" id="matematyk-checkbox">
+				<label class="switch__label" for="uniqueIdA">Latex and math extension</label>
+			</div>
+		</div>
+	</div>
 
 
-  <div class="column hidden" id="no-slide-column">
-  <i  class="material-icons" onclick="settingsPanel(true)">settings</i>
-  <div class="row">
-  No slide is selected. 
-  </div>
-    <div class="row">
-      <button class='button button--primary' onclick='makeFirst(1024,768)'>Create slide 1024 x 768</button>
-      <button class='button button--primary' onclick='makeFirst(1280,960)'>Create slide 1280 x 960</button>
-    </div>
+	<div class="column hidden" id="no-slide-column">
+		<i class="material-icons" onclick="settingsPanel(true)">settings</i>
+		<div class="row">
+			No slide is selected.
+		</div>
+		<div class="row">
+			<button class='button button--primary' onclick='makeFirst(1024,768)'>Create slide 1024 x 768</button>
+			<button class='button button--primary' onclick='makeFirst(1280,960)'>Create slide 1280 x 960</button>
+		</div>
+	</div>
 
-  </div>
+	<div class="column hidden" id="slide-column">
+		<div class="top-buttons">
+			<div class="icon-button" onclick="exportButton()">
+				<div id="icon-play" class="icon icon--play"></div>
+			</div>
+			<div id="slide-name">
+				mikla </div>
+			<i id="parent-button" class="material-icons" onclick="parentButton()">arrow_upward</i>
+			<div id="slide-count"></div>
+			<i class="material-icons" onclick="settingsPanel(true)">settings</i>
+		</div>
 
-  <div class="column hidden" id="slide-column">
-    <div class="top-buttons">
-      <div class="icon-button" onclick="exportButton()">
-        <div id="icon-play" class="icon icon--play"></div>
-      </div>
-      <div id="slide-name">
-        mikla </div>
-      <i id="parent-button" class="material-icons" onclick="parentButton()">arrow_upward</i>
-      <div id="slide-count"></div>
-      <i  class="material-icons" onclick="settingsPanel(true)">settings</i>
-    </div>
+		<!-- The toolbar which contains buttons for creating events -->
+		<div id="event-toolbar">
+			<!-- the dropdown menu for showing/hiding -->
+			<div class="event-toolbar-element" id="event-toolbar-show">
+				<i class="material-icons">visibility</i>
+				<div class='dropping-arrow'>
+					<i class="material-icons">keyboard_arrow_down</i>
+				</div>
+				<div class='toolbar-triangle'>
+				</div>
+				<div class="toolbar-dropdown" id="dropdown-show">
+					<div class="row" id='dropdown-show-show'>
+						<i class="material-icons">visibility</i>
+						Create a showing event
+					</div>
+					<div class="row" id='dropdown-show-hide'>
+						<i class="material-icons">visibility_off</i>
+						Create a hiding event
+					</div>
+				</div>
+			</div>
+			<!-- the dropdown menu for zoom events -->
+			<div class="event-toolbar-element" id="event-toolbar-zoom">
+				<i class="material-icons">zoom_out_map</i>
+				<div class='dropping-arrow'>
+					<i class="material-icons">keyboard_arrow_down</i>
+				</div>
+				<div class='toolbar-triangle'>
+				</div>
+				<div class="toolbar-dropdown" id="dropdown-zoom">
+					<div class="labelrow">
+						Create a link to new slide
+					</div>
+					<div class="row" id='dropdown-zoom-new'>
+						<i class="material-icons">add</i>
+						<input type="input" id='new-child-name' placeholder='Name of new slide' />
+					</div>
+					<div class="separator"> </div>
+					<div class="labelrow">
+						Create a link to existing slide
+					</div>
+				</div>
+			</div>
 
-    <div class="row" id="events-label">
-      <div class="dropdown">
-        <div class="dropbtn" onmouseover="dropDownMouseover(this)">
-          Events
-          <i class="material-icons">add</i>
-        </div>
-        <div class="dropdown-content" id="dropdown-content">
-          <div class="list-item">
-            <div class="list-label no-pointer" id="add-event">Add event for selection</div>
-          </div>
-          <div class="event-list">
-            <div class="list-item" id="add-show" onclick="dropDownClick('show')">
-              <i class="material-icons">visibility</i>
-              <div class="list-label" id="add-show">Show event for selection</div>
-            </div>
-            <div class="list-item" id="add-hide" onclick="dropDownClick('hide')">
-              <i class="material-icons">visibility_off</i>
-              <div class="list-label" id="add-hide">Hide event for selection</div>
-            </div>
-          </div>
+		</div>
 
-          <div class="separator"> </div>
+		<!-- the list of events in the current slide -->
+		<div id="event-list"> </div>
 
-          <div class="list-item">
-            <div class="list-label no-pointer" id="add-child">Add child slide</div>
-          </div>
-          <div class="event-list" id="child-list">
-            <div class="list-item selectable" id="new-child" onclick="newChildClick()">
-              <i class="material-icons">add</i>
-              <div class="list-label">Create new child slide</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="event-list" class="event-list"> </div>
-    </div>
 
-    <div id='matematyk'>
-      <div class="matematyk-row" id='matematyk-latex'>
-        <i id="latexit-icon" class="material-icons sigma-button">
-          functions
-        </i>
-        <div id='latex-button'> Latex selection </div>
-        <div class="spacer"> </div>
-      </div>
-      <div class="matematyk-row" id='matematyk-insert'>
-        <i class="material-icons sigma-button">
-          functions
-        </i>
-        <div> Insert </div>
-        <input type="input" id='matematyk-input' placeholder="Σ">
-        <div> in math font </div>
-      </div>
-      <div id="matematyk-words">
-      </div>
-    </div>
-  </div>
+		<div id='matematyk'>
+			<div class="matematyk-row" id='matematyk-latex'>
+				<i id="latexit-icon" class="material-icons sigma-button">
+					functions
+				</i>
+				<div id='latex-button'> Latex selection </div>
+				<div class="spacer"> </div>
+			</div>
+			<div class="matematyk-row" id='matematyk-insert'>
+				<i class="material-icons sigma-button">
+					functions
+				</i>
+				<div> Insert </div>
+				<input type="input" id='matematyk-input' placeholder="Σ">
+				<div> in math font </div>
+			</div>
+			<div id="matematyk-words">
+			</div>
+		</div>
+	</div>
 </div>
 
 
@@ -627,10 +653,13 @@ document.addEventListener("dragover", (event) => {
   event.preventDefault();
 });
 
+
+
+
+
 document.addEventListener("drop", ({
   target
 }) => {
-
   var realtarget;
   if (target.classList.contains("dropzone"))
     realtarget = target;
@@ -671,60 +700,6 @@ function postMessage(msg) {
 }
 
 
-//when the user has clicked 'add a new child slide'
-function newChildClick(event) {
-  //hide the dropdown menu
-  document.getElementById("dropdown-content").style.display = "none";
-  postMessage({
-      type: 'createEvent',
-      id: null,
-      subtype: 'child'
-    })
-}
-
-
-//when an item of the dropdown menu is clicked
-function dropDownClick(event) {
-  //hide the dropdown menu
-  document.getElementById("dropdown-content").style.display = "none";
-
-  if (event == "show" || event == "hide") {
-    if (document.getElementById("add-show").classList.contains("disabled"))
-      return;
-    // show and hide buttons send strings
-    postMessage({
-      type: 'createEvent',
-      subtype: event
-    })
-  } else
-  if (event.startsWith(dropDownPrefix)) {
-    // add child buttons send events
-    var clickedid = event.slice(dropDownPrefix.length);
-    //a child event was clicked
-    postMessage({
-      type: 'createEvent',
-      id: clickedid,
-      subtype: 'child'
-    });
-  }
-}
-
-//when the dropdown menu is hovered
-//reanable visibility, which might have been turned off after the last click
-function dropDownMouseover(event) {
-  //send a message to the backend, so that the selection is forgotten
-  postMessage({
-    type: 'hoverEvent',
-    index : -1
-  });
-  //update the contents of the dropdown menu
-  postMessage({
-    type: 'requestDropDown'
-  });
-  document.getElementById("dropdown-content").style.display = "";
-}
-
-
 function changeSlide(msg) {
   docName = msg.docName;
   if ('slide' in msg) {
@@ -744,7 +719,6 @@ function changeSlide(msg) {
     showColumn('no-slide-column');
   }
 }
-
 
 function eventIconClick(index) {
   postMessage({
@@ -796,51 +770,128 @@ function makeEvent(event, index) {
   }
 }
 
-//get the contents for the dropdown menu 
-function dropDownContents(msg) {
-if (msg.selected) {
-      document.getElementById("add-show").classList.add("selectable");
-      document.getElementById("add-show").classList.remove("disabled");
-      document.getElementById("add-hide").classList.add("selectable");
-      document.getElementById("add-hide").classList.remove("disabled");
-    } else {
-      document.getElementById("add-show").classList.remove("selectable");
-      document.getElementById("add-show").classList.add("disabled");
-      document.getElementById("add-hide").classList.remove("selectable");
-      document.getElementById("add-hide").classList.add("disabled");
-    }
+//if the selection was changed in the ui, we need to disable/enable corresponding elements of the toolbar and dropdown. This function is triggered by a message from figma.
+function selChange(msg) {
+	const eventDropdowns = [
+		'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide'
+	]
 
-    var childlist = document.getElementById("child-list");
+	for (const i of eventDropdowns) {
+		var dom = document.getElementById(i);
+		if (msg.selected) {
+			dom.classList.remove('disabled')
+		} else {
+			dom.classList.add('disabled')
+		}
+	}
+}
 
-    //if I iterate over children and remove them, this messes with the iterator
-    //so I first creat a copy of the children;
-    var tempchildlist = [];
-    for (const x of childlist.childNodes)
-      if (x.id != "new-child")
-        tempchildlist.push(x);
-    for (const x of tempchildlist)
-      x.remove();
+//the event handlers for the clicking on the buttons in the event toolbar, which create dropdowns 
+for (const toolbarButton of document.getElementsByClassName('event-toolbar-element')) {
+	toolbarButton.addEventListener('click', (event) => {
+		//go up the tree until you find a button
+		function stoppingCriterion(target) {
+			return (target.nodeName == 'DIV');
+		}
+		var target = event.target;
+		while (!stoppingCriterion(target)) {
+			target = target.parentNode;
+		}
+		if (target.classList.contains('dropping-arrow')) {
+			//the little drop-down arrow was clicked, which means that the visibility of the dropdown should be toggled
 
+			if (toolbarButton.classList.contains('unfolded'))
+				toolbarButton.classList.remove('unfolded')
+			else {
+				//fold the other toolbars
+				for (const otherToolbarButton of document.getElementsByClassName('event-toolbar-element'))
+					otherToolbarButton.classList.remove('unfolded');
+				//unfold the current one
+				toolbarButton.classList.add('unfolded');
+				//ask for a refresh of the dropdown contents
+				postMessage({
+					type: 'requestDropDown'
+				});
+			}
+		} else {
+			if (!target.classList.contains('disabled')) {
+				//do what needs to be done
 
-    for (const item of msg.slides) {
-      var child = document.createElement("div");
-      child.id = dropDownPrefix + item.id;
-      child.onclick = function () {
-        dropDownClick(dropDownPrefix + item.id);
-      };
-      child.innerHTML = "<i class=\"material-icons\">zoom_out_map</i> <div class=\"list-label\">" + item.name + "</div>";
-      child.classList.add("list-item");
-      child.classList.add("selectable");
-      childlist.appendChild(child)
-    }
+				//the button that was clicked is one for the show/hide events
+				if (target.id.startsWith('dropdown-show-') || target.id == 'event-toolbar-show') {
+					showEventsClicked(target.id);
+					toolbarButton.classList.remove('unfolded');
+				}
+
+				// a link to a child was created
+				if (target.id.startsWith(dropDownPrefix)) {
+					var clickedid = target.id.slice(dropDownPrefix.length);
+					postMessage({
+						type: 'createEvent',
+						id: clickedid,
+						subtype: 'child'
+					});
+					toolbarButton.classList.remove('unfolded');
+				}
+
+				// creation of a new child is requested
+				if (target.id == 'event-toolbar-zoom' || target.id == 'dropdown-zoom-new' ) {
+					postMessage({
+						type: 'createEvent',
+						id: null,
+						subtype: 'child'
+					});
+					toolbarButton.classList.remove('unfolded');
+				}
+
+			}
+
+		}
+	});
 }
 
 
-function eventNumber(node) {
-  while (!(node.classList.contains('list-item')))
-    {console.log(node);
-    node = node.parentNode;}
-  return index = Array.from(node.parentNode.children).indexOf(node);
+// what is done when the toolbar for show/hide events has been clicked. id is the id of the clicked dom element
+function showEventsClicked(id) {
+	var subtype = 'show';
+	if (id.startsWith('dropdown-show-'))
+			subtype =  id.slice('dropdown-show-'.length);
+	postMessage({
+		type: 'createEvent',
+		subtype: subtype
+	})
+}
+
+
+
+//get the contents for the dropdown menu 
+function dropDownContents(msg) {
+
+		var zoomDropdown = document.getElementById('dropdown-zoom');
+
+		//remove menu items that are child links
+		var toDelete = [];
+		for (const child of zoomDropdown.childNodes)
+			{
+				if (child.id != undefined)
+				if (child.id.startsWith(dropDownPrefix))
+					toDelete.push(child);
+			}	
+		for (const child of toDelete)
+			child.remove();
+
+		
+		
+		//create new ones, based on the msg 
+    for (const item of msg.slides) {
+			var child = document.createElement("div");
+			child.classList.add('row');
+      child.id = dropDownPrefix + item.id;
+      child.innerHTML = '<i class="material-icons">zoom_out_map</i>' + item.name;
+      zoomDropdown.appendChild(child)
+
+			
+    }
 }
 
 
@@ -857,7 +908,6 @@ function matematykSendWord(w) {
 
 document.getElementById('matematyk-toggle').addEventListener('click',
 function (event)   {
-  console.log('dupa');
   const checkbox = document.getElementById('matematyk-checkbox');
   checkbox.checked = !checkbox.checked;
   if (checkbox.checked)
@@ -1008,7 +1058,13 @@ function messageHandler(event) {
   //sends the svg's to the server. Aparently this cannot be done on the plugin side, since it requires internet connectivity.
   if (msg.type == 'savePresentation') {
     savePresentation(msg);
-  }
+	}
+	
+	//the selection has been updated. This is used to disable or not items in the toolbar that make sense only if there is a selection
+  if (msg.type == 'selChange') {
+    selChange(msg);
+	}
+	
 }
 
 // 

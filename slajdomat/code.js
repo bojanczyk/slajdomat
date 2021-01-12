@@ -124,12 +124,11 @@ function createNewSlide(width, height) {
 
 
 
-//send the drop down list, which says whether or not there is something selected, and what are the possible candidates for children. 
+//send the  list which says what are the possible candidates for child slides. 
 function sendDropDownList() {
     const msg = {
         type: 'dropDownContents',
-        slides: [],
-        selected: (selectedOnCurrentSlide().length > 0)
+        slides: []
     }
     const nodes = figma.root.findAll(x => isSlideNode(x) && x.id != currentSlide.id);
 
@@ -611,18 +610,21 @@ function slideWithSelection() {
 
 //the selection has changed
 function selChange() {
+
+//if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
     if (savedSelection == null) {
-        const slide = slideWithSelection(); {
-            // console.log(slide);
-            // console.log("current:", currentSlide)
+        const slide = slideWithSelection();
+        //tell the ui whether or not there is a selected object that can be made into an event
+        figma.ui.postMessage({
+            type: 'selChange',
+            selected: (slide != null)
+        })
+        //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
+        if ((currentSlide != null && currentSlide.removed) || (slide != currentSlide && slide != null))
+            setCurrentSlide(slide);
+        else if (currentSlide != null)
+            sendEventList();
 
-
-            //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
-            if ((currentSlide != null && currentSlide.removed) || (slide != currentSlide && slide != null))
-                setCurrentSlide(slide);
-            else if (currentSlide != null)
-                sendEventList();
-        }
     }
 
     matematykSelChange();
