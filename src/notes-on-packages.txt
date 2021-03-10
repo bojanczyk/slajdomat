@@ -1,0 +1,10 @@
+1. I need to use version 1 of "mime", because the higher version has changed the name of mime.lookup to mime.getType. See https://stackoverflow.com/questions/47825700/mime-lookup-is-not-a-function-in-expressjs-run-inside-docker
+
+2. I have a custom script to build the figma plugin, which is in the script directory. I would have liked to use webpack, as indicated on this page 
+https://www.figma.com/plugin-docs/bundling-webpack/
+However, the instructions do not seem to work (I made them work one time, but then was unable to repeat this). The problem is this line of code in the proposed webpack configuration file
+new HtmlWebpackInlineSourcePlugin(HtmlWebpackPlugin)
+
+3. I include binaries for ffmpeg and ffprobe. Maybe there is some more professional way to deal with such dependencies.
+
+

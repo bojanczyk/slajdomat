@@ -1,0 +1,94 @@
+/* for the index page */
+html {
+    height : 100%
+}
+
+
+body {
+    font-family : 'Roboto';
+    display : flex;
+    flex-direction: column;
+    margin : 0px;
+    height : 100%;
+}
+
+.panel {
+    padding : 10px;
+    overflow : scroll;
+}
+#index-title {
+    font-size: large;
+}
+#all-presentations {
+    margin-top: 10px;
+    padding : 5px;
+}
+
+.presentation {
+    padding : 5px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.presentation:hover {
+    background-color:#daebf7;
+}
+
+
+.hidden {
+    display: none;
+}
+
+#status-panel {
+    background-color: lightgrey;
+    font-size: 12px;
+    font-weight: 100;
+    height : 50px;
+}
+
+#folder-link {
+    font-size : 12px;
+    font-weight :  100;
+    padding-top : 5px;
+    padding-left : 10px;
+    cursor: pointer;
+}
+
+#presentation-panel {
+    flex-grow: 1;
+}
+
+#no-pre {
+    flex-grow : 1;
+}
+
+#empty-folder-text {
+    padding-top : 10px;
+    font-weight : 200;
+}
+
+.settings-item {
+    margin : 10px; 
+    font-weight : 200;
+}
+
+#port-number {
+    margin-left : 5px;
+    width : 50px;
+}
+
+#dialog-buttons {
+    position: absolute;
+    bottom: 0;
+    right : 0;
+    margin : 5px;
+    padding : 5px;
+}
+
+#dialog-buttons button {
+    margin : 5px;
+}
+
+#settings-body {
+    display: flex;
+}

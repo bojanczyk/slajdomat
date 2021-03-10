@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
+	<title>Slajdomat viewer</title>
+	<!-- <link rel="stylesheet" href="css/electron.css"> -->
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+	<link rel="icon" type="image/png" href="favicon.png">
+
+
+</head>
+
+<body>
+	<div id='no-pre' class='panel'>
+		Select a presentation directory in the File menu.
+	</div>
+
+	<div id='presentation-panel' class='panel hidden'>
+		<div id="index-title">
+			Presentations in this folder
+		</div>
+		<div id="folder-link">
+		</div>
+		<div id="empty-folder-text" class="hidden">
+			There are no presentations in this folder. Create a new presentation using the Slajdomat plugin for Figma.
+		</div>
+		<div id="all-presentations">
+		</div>
+	</div>
+
+	<div id='status-panel' class='panel'>
+	</div>
+	<!-- <script src="./render-code.js"> -->
+	</script>
+
+</body>
+
+</html>

@@ -1,0 +1,39 @@
+/* for the index page */
+
+body {
+    font-family : 'Roboto';
+    display : flex;
+    margin : 0px
+}
+
+.panel {
+    padding : 10px;
+    overflow: scroll;
+}
+#index-title {
+    font-size: large;
+}
+#all-presentations {
+    margin-top: 10px;
+    padding : 5px;
+}
+
+.presentation {
+    padding : 5px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.presentation:hover {
+    background-color:#daebf7;
+}
+
+
+.hidden {
+    display: none;
+}
+
+#status-panel {
+    background-color: lightgrey;
+    flex-grow: 1;
+}

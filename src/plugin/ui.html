@@ -1,0 +1,161 @@
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css"
+	href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds@master/dist/figma-plugin-ds.css">
+
+<div id="entire-plugin">
+	<div class="column hidden" id="settings-column">
+		<i id="close-settings" class="material-icons">close</i>
+		<div class="row">
+			Settings
+		</div>
+
+		<div class="settings-item">
+			<label>Slajdomat app</label>
+			<div class="settings-item">
+				Address of the Slajdomat app. Default is http://localhost:3001 
+			</div>
+			<div class="settings-item">
+				<input type="text" id="server-url" />
+			</div>
+			<div class="settings-item" id="server-url-status">
+			</div>
+		</div>
+
+		<div class="settings-item" id='settings-matematyk'>
+			<input type="checkbox" id="matematyk-checkbox">
+			<label>Latex and math extension</label>
+			<div class="settings-item">
+				Math characters are inserted using the font
+				<label id="current-insertion-font">
+				</label> <label>. Use the following button to change to the currently selected font </label>
+			</div>
+			<div class="settings-item">
+				<button type="button" id="new-font-name">
+					Change to font of selection</button>
+			</div>
+
+			<div class="settings-item">
+				Math characters use a font size that is scaled with respect to preceding characters.
+			</div>
+			<div class="settings-item">
+				<label>Size: </label>
+				<select id="math-font-size-select">
+					<option value="80">80%</option>
+					<option value="100">100%</option>
+					<option value="120">120%</option>
+				</select>
+			</div>
+			<div class="settings-item">
+				When converting latex code to a picture, the following service is used:
+			</div>
+			<div class="settings-item">
+				<input type="text" id='latexit-url' placeholder='' />
+			</div>
+		</div>
+
+	</div>
+
+
+	<div class="column hidden" id="no-slide-column">
+		<i class="material-icons" id="settings-button-two">settings</i>
+		<div class="row">
+			No slide is selected.
+		</div>
+		<div class="row">
+			<button class='button button--primary' id="make-first-small">Create slide 1024 x 768</button>
+			<button class='button button--primary' id="make-first-big">Create slide 1280 x 960</button>
+		</div>
+	</div>
+
+	<div class="column hidden" id="slide-column">
+		<div class="top-buttons">
+			<div class="icon-button">
+				<div id="icon-play" class="icon icon--play"></div>
+			</div>
+			<div id="slide-name">
+				 </div>
+			<i id="parent-button" class="material-icons">arrow_upward</i>
+			<div id="slide-count"></div>
+			<i class="material-icons" id="settings-button">settings</i>
+		</div>
+
+		<!-- The toolbar which contains buttons for creating events -->
+		<div id="event-toolbar">
+			<!-- the dropdown menu for showing/hiding -->
+			<div class="event-toolbar-element" id="event-toolbar-show">
+				<div class="event-toolbar-button">
+					<i class="material-icons">visibility</i>
+				</div>
+				<div class='dropping-arrow'>
+					<i class="material-icons">keyboard_arrow_down</i>
+				</div>
+				<div class='toolbar-triangle'>
+				</div>
+				<div class="toolbar-dropdown" id="dropdown-show">
+					<div class="row" id='dropdown-show-show'>
+						<i class="material-icons">visibility</i>
+						Create a showing event
+					</div>
+					<div class="row" id='dropdown-show-hide'>
+						<i class="material-icons">visibility_off</i>
+						Create a hiding event
+					</div>
+				</div>
+			</div>
+
+			<!-- the dropdown menu for zoom events -->
+			<div class="event-toolbar-element" id="event-toolbar-zoom">
+				<div class="event-toolbar-button">
+					<i class="material-icons">zoom_out_map</i>
+				</div>
+				<div class='dropping-arrow'>
+					<i class="material-icons">keyboard_arrow_down</i>
+				</div>
+				<div class='toolbar-triangle'>
+				</div>
+				<div class="toolbar-dropdown" id="dropdown-zoom">
+					<div class="labelrow">
+						Create a link to new slide
+					</div>
+					<div class="row" id='dropdown-zoom-new'>
+						<i class="material-icons">add</i>
+						<input type="input" id='new-child-name' placeholder='Name of new slide' />
+					</div>
+					<div class="separator"> </div>
+					<div class="labelrow">
+						Create a link to existing slide
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<!-- the list of events in the current slide -->
+		<div id="event-list"> </div>
+
+
+		<div id='matematyk'>
+			<div class="matematyk-row" id='matematyk-latex'>
+				<i id="latexit-icon" class="material-icons sigma-button">
+					functions
+				</i>
+				<div id='latex-button'> Latex selection </div>
+				<div class="spacer"> </div>
+			</div>
+			<div class="matematyk-row" id='matematyk-insert'>
+				<i class="material-icons sigma-button">
+					functions
+				</i>
+				<div> Insert </div>
+				<input type="input" id='matematyk-input' placeholder="Σ">
+				<div> in math font </div>
+			</div>
+			<div id="matematyk-words">
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
