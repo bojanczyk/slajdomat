@@ -13,7 +13,7 @@
 		<div class="settings-item">
 			<label>Slajdomat app</label>
 			<div class="settings-item">
-				Address of the Slajdomat app. Default is http://localhost:3001 
+				Address of the Slajdomat app. Default is http://localhost:3001
 			</div>
 			<div class="settings-item">
 				<input type="text" id="server-url" />
@@ -71,12 +71,12 @@
 	<div class="column hidden" id="slide-column">
 		<div class="top-buttons">
 			<div class="icon-button">
-				<div id="icon-play" class="icon icon--play"></div>
+				<div title="Export the slides to the slajdomat app." id="icon-play" class="icon icon--play"></div>
 			</div>
-			<div id="slide-name">
-				 </div>
+			<div title="Name of the current slide." id="slide-name">
+			</div>
 			<i id="parent-button" class="material-icons">arrow_upward</i>
-			<div id="slide-count"></div>
+			<div title="The number of slides, i.e. top-level frames." id="slide-count"></div>
 			<i class="material-icons" id="settings-button">settings</i>
 		</div>
 
@@ -84,7 +84,7 @@
 		<div id="event-toolbar">
 			<!-- the dropdown menu for showing/hiding -->
 			<div class="event-toolbar-element" id="event-toolbar-show">
-				<div class="event-toolbar-button">
+				<div title="Add a show event for the currently selected object." class="event-toolbar-button">
 					<i class="material-icons">visibility</i>
 				</div>
 				<div class='dropping-arrow'>
@@ -93,11 +93,11 @@
 				<div class='toolbar-triangle'>
 				</div>
 				<div class="toolbar-dropdown" id="dropdown-show">
-					<div class="row" id='dropdown-show-show'>
+					<div title="A showing event means that the object goes from invisible to visible" class="row" id='dropdown-show-show'>
 						<i class="material-icons">visibility</i>
 						Create a showing event
 					</div>
-					<div class="row" id='dropdown-show-hide'>
+					<div title="A hiding event means that the object goes from visible to invisible"  class="row" id='dropdown-show-hide'>
 						<i class="material-icons">visibility_off</i>
 						Create a hiding event
 					</div>

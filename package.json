@@ -6,13 +6,13 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package",
+    "package": "electron-forge package; bash src/main/post-electron.sh",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts .",
     "webpack": "webpack",
     "plugin": "bash src/plugin/make-plugin-ui.sh",
-    "watch": "npm-watch"
+    "watch": "yarn npm-watch & yarn webpack"
   },
   "watch": {
     "plugin": {
@@ -22,8 +22,7 @@
         "dist"
       ],
       "extensions": "js,css,html"
-    }
-  },
+    }  },
   "keywords": [],
   "author": {
     "name": "Mikolaj Bojanczyk",
@@ -35,8 +34,7 @@
       "packagerConfig": {
         "icon": "src/icons/slajdomat.icns"
       },
-      "makers": [
-        {
+      "makers": [{
           "name": "@electron-forge/maker-dmg"
         },
         {
@@ -61,8 +59,7 @@
             "mainConfig": "./webpack.main.config.js",
             "renderer": {
               "config": "./webpack.renderer.config.js",
-              "entryPoints": [
-                {
+              "entryPoints": [{
                   "html": "./src/renderer/index.html",
                   "js": "./src/renderer/renderer.ts",
                   "name": "main_window"

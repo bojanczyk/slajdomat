@@ -6,7 +6,6 @@ module.exports = (env, argv) => ({
   mode: argv.mode === 'production' ? 'production' : 'development',
 
   watch: true,
-  // This is necessary because Figma's 'eval' works differently than normal eval
   devtool: argv.mode === 'production' ? false : 'inline-source-map',
 
   entry: {

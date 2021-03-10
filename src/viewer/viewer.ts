@@ -32,7 +32,7 @@ import {
     soundAdvance
 } from "./sound"
 
-import {
+import {  
     fetchJSON,
     presentationDir
 } from './files'
