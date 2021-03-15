@@ -231,13 +231,14 @@ function recordSound(event : SlideEvent) : Promise<void> {
                         file: Array.from(y)
                     };
                     sendToServer(retmsg)
-                        .then(r => r.json())
+                        .then(r => r.json() )
                         .then(r => {
+                            if (r.status != 'Sound recorded successfully')
+                                throw r.status;
                             soundDurations.set(event, r.duration);
                             updateEventDuration(event);
-                        }).catch((e) => {
-                            console.log(e);
-                            userAlert("Could not send this sound to the server: " + longName)
+                        }).catch(() => {
+                            userAlert("Failed to record sound.")
                         });
 
                 };

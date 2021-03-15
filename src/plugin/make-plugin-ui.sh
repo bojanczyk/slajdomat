@@ -21,4 +21,9 @@ echo "</style>" >> $Out
 cp dist/viewer.js resources/
 cp src/viewer/slajdomat.html resources/index.html
 
+#also copies the viewer slides into a directory for testing slides
+cp dist/viewer.js test-slides/
+cp src/viewer/slajdomat.html test-slides/index.html
+
+
 

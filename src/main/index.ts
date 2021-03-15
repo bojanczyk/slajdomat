@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, Menu, dialog} from 'electron';
 import * as fs from 'fs';
 
+
+
 import {startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings} from './server'
 export {sendStatus, mainWindow}
 
@@ -176,10 +178,14 @@ ipcMain.on('open-viewer', (event, arg) => {
     y : offset[1]+20,
     webPreferences: {
       nodeIntegration: true
-    }
+    },
+    show : false
   })
   
   viewerWin.loadFile(slajdomatSettings.directory + '/' + arg + '/index.html')
+  viewerWin.once('ready-to-show', () => {
+    viewerWin.show()
+  })
 })
 
 
@@ -207,9 +213,12 @@ let preferencesWindow : BrowserWindow;
 function openPreferences() : void {
   console.log('preferences')
   preferencesWindow = new BrowserWindow({
-    height: 150,
-    width: 200,
+    height: 250,
+    width: 300,
+    // modal : true // I would like to understand how to do this
+    //parent : mainWindow,
     frame : false,
+    show : false,
     webPreferences: {
             nodeIntegration: true
           }
@@ -217,6 +226,9 @@ function openPreferences() : void {
 
   // and load the index.html of the app.
   preferencesWindow.loadURL(SETTINGS_WINDOW_WEBPACK_ENTRY);
+  preferencesWindow.once('ready-to-show', () => {
+    preferencesWindow.show()
+  })
   preferencesWindow.webContents.on('did-finish-load', () => {
     preferencesWindow.webContents.send('settings', slajdomatSettings)
 });
@@ -239,6 +251,8 @@ function startApp() : void
   {
     readPresentations();
   }
-    
+
+  
+   
   startServer();
 }

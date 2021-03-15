@@ -12,7 +12,8 @@
     "lint": "eslint --ext .ts .",
     "webpack": "webpack",
     "plugin": "bash src/plugin/make-plugin-ui.sh",
-    "watch": "yarn npm-watch & yarn webpack"
+    "watch": "yarn npm-watch & yarn webpack",
+    "viewtest" : "cd test-slides; python3 -m http.server 8000"
   },
   "watch": {
     "plugin": {
@@ -22,7 +23,8 @@
         "dist"
       ],
       "extensions": "js,css,html"
-    }  },
+    }
+  },
   "keywords": [],
   "author": {
     "name": "Mikolaj Bojanczyk",
@@ -34,7 +36,8 @@
       "packagerConfig": {
         "icon": "src/icons/slajdomat.icns"
       },
-      "makers": [{
+      "makers": [
+        {
           "name": "@electron-forge/maker-dmg"
         },
         {
@@ -59,7 +62,8 @@
             "mainConfig": "./webpack.main.config.js",
             "renderer": {
               "config": "./webpack.renderer.config.js",
-              "entryPoints": [{
+              "entryPoints": [
+                {
                   "html": "./src/renderer/index.html",
                   "js": "./src/renderer/renderer.ts",
                   "name": "main_window"
@@ -101,13 +105,17 @@
     "@electron-forge/maker-dmg": "^6.0.0-beta.54",
     "@figma/plugin-typings": "^1.19.2",
     "@fontsource/roboto": "^4.2.2",
+    "@types/command-exists": "^1.2.0",
     "@types/cors": "^2.8.10",
     "@types/dom-mediacapture-record": "^1.0.7",
     "@types/express": "^4.17.11",
+    "command-exists": "^1.2.9",
     "cors": "^2.8.5",
     "electron-squirrel-startup": "^1.0.0",
+    "file-loader": "^6.2.0",
     "gsap": "^3.6.0",
     "html-webpack-plugin": "^5.2.0",
+    "material-design-icons": "^3.0.1",
     "mime": "^1",
     "nodemon": "^2.0.7",
     "npm-watch": "^0.7.0",

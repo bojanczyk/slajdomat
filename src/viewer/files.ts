@@ -82,7 +82,7 @@ function fetchJSON(filename: string): Promise < unknown > {
         else
             return res.json();
     }).
-    catch(() => {
+    catch((e) => {        
         userAlert("Could not load slide file " + filename);
         return null;
     });

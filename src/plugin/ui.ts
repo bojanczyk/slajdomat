@@ -22,6 +22,9 @@ import {
 } from '../viewer/types'
 
 
+// import 'material-design-icons/iconfont/material-icons.css'
+
+
 
 // global variables  *******************
 
@@ -141,15 +144,11 @@ function showColumn(column: WindowMode): void {
 
 //toggle the play button between "spinner" and "play"
 function exportWaiting(waiting: boolean): void {
-  const button = document.getElementById("icon-play");
+  const button = document.getElementById("export-slides");
   if (waiting) {
-    button.classList.remove("icon--play");
-    button.classList.add("icon--spinner");
-    button.classList.add("icon--spin");
+    button.classList.add('myspinner');
   } else {
-    button.classList.add("icon--play");
-    button.classList.remove("icon--spinner");
-    button.classList.remove("icon--spin");
+    button.classList.remove('myspinner');
   }
 }
 
@@ -362,7 +361,7 @@ function selChange(msg: {
 
 
   const eventDropdowns = [
-    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide'
+    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide', 'direct-show-button'
   ]
 
   for (const i of eventDropdowns) {
@@ -386,30 +385,30 @@ function selChange(msg: {
 
   //update the matematyk part 
   if (msg.canInsert) {
-    document.getElementById('matematyk-insert').classList.remove('disabled');
+    document.getElementById('matematyk-input-container').classList.remove('disabled');
     document.getElementById('matematyk-words').classList.remove('disabled');
     (document.getElementById('matematyk-input') as HTMLInputElement).disabled = false;
   } else {
+    document.getElementById('matematyk-input-container').classList.add('disabled');
     document.getElementById('matematyk-words').classList.add('disabled');
-    document.getElementById('matematyk-insert').classList.add('disabled');
     (document.getElementById('matematyk-input') as HTMLInputElement).disabled = true;
   }
 
   if (msg.latexState == LatexState.None) //no object is selected, so the latex button should be disabled
   {
-    document.getElementById('matematyk-latex').classList.add('disabled')
+    document.getElementById('latex-button').classList.add('disabled')
   }
 
   if (msg.latexState == LatexState.Latex) //a text object is selected
   {
-    document.getElementById('matematyk-latex').classList.remove('disabled');
-    document.getElementById('latex-button').innerHTML = 'Latex selection';
+    document.getElementById('latex-button').classList.remove('disabled');
+    document.getElementById('latex-button').innerHTML = 'attach_money';
   }
 
   if (msg.latexState == LatexState.Delatex) //a text object is selected
   {
-    document.getElementById('matematyk-latex').classList.remove('disabled');
-    document.getElementById('latex-button').innerHTML = 'Delatex selection';
+    document.getElementById('latex-button').classList.remove('disabled');
+    document.getElementById('latex-button').innerHTML = 'money_off';
   }
 }
 
@@ -435,16 +434,9 @@ for (const toolbarButton of toolbarButtons) {
       target = target.parentNode as HTMLElement;
     }
 
-    //if the target is the name of the menu, the use the default element of the menu
-    if (target.classList.contains('event-toolbar-button')) {
-      if (toolbarButton.id == 'event-toolbar-show')
-        target = document.getElementById('dropdown-show-show');
-      if (toolbarButton.id == 'event-toolbar-zoom')
-        target = document.getElementById('dropdown-zoom-new');
-    }
 
 
-    if (target.classList.contains('dropping-arrow')) {
+    if (target.classList.contains('event-toolbar-title')) {
       //the little drop-down arrow was clicked, which means that the visibility of the dropdown should be toggled
 
       if (toolbarButton.classList.contains('unfolded'))
@@ -581,7 +573,7 @@ function matematykSendWord(w: string): void {
 
 
 function fetchLatex(url: string): void {
-  document.getElementById("latexit-icon").classList.add("myspinner");
+  document.getElementById("latex-button").classList.add("myspinner");
   fetch(url).then(x => {
     if (!x.ok) {
       throw "nic"
@@ -593,10 +585,10 @@ function fetchLatex(url: string): void {
         text: x
       }
     }, '*');
-    document.getElementById("latexit-icon").classList.remove("myspinner");
+    document.getElementById("latex-button").classList.remove("myspinner");
   }).catch(() => {
     notify("Could not compile latex.");
-    document.getElementById("latexit-icon").classList.remove("myspinner");
+    document.getElementById("latex-button").classList.remove("myspinner");
   })
 }
 
@@ -689,7 +681,7 @@ document.addEventListener('click', (event: MouseEvent) => {
   const target = event.target as HTMLElement;
 
   switch (target.id) {
-    case 'icon-play':
+    case 'export-slides':
       //the toolbar button to export slides
       exportWaiting(true);
       postMessage({
@@ -710,6 +702,10 @@ document.addEventListener('click', (event: MouseEvent) => {
       showColumn(WindowMode.Settings);
       break;
 
+    case 'direct-show-button':
+      if (!target.classList.contains('disabled'))
+        showEventsClicked('direct-show-button');
+      break;
     case 'close-settings':
       //switch away from the settings panel
       showColumn(savedColumn);

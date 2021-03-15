@@ -8,3 +8,7 @@ yarn.lock
 figma-plugin/ui.html
 figma-plugin/code.js
 out
+test-slides/*
+resources/index.html
+resources/viewer.js
+

@@ -12,6 +12,8 @@ import {
     mainWindow
 } from './index'
 
+
+
 import express from 'express'
 import cors from 'cors'
 import * as http from 'http'
@@ -33,6 +35,7 @@ import {
 import {
     Database
 } from '../plugin/plugin-types'
+// import { writeFileSync } from 'original-fs'
 
 /*import {
     load
@@ -45,7 +48,9 @@ type PresentationList = {
 
 type SlajdomatSettings = {
     port: number,
-    directory ? : string
+    directory ? : string,
+    ffmpeg : string,
+    ffprobe : string
 }
 
 let presentations: PresentationList;
@@ -96,16 +101,19 @@ function myStringify(x: PresentationList | Manifest | SlajdomatSettings): string
 
 //sanitize a string so that it is a good filename 
 function sanitize(s: string) {
-    return encodeURI(s).replace(/:/g, "_").replace(/%20/g, '_').replace(/%/g, '#');
+    return encodeURI(s).replace(/:/g, "_").replace(/%20/g, '_').replace(/%/g, '_');
 }
 
 //returns the directory for a presentation, and if it does not exist, then it creates the directory and adds a suitable entry in the presentations json
 function presentationDir(presentationName: string) {
     if (!(presentationName in presentations)) {
-        const dirName = sanitize(presentationName)
+        const dirName = sanitize(presentationName);
         presentations[presentationName] = dirName;
         sendStatus('adding ' + dirName)
-        mainWindow.webContents.send('presentationList', presentations);
+        mainWindow.webContents.send('presentationList', {
+            dir: slajdomatSettings.directory,
+            presentations: presentations
+        });
         fs.mkdirSync(slajdomatSettings.directory + '/' + dirName)
     }
     return slajdomatSettings.directory + '/' + presentations[presentationName];
@@ -116,7 +124,14 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
     const presentation = manifest.presentation;
 
     if (!(slideId in manifest.slideDict)) {
-        const dirName = sanitize(name);
+        let dirName = sanitize(name);
+
+        //append a number to the dir name until it is not used
+        while (Object.values(manifest.slideDict).indexOf(dirName) > -1) {
+            dirName = dirName + 'bis';
+        }
+
+
         manifest.slideDict[slideId] = dirName;
         writeManifest(manifest);
         sendStatus('Received slide ' + dirName);
@@ -126,7 +141,14 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
             sendStatus(e)
         }
     }
-    return presentationDir(presentation) + '/' + manifest.slideDict[slideId]
+
+    const dir = presentationDir(presentation) + '/' + manifest.slideDict[slideId];
+
+    //it could be the case that the directory disappeared for some reason, in which case the directory will be created
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir);
+
+    return dir;
 }
 
 //writes the manifest of a presentation to disk
@@ -147,6 +169,8 @@ function readManifest(presentation: string) {
 
 
 function readPresentations(): void {
+
+    sendStatus('reading presentations')
     //returns the title of a presentation stored in the given directory, otherwise throws an error (for example, if the argument is not a directory, or a directory without a manifest)
     function presentationTitle(dir: string): string {
         const data = fs.readFileSync(slajdomatSettings.directory + '/' + dir + '/manifest.json').toString();
@@ -178,48 +202,54 @@ function readPresentations(): void {
 //we get a single sound, in the wav format
 function onGetWav(msg: MessageToServerSound): ServerResponse {
 
-    const manifest = readManifest(msg.presentation);
-    const buffer = new Uint8Array(msg.file)
-    const fileName = slideDir(manifest, msg.slideId) + '/' + msg.name;
-    writeFile(fileName + '.wav', Buffer.from(buffer));
+    try {
+        const manifest = readManifest(msg.presentation);
+        const buffer = new Uint8Array(msg.file)
+        const fileName = slideDir(manifest, msg.slideId) + '/' + msg.name;
+        fs.writeFileSync(fileName + '.wav', Buffer.from(buffer));
 
-    //create a new entry in the sound dictionary 
-    if (!(msg.slideId in manifest.soundDict)) {
-        manifest.soundDict[msg.slideId] = {};
-    }
-
-    const retval: ServerResponse = {
-        status: 'Sound recorded successfully'
-    };
-
-
-    child.exec(resourceDir() + '/ffmpeg -y -i ' + fileName + '.wav ' + fileName + '.mp3', (error) => {
-        if (error) {
-            sendStatus(`ffmpeg command failed: ${error.message}`);
-            return;
+        //create a new entry in the sound dictionary 
+        if (!(msg.slideId in manifest.soundDict)) {
+            manifest.soundDict[msg.slideId] = {};
         }
+
+        if (!fs.existsSync(slajdomatSettings.ffmpeg) || !fs.existsSync(slajdomatSettings.ffprobe))
+            throw('To record sound, install ffmpeg and ffprobe.')
+
+        const retval: ServerResponse = {
+            status: 'Sound recorded successfully'
+        };
+
+
+        child.execSync(`${slajdomatSettings.ffmpeg} -y -i  ${fileName}.wav ${fileName}.mp3`);
+
+        //delete the .wav version, which is no longer needed
+        // fs.unlinkSync(fileName + '.wav');
+
         let duration: number = undefined;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        child.exec(resourceDir() + '/ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ' + fileName + '.mp3', (error, stdout, ignoredBis) => {
-            if (error) {
-                sendStatus(`ffprobe for checking duration failed: ${error.message}`);
-                return;
-            }
-            duration = parseFloat(stdout);
-            manifest.soundDict[msg.slideId][msg.index] = {
-                file: msg.name,
-                duration: duration
-            };
-            writeManifest(manifest);
-            sendStatus('Sound for event ' + msg.index + ' in slide ' + manifest.slideDict[msg.slideId]);
-            sendStatus('Sound duration: ' + stdout);
+        const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
 
-            retval.duration = duration;
-        })
+        duration = parseFloat(probeString.toString());
+        manifest.soundDict[msg.slideId][msg.index] = {
+            file: msg.name,
+            duration: duration
+        };
+        writeManifest(manifest);
+        sendStatus(`Recorded ${duration.toFixed(2)}s for event ${msg.index} in slide ${manifest.slideDict[msg.slideId]}`);
 
-    });
+        retval.duration = duration;
+        return retval;
 
-    return retval;
+
+    } catch (e) {
+        sendStatus(`Failed to record sound for event ${msg.index} in slide ${msg.slideId}`);
+        sendStatus('Error: ' + e);
+        return {
+            status: e
+        };
+    }
+
 }
 
 
@@ -315,6 +345,7 @@ function startServer(): void {
                 default:
                     throw "unexpected message type "
             }
+
 
             res.send(response);
 

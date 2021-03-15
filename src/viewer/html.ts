@@ -314,7 +314,7 @@ function timelineButtons() : void {
 }
 
 //toggles the side panel on the left with the list of slides
-function togglePanel(visible : boolean) : void {
+function showPanel(visible : boolean) : void {
     if (visible) {
         gsap.to("#left-panel", {
             width: "20%",
@@ -328,15 +328,30 @@ function togglePanel(visible : boolean) : void {
     }
 }
 
+function togglePanel() : void {
+    
+    if ((document.getElementById('left-panel') as HTMLDivElement).clientWidth > 0)
+        showPanel(false)
+    else    
+        showPanel(true);
+}
+
 //initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
 function initPanels() : void  {
+    
+    /* I no longer want the left to open automatically on mouseover, this was intrusive
     document.addEventListener('mousemove', function (e) {
         if (e.clientX < 20)
             togglePanel(true);
     })
+    
+
     document.getElementById('close-panel').addEventListener('click', function () {
-        togglePanel(false)
+        showPanel(false)
     });
+    */
+    
+    document.getElementById('open-menu').addEventListener('click', togglePanel);
     document.getElementById('prev-event').addEventListener('click', prevButton);
     document.getElementById('next-event').addEventListener('click', nextButton);
     document.getElementById('play-button').addEventListener('click', playButton);

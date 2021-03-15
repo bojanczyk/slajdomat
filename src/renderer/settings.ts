@@ -10,8 +10,9 @@ let settings : SlajdomatSettings;
 
 ipcRenderer.on('settings', (event, msg) => {
     settings = msg as SlajdomatSettings;
-    const portInput = document.getElementById('port-number') as HTMLInputElement;
-    portInput.value = msg.port 
+    (document.getElementById('port-number') as HTMLInputElement).value = settings.port.toString(); 
+    (document.getElementById('ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg; 
+    (document.getElementById('ffprobe-path') as HTMLInputElement).value = settings.ffprobe; 
 });
 
 document.addEventListener('click', (e) => {
@@ -24,8 +25,10 @@ document.addEventListener('click', (e) => {
 
     if (target.id == 'ok')
     {   
-        const portInput = document.getElementById('port-number') as HTMLInputElement;
-        settings.port = parseInt(portInput.value);
+        settings.port = parseInt((document.getElementById('port-number') as HTMLInputElement).value);
+        settings.ffmpeg = (document.getElementById('ffmpeg-path') as HTMLInputElement).value;
+        settings.ffprobe = (document.getElementById('ffprobe-path') as HTMLInputElement).value;
+    
         ipcRenderer.send('settings-closed', settings );
     }
 });

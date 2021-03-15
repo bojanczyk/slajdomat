@@ -106,21 +106,35 @@ color : LightGrey;
 
 /* buttons on the top panel *********** */
 
-.top-buttons {
+.toolbar-separator {
+  background-color : grey;
+  height : 1px;
+}
+
+.toolbar {
   display : flex;
-  background-color: black;
+  background-color:var(--grafitowy);
   align-items : center;
   padding-right : 5px;
+  padding-left : 5px;
+  height : 35px;
 }
 
-.top-buttons div div {
-  filter : invert(100%);
-}
 
-.top-buttons i {
+.toolbar-button {
   color : white;
   cursor : pointer;
+  padding : 8px;
 }
+
+.toolbar-button.disabled {
+  color : grey;
+}
+
+.toolbar-button:hover:not(.disabled) {
+  background-color: black;
+}
+
 
 
 .hidden {
@@ -140,8 +154,8 @@ color : LightGrey;
 
 #slide-count {
   color : white;
-  margin-right : 10px;
-  margin-left: 10px;
+  margin-right : 5px;
+  margin-left: 5px;
 }
 
 #parent-button {
@@ -164,7 +178,6 @@ cursor:pointer;
 
 #matematyk {
   background-color: LightGrey;
-  padding-top : 5px;
   padding-bottom : 5px;
 }
 
@@ -228,6 +241,15 @@ background-color : var(--select-color);
 
 .disabled input {
   color : LightGrey;
+}
+
+#matematyk-input-container {
+  color : white;
+  margin-left : 15px;
+}
+
+#matematyk-input-container.disabled {
+  color : grey;
 }
 
 
@@ -302,11 +324,7 @@ background-color : var(--select-color);
 
 /* toolbar for events */
 #event-toolbar {
-	display : flex;
-	height : 35px;
   background-color: var(--grafitowy);
-	align-items: center;
-	padding-left: 8px;
 }
 
 #event-toolbar .disabled {
@@ -320,15 +338,29 @@ background-color : var(--select-color);
 	height: 100%;
 	display : flex;
 	align-items: center;
-  margin-right: 10px;
 }
 
-.dropping-arrow {
-	margin-left: 4px;
+.event-toolbar-title:hover i {
+	padding-top: 4px; 
 }
 
-.dropping-arrow:hover  {
-  margin-top: 10px;
+.event-toolbar-title i {
+	margin: 0px; 
+}
+
+.event-toolbar-title {
+  height : 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* margin-left : 10px; */
+  /* margin-right: 10px; */
+  padding-left : 10px;
+  padding-right : 10px;
+}
+
+.event-toolbar-title:hover  {
+  background-color: black;
 }
 
 #event-toolbar .labelrow {
@@ -368,8 +400,8 @@ background-color : var(--select-color);
   height: 0; 
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  
   border-bottom: 6px solid var(--grafitowy);
+  margin-right: -15px;
 }
 
 .unfolded .toolbar-triangle {
@@ -395,8 +427,25 @@ background-color : var(--select-color);
 	display : inline-block;
 }
 
+.unfolded .event-toolbar-title {
+  background-color: var(--niebieski);
+}
+
 .drag-source {
   background-color:lightcyan;
+}
+
+.event-toolbar-element input {
+  background-color: var(--grafitowy);
+  border : 1px grey;
+  border-style: solid;
+  border-right: none;
+  border-left : none;
+  border-top: none;
+}
+
+.row:hover input {
+  background-color: var(--niebieski);
 }
 
 .between-events{

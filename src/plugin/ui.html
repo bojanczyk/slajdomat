@@ -69,35 +69,39 @@
 	</div>
 
 	<div class="column hidden" id="slide-column">
-		<div class="top-buttons">
-			<div class="icon-button">
-				<div title="Export the slides to the slajdomat app." id="icon-play" class="icon icon--play"></div>
-			</div>
+		<div class="toolbar">
+			<i class="material-icons toolbar-button" title="Export the slides to the slajdomat app." id="export-slides"> file_upload
+			</i>
 			<div title="Name of the current slide." id="slide-name">
 			</div>
 			<i id="parent-button" class="material-icons">arrow_upward</i>
 			<div title="The number of slides, i.e. top-level frames." id="slide-count"></div>
-			<i class="material-icons" id="settings-button">settings</i>
+			<i class="material-icons toolbar-button" id="settings-button">settings</i>
 		</div>
 
+		<div class= "toolbar-separator"></div>
+
 		<!-- The toolbar which contains buttons for creating events -->
-		<div id="event-toolbar">
+		<div id="event-toolbar" class="toolbar">
+			<i class="material-icons toolbar-button" id="direct-show-button">visibility</i>
 			<!-- the dropdown menu for showing/hiding -->
 			<div class="event-toolbar-element" id="event-toolbar-show">
-				<div title="Add a show event for the currently selected object." class="event-toolbar-button">
-					<i class="material-icons">visibility</i>
-				</div>
-				<div class='dropping-arrow'>
+				<div title="Menu for overlay events, which show or hide objects on this slide, without changing the slide."
+					class="event-toolbar-title">
+					<!-- <i class="material-icons">visibility</i> -->
+					Overlays
 					<i class="material-icons">keyboard_arrow_down</i>
-				</div>
-				<div class='toolbar-triangle'>
+					<div class='toolbar-triangle'> -->
+					</div>
 				</div>
 				<div class="toolbar-dropdown" id="dropdown-show">
-					<div title="A showing event means that the object goes from invisible to visible" class="row" id='dropdown-show-show'>
+					<div title="A showing event means that the object goes from invisible to visible" class="row"
+						id='dropdown-show-show'>
 						<i class="material-icons">visibility</i>
 						Create a showing event
 					</div>
-					<div title="A hiding event means that the object goes from visible to invisible"  class="row" id='dropdown-show-hide'>
+					<div title="A hiding event means that the object goes from visible to invisible" class="row"
+						id='dropdown-show-hide'>
 						<i class="material-icons">visibility_off</i>
 						Create a hiding event
 					</div>
@@ -106,25 +110,23 @@
 
 			<!-- the dropdown menu for zoom events -->
 			<div class="event-toolbar-element" id="event-toolbar-zoom">
-				<div class="event-toolbar-button">
-					<i class="material-icons">zoom_out_map</i>
-				</div>
-				<div class='dropping-arrow'>
+				<div title="Menu for creating zoom events, which go to another slide." class="event-toolbar-title">
+					Zoom
 					<i class="material-icons">keyboard_arrow_down</i>
-				</div>
-				<div class='toolbar-triangle'>
+					<div class='toolbar-triangle'>
+					</div>
 				</div>
 				<div class="toolbar-dropdown" id="dropdown-zoom">
-					<div class="labelrow">
-						Create a link to new slide
+					<div class="labelrow" title="This creates a new slide, and a zoom link to it.">
+						Zoom link to new slide
 					</div>
 					<div class="row" id='dropdown-zoom-new'>
 						<i class="material-icons">add</i>
 						<input type="input" id='new-child-name' placeholder='Name of new slide' />
 					</div>
 					<div class="separator"> </div>
-					<div class="labelrow">
-						Create a link to existing slide
+					<div class="labelrow" title="Creates a zoom link to an existing slide.">
+						Zoom link to existing slide
 					</div>
 				</div>
 			</div>
@@ -136,20 +138,11 @@
 
 
 		<div id='matematyk'>
-			<div class="matematyk-row" id='matematyk-latex'>
-				<i id="latexit-icon" class="material-icons sigma-button">
-					functions
-				</i>
-				<div id='latex-button'> Latex selection </div>
-				<div class="spacer"> </div>
-			</div>
-			<div class="matematyk-row" id='matematyk-insert'>
-				<i class="material-icons sigma-button">
-					functions
-				</i>
-				<div> Insert </div>
+			<div class='toolbar'>
+				<i class='material-icons toolbar-button' id='latex-button' title='Latex converts the selected text to a picture of a math formula, and delatex reverts the process.'>attach_money</i>
+				<div id='matematyk-input-container' title="Use this to insert characters, such as math symbols, that are not available in your basic font. The math font is chosen in the settings."> Insert 
 				<input type="input" id='matematyk-input' placeholder="Σ">
-				<div> in math font </div>
+				in math font </div>
 			</div>
 			<div id="matematyk-words">
 			</div>

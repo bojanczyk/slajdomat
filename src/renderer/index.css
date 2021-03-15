@@ -72,11 +72,6 @@ body {
     font-weight : 200;
 }
 
-#port-number {
-    margin-left : 5px;
-    width : 50px;
-}
-
 #dialog-buttons {
     position: absolute;
     bottom: 0;
@@ -91,4 +86,23 @@ body {
 
 #settings-body {
     display: flex;
+    font-size: small;
+}
+
+#settings-body button {
+    font-family: 'Roboto';
+    font-weight: 100;
+}
+
+#settings-body input {
+    margin-top : 5px;
+    padding : 5px;
+    font-family: 'Roboto';
+    font-weight: 100;
+}
+
+.settings-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 4px;
 }

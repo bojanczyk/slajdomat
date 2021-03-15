@@ -13,7 +13,7 @@
     cursor: default;
     font-family: 'Roboto';
     font-weight: 300;
-    overflow : hidden;
+    overflow : hidden; 
     white-space: nowrap;
 }
 
@@ -53,9 +53,6 @@
 }
 
 #slide-stack-container {
-   position: absolute;
-   top : 30px;
-   bottom : 30px;
    overflow : scroll; 
 }
 
@@ -63,10 +60,23 @@
     text-decoration: line-through;
 }
 
-#close-panel {
-    position : absolute;
-    top : 3px;
-    right : 3px;
-    font-size: 15px;
-    cursor: pointer;
+
+#made-using-slajdomat {
+    padding : 5px;
+    width : 200px;
+    white-space: normal;
+    margin : 1px;
 }
+
+
+#logo-line {
+    font-size : 20px;
+    margin-top  : 5px;
+    margin-bottom : 5px;
+    }
+
+#logo-second-line {
+    font-size: 14px;
+    margin : 0px;
+}
+
