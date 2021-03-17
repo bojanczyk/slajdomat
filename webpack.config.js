@@ -5,7 +5,7 @@ const webpack = require('webpack')
 module.exports = (env, argv) => ({
   mode: 'production', // alternative is  'development',
 
-  watch: true,
+  // watch: true,
   // devtool: this.mode === 'production' ? false : 'inline-source-map',
 
   entry: {

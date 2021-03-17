@@ -6,13 +6,14 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package; bash src/main/post-electron.sh",
+    "package": "electron-forge package;  bash src/main/post-electron.sh",
+    "make-all" : "electron-forge package; webpack; bash src/plugin/make-plugin-ui.sh; bash src/main/post-electron.sh",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts .",
     "webpack": "webpack",
     "plugin": "bash src/plugin/make-plugin-ui.sh",
-    "watch": "yarn npm-watch & yarn webpack",
+    "watch": "npm-watch & webpack --watch",
     "viewtest" : "cd test-slides; python3 -m http.server 8000"
   },
   "watch": {

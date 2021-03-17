@@ -73,12 +73,15 @@ function initPlugin() {
                     style: 'Regular'
                 },
                 mathFontSize: 1,
-                serverURL : 'http://localhost:3001',
-                latexitURL : 'https://latex.codecogs.com/svg.latex?'
+                serverURL: 'http://localhost:3001',
+                latexitURL: 'https://latex.codecogs.com/svg.latex?'
             }
 
             try {
-                pluginSettings = {...defaultSettings, ...JSON.parse(x)};
+                pluginSettings = {
+                    ...defaultSettings,
+                    ...JSON.parse(x)
+                };
             } catch (e) {
                 pluginSettings = defaultSettings;
             }
@@ -114,42 +117,41 @@ function createNewSlide(width: number, height: number): FrameNode {
         y: 0
     };
 
-    if (currentSlide == null) {
-        candidate.x = 0;
-        candidate.y = 0;
-    } else {
-        //search for free space below the current slide,
-        //using the city metric
-        let i = 0;
-        let searching = true;
-        while (searching) {
-            i++;
-            for (let j = 0; j < i && searching; j++) {
-                candidate.x = currentSlide.x + j * width;
-                candidate.y = currentSlide.y + (i + 0.2) * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = currentSlide.x + (i + 0.2) * width;
-                candidate.y = currentSlide.y + j * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = currentSlide.x - j * width;
-                candidate.y = currentSlide.y + (i + 0.2) * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = currentSlide.x - (i + 0.2) * width;
-                candidate.y = currentSlide.y + j * height;
-                if (intersectsNothing(candidate))
-                    searching = false;
+    const basex = (currentSlide == null ? 0 : currentSlide.x);
+    const basey = (currentSlide == null ? 0 : currentSlide.y);
+
+    //search for free space below the current slide,
+    //using the city metric (i.e. the search follows a square spiral pattern)
+    let i = 0;
+    let searching = true;
+    while (searching) {
+        i++;
+        for (let j = 0; j < i && searching; j++) {
+            candidate.x = basex + j * width;
+            candidate.y = basey + (i + 0.2) * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
             }
+            candidate.x = basex + (i + 0.2) * width;
+            candidate.y = basey + j * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
+            }
+            candidate.x = basex - j * width;
+            candidate.y = basey + (i + 0.2) * height;
+            if (intersectsNothing(candidate)) {
+                searching = false;
+                break;
+            }
+            candidate.x = basex - (i + 0.2) * width;
+            candidate.y = basey + j * height;
+            if (intersectsNothing(candidate))
+                searching = false;
         }
     }
+
 
     const newSlide = figma.createFrame();
     newSlide.x = candidate.x;
@@ -281,13 +283,29 @@ function createEvent(eventInfo: {
         const selected = figma.currentPage.selection;
 
         let sorted: SceneNode[] = [];
+
+        //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
+        let xarray  = [] as number[];
+        let yarray  = [] as number[];
+
         for (const item of selected) {
             if (isShowHideNode(item))
+            {
+                xarray.push(item.x);
+                yarray.push(item.y);
                 sorted.push(item);
+            }
         }
 
+        const dx = Math.max(...xarray) - Math.min(...xarray);
+        const dy = Math.max(...yarray) - Math.min(...yarray);
+        
+
         const sortIndex = (a: SceneNode) => {
-            return a.y + a.x
+            if (dx > dy)
+                return a.x
+            else
+                return a.y
         };
         //the order of events is so that it progresses in the down-right direction
 
