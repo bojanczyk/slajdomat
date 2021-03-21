@@ -49,8 +49,8 @@ type PresentationList = {
 type SlajdomatSettings = {
     port: number,
     directory ? : string,
-    ffmpeg : string,
-    ffprobe : string
+    ffmpeg: string,
+    ffprobe: string
 }
 
 let presentations: PresentationList;
@@ -170,7 +170,7 @@ function readManifest(presentation: string) {
 
 function readPresentations(): void {
 
-    sendStatus('reading presentations')
+    
     //returns the title of a presentation stored in the given directory, otherwise throws an error (for example, if the argument is not a directory, or a directory without a manifest)
     function presentationTitle(dir: string): string {
         const data = fs.readFileSync(slajdomatSettings.directory + '/' + dir + '/manifest.json').toString();
@@ -214,7 +214,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         }
 
         if (!fs.existsSync(slajdomatSettings.ffmpeg) || !fs.existsSync(slajdomatSettings.ffprobe))
-            throw('To record sound, install ffmpeg and ffprobe.')
+            throw ('To record sound, install ffmpeg and ffprobe.')
 
         const retval: ServerResponse = {
             status: 'Sound recorded successfully'
@@ -274,31 +274,38 @@ function onGetSlide(msg: {
         soundDict: {}
     }
 
-    //if there were some sounds previously saved, we keep them
-    const oldManifest: Manifest = readManifest(msg.presentation);
-    if (oldManifest != undefined) {
-        manifest.soundDict = oldManifest.soundDict;
-        manifest.slideDict = oldManifest.slideDict;
-    }
+    try {
+        //if there were some sounds previously saved, we keep them
+        const oldManifest: Manifest = readManifest(msg.presentation);
+        if (oldManifest != undefined) {
+            manifest.soundDict = oldManifest.soundDict;
+            manifest.slideDict = oldManifest.slideDict;
+        }
 
 
-    for (const slide of msg.slideList) {
-        const dir = slideDir(manifest, slide.database.id, slide.database.name)
-        writeFile(dir + '/image.svg', slide.svg);
-        sendStatus('Received slides for ' + slide.database.name);
-    }
+        for (const slide of msg.slideList) {
+            const dir = slideDir(manifest, slide.database.id, slide.database.name)
+            writeFile(dir + '/image.svg', slide.svg);
+            sendStatus('Received slides for ' + slide.database.name);
+        }
 
-    const presDir = presentationDir(manifest.presentation)
+        const presDir = presentationDir(manifest.presentation)
 
-    writeFile(presDir + '/manifest.json', myStringify(manifest));
+        writeFile(presDir + '/manifest.json', myStringify(manifest));
 
-    //copy the latest version of the html files to the slide directory
-    const htmlSourceDir = app.getAppPath() + '/resources';
-    fs.copyFileSync(htmlSourceDir + '/index.html', presDir + '/index.html')
-    fs.copyFileSync(htmlSourceDir + '/viewer.js', presDir + '/viewer.js')
+        //copy the latest version of the html files to the slide directory
+        const htmlSourceDir = app.getAppPath() + '/resources';
+        fs.copyFileSync(htmlSourceDir + '/index.html', presDir + '/index.html')
+        fs.copyFileSync(htmlSourceDir + '/viewer.js', presDir + '/viewer.js')
 
-    return {
-        status: "ok"
+        return {
+            status: "ok"
+        }
+    } catch (error) {
+        sendStatus(`Error receiving slide ${error.toString}`);
+        return {
+            status: 'error'
+        }
     }
 
 }

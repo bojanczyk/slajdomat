@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog} from 'electron';
+import { app, BrowserWindow, ipcMain, dialog} from 'electron';
+import {createMenu} from './menubar'
 import * as fs from 'fs';
-
+import * as child from 'child_process'
 
 
 import {startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings} from './server'
-export {sendStatus, mainWindow}
+export {sendStatus, mainWindow,openPreferences,openFolder}
 
 //this is the link to the main window html, produced by the despicable webpack
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -49,103 +50,6 @@ const createWindow = (): void => {
 };
 
 
-function createMenu() 
-{
-
-const isMac = process.platform === 'darwin'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const template : any = [
-  // { role: 'appMenu' }
-  ...(isMac ? [{
-    label: app.name,
-    submenu: [
-      { role: 'about' },
-      { type: 'separator' },
-      { label : 'Preferences', click : openPreferences, accelerator : 'CommandOrControl+.'},
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideothers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
-    ]
-  }] : []),
-  // { role: 'fileMenu' }
-  {
-    label: 'File',
-    submenu: [
-      { label : 'Choose presentations folder', click : openFolder, accelerator : 'CommandOrControl+O'},
-      isMac ? { role: 'close' } : { role: 'quit' },
-      
-    ]
-  },
-  // { role: 'editMenu' }
-  {
-    label: 'Edit',
-    submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      ...(isMac ? [
-        { role: 'pasteAndMatchStyle' },
-        { role: 'delete' },
-        { role: 'selectAll' },
-        { type: 'separator' },
-        {
-          label: 'Speech',
-          submenu: [
-            { role: 'startSpeaking' },
-            { role: 'stopSpeaking' }
-          ]
-        }
-      ] : [
-        { role: 'delete' },
-        { type: 'separator' },
-        { role: 'selectAll' }
-      ])
-    ]
-  },
-  // { role: 'viewMenu' }
-  {
-    label: 'View',
-    submenu: [
-      { role: 'reload' },
-      { role: 'forceReload' },
-      { role: 'toggleDevTools' },
-      { type: 'separator' },
-      { role: 'resetZoom' },
-      { role: 'zoomIn' },
-      { role: 'zoomOut' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
-    ]
-  },
-  // { role: 'windowMenu' }
-  {
-    label: 'Window',
-    submenu: [
-      { role: 'minimize' },
-      { role: 'zoom' },
-      ...(isMac ? [
-        { type: 'separator' },
-        { role: 'front' },
-        { type: 'separator' },
-        { role: 'window' }
-      ] : [
-        { role: 'close' }
-      ])
-    ]
-  },
-]
-const menu = Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)
-}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -162,14 +66,9 @@ app.on('activate', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
 
-
+//the user has clicked a presentation name, which should result in opening that presentation in a new window
 ipcMain.on('open-viewer', (event, arg) => {
-  console.log(arg) // prints "ping"
-  // event.reply('asynchronous-reply', 'pong')
-
   const offset = mainWindow.getPosition();
   const viewerWin = new BrowserWindow({
     width: 800,
@@ -189,6 +88,49 @@ ipcMain.on('open-viewer', (event, arg) => {
 })
 
 
+function runGitScript() : void {
+  const gitScript = slajdomatSettings.directory+'/.gitscript';
+  if (!fs.existsSync(gitScript))
+    {
+      sendStatus('There is no file .gitscript in '+ slajdomatSettings.directory)
+    }
+    else
+    {
+      const gitProcess  = child.spawn('bash', [gitScript]);
+
+      gitProcess.stdout.on('data', function (data) {
+        sendStatus('stdout: ' + data.toString());
+      });
+      
+      gitProcess.stderr.on('data', function (data) {
+        sendStatus('stderr: ' + data.toString());
+      });
+      
+      gitProcess.on('exit', function (code) {
+        sendStatus('child process exited with code ' + code.toString());
+      });
+    }
+}
+
+//a button in the toolbar has been clicked
+ipcMain.on('toolbar', (event, arg) => {
+  switch (arg) {
+        
+        case 'git-script':
+            //the button for running the git script
+            runGitScript();
+            break;
+
+        case 'upgrade-presentations':
+            //the button for upgrading the presentations
+            // do nothing
+            break;
+
+        default:
+            //do nothing
+
+    }
+})
 
 
 

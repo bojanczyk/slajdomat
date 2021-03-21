@@ -106,3 +106,18 @@ body {
     flex-direction: column;
     margin-bottom: 4px;
 }
+
+#toolbar {
+    background-color:lightgray;
+    padding-left : 5px;
+}
+
+.toolbar-button {
+    padding : 5px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.toolbar-button:hover {
+    background-color:#daebf7;
+}

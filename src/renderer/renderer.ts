@@ -37,16 +37,16 @@ import {
 
 
 
-
-
+//print a message at the status update at the bottom
 ipcRenderer.on('status-update', (event, arg) => {
     const div = document.createElement('div');
     div.innerHTML = arg;
     const statusPanel = document.getElementById('status-panel');
     statusPanel.appendChild(div);
-    statusPanel.scrollTo(0,statusPanel.scrollHeight);
+    statusPanel.scrollTo(0, statusPanel.scrollHeight);
 })
 
+//we receive the list of presentations in the current folder
 ipcRenderer.on('presentationList', (event, msg) => {
     document.getElementById('folder-link').innerHTML = msg.dir;
     document.getElementById('presentation-panel').classList.remove('hidden');
@@ -76,4 +76,25 @@ ipcRenderer.on('presentationList', (event, msg) => {
 
 document.getElementById('folder-link').addEventListener('click', () => {
     console.log('')
+})
+
+document.getElementById('toolbar').addEventListener('click', (event) => {
+
+    ipcRenderer.send('toolbar', (event.target as HTMLElement).id)
+    // switch ((event.target as HTMLElement).id) {
+        
+    //     case 'git-script':
+    //         //the button for running the git script
+    //         ipcRenderer.send('git-script')
+    //         break;
+
+    //     case 'upgrade-presentations':
+    //         //the button for upgrading the presentations
+    //         ipcRenderer.send('upgrade-presentations')
+    //         break;
+
+    //     default:
+    //         //do nothing
+
+    // }
 })

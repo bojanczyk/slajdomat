@@ -1,1 +1,11 @@
 - highlighter
+- move event
+- change id from figma to home-made so that copy/paste works
+- comments on slides
+- tree structure in app
+- git script in app
+- two-way sound recording
+- searching slides
+- pdf export
+- mobile friendly html
+- maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
