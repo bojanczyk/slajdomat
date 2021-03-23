@@ -37,6 +37,11 @@ import {
 
 
 
+/*import { 
+    PresentationList
+} from '../main/server'*/
+
+
 //print a message at the status update at the bottom
 ipcRenderer.on('status-update', (event, arg) => {
     const div = document.createElement('div');
@@ -46,14 +51,27 @@ ipcRenderer.on('status-update', (event, arg) => {
     statusPanel.scrollTo(0, statusPanel.scrollHeight);
 })
 
+//stop the spinner for a toolbar element
+ipcRenderer.on('stop-spin', (event, arg) => {
+    if (arg == 'git-script')
+    {
+        const buttonHTML = document.getElementById('git-script');
+        buttonHTML.innerHTML = 'file_upload';
+        buttonHTML.classList.remove('myspinner');
+    }
+})
+
 //we receive the list of presentations in the current folder
 ipcRenderer.on('presentationList', (event, msg) => {
+
     document.getElementById('folder-link').innerHTML = msg.dir;
     document.getElementById('presentation-panel').classList.remove('hidden');
     document.getElementById('no-pre').classList.add('hidden');
     const ul = document.getElementById("all-presentations");
     ul.innerHTML = '';
-    if (Object.keys(msg.presentations).length == 0) {
+
+    
+    if (Object.keys(msg.presentations).length == 0 && msg.subfolders.length == 0)  {
         //if there are no presentations in the current directory, then a message is displayed which says that such presentations can be created using the figma plugin
         document.getElementById('empty-folder-text').classList.remove('hidden');
     } else {
@@ -64,9 +82,21 @@ ipcRenderer.on('presentationList', (event, msg) => {
             const li = document.createElement("div");
             li.classList.add('presentation')
             li.id = i;
-            li.innerHTML = i;
+            li.innerHTML = '<i class="material-icons"> zoom_out_map </i>' + i;
             li.addEventListener('click', () => {
                 ipcRenderer.send('open-viewer', msg.presentations[i])
+            })
+            ul.appendChild(li);
+        }
+
+        
+        for (const f of msg.subfolders) {
+            console.log(f);
+            const li = document.createElement("div");
+            li.classList.add('presentation')
+            li.innerHTML = '<i class="material-icons"> folder_open </i>' + f;
+            li.addEventListener('click', () => {
+                ipcRenderer.send('goto-folder', f)
             })
             ul.appendChild(li);
         }
@@ -74,27 +104,22 @@ ipcRenderer.on('presentationList', (event, msg) => {
 });
 
 
-document.getElementById('folder-link').addEventListener('click', () => {
-    console.log('')
+document.getElementById('parent-folder').addEventListener('click', () => {
+    ipcRenderer.send('parent-folder');
 })
 
 document.getElementById('toolbar').addEventListener('click', (event) => {
 
-    ipcRenderer.send('toolbar', (event.target as HTMLElement).id)
-    // switch ((event.target as HTMLElement).id) {
-        
-    //     case 'git-script':
-    //         //the button for running the git script
-    //         ipcRenderer.send('git-script')
-    //         break;
-
-    //     case 'upgrade-presentations':
-    //         //the button for upgrading the presentations
-    //         ipcRenderer.send('upgrade-presentations')
-    //         break;
-
-    //     default:
-    //         //do nothing
-
-    // }
+    const button = (event.target as HTMLElement).id;
+    ipcRenderer.send('toolbar', button);
+    if (button == 'git-script')
+        {
+            const buttonHTML = document.getElementById('git-script');
+            buttonHTML.innerHTML = 'autorenew';
+            buttonHTML.classList.add('myspinner');
+        }
+    
 })
+
+
+

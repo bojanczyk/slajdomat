@@ -5,7 +5,8 @@ export {
     readPresentations,
     saveSettings,
     loadSettings,
-    assignSettings
+    assignSettings,
+    currentDir
 }
 import {
     sendStatus,
@@ -46,9 +47,13 @@ type PresentationList = {
     [key: string]: string
 };
 
+
+let currentDir : string;
+
+
 type SlajdomatSettings = {
     port: number,
-    directory ? : string,
+    directory?: string,
     ffmpeg: string,
     ffprobe: string
 }
@@ -108,15 +113,10 @@ function sanitize(s: string) {
 function presentationDir(presentationName: string) {
     if (!(presentationName in presentations)) {
         const dirName = sanitize(presentationName);
-        presentations[presentationName] = dirName;
         sendStatus('adding ' + dirName)
-        mainWindow.webContents.send('presentationList', {
-            dir: slajdomatSettings.directory,
-            presentations: presentations
-        });
-        fs.mkdirSync(slajdomatSettings.directory + '/' + dirName)
+        fs.mkdirSync(currentDir + '/' + dirName)
     }
-    return slajdomatSettings.directory + '/' + presentations[presentationName];
+    return currentDir + '/' + presentations[presentationName];
 }
 
 //returns the directory for a slide in a presentation, and if it does not exist, then it creates the directory
@@ -168,33 +168,45 @@ function readManifest(presentation: string) {
 }
 
 
-function readPresentations(): void {
 
+//scans the present folder for presentations, and sends them the renderer so that buttons can be created
+function readPresentations(where : string): void {
+
+    currentDir = where;
     
-    //returns the title of a presentation stored in the given directory, otherwise throws an error (for example, if the argument is not a directory, or a directory without a manifest)
-    function presentationTitle(dir: string): string {
-        const data = fs.readFileSync(slajdomatSettings.directory + '/' + dir + '/manifest.json').toString();
-        // console.log(data);
-        const json = JSON.parse(data) as Manifest;
-        return json.presentation;
+    function scanFolders(dir: string) {
+
+        const retval = {
+            dir : dir,
+            presentations:  {} as PresentationList,
+            subfolders : [] as string[]
+        }        
+        fs.readdirSync(dir).forEach(file => {
+            const fullName = dir + '/' + file;
+            try {
+                //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
+                const data = fs.readFileSync(fullName + '/manifest.json').toString();
+                const json = JSON.parse(data) as Manifest;
+                retval.presentations[json.presentation] = file;
+                console.log('added ', file);
+            } catch (e) {
+                //otherwise, if the file is not a folder with presentations, then run recursively
+                if (!file.startsWith('.')) {
+                    if (fs.lstatSync(fullName).isDirectory())
+                        retval.subfolders.push(file);
+                }
+            }
+
+        })
+        return retval;
     }
 
-    presentations = {};
-    //for each child of the presentations directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
-    fs.readdirSync(slajdomatSettings.directory).forEach(file => {
-        try {
-            const title = presentationTitle(file);
-            presentations[title] = file;
-        } catch (e) {
-            // do nothing
-        }
-    })
+    const msg = scanFolders(currentDir);
+    
 
     //send the list of presentations to the renderer
-    mainWindow.webContents.send('presentationList', {
-        dir: slajdomatSettings.directory,
-        presentations: presentations
-    });
+    mainWindow.webContents.send('presentationList', msg);
+    
 
 }
 
@@ -262,7 +274,7 @@ function onGetSlide(msg: {
     slideList: {
         database: Database,
         svg: string
-    } []
+    }[]
 }): ServerResponse {
     sendStatus("Receiving slides for " + msg.presentation);
 

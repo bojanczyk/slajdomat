@@ -25,9 +25,14 @@ body {
 }
 
 .presentation {
+    display: flex;
     padding : 5px;
     cursor: pointer;
     user-select: none;
+}
+
+.presentation i {
+    margin-right : 5px
 }
 
 .presentation:hover {
@@ -46,6 +51,14 @@ body {
     height : 50px;
 }
 
+#folder-link-panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;    
+}
+#folder-link-panel i {
+    padding : 0px
+}
 #folder-link {
     font-size : 12px;
     font-weight :  100;
@@ -120,4 +133,17 @@ body {
 
 .toolbar-button:hover {
     background-color:#daebf7;
+}
+
+.myspinner {
+    -webkit-animation: rotation 2s infinite linear;
+}
+
+@-webkit-keyframes rotation {
+    from {
+            -webkit-transform: rotate(0deg);
+    }
+    to {
+            -webkit-transform: rotate(359deg);
+    }
 }
