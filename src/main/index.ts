@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as child from 'child_process'
 
 
-import {startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings} from './server'
+import {startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, currentDir} from './server'
 export {sendStatus, mainWindow,openPreferences,openFolder}
 
 //this is the link to the main window html, produced by the despicable webpack
@@ -13,6 +13,8 @@ declare const SETTINGS_WINDOW_WEBPACK_ENTRY: string;
 
 //the main window with the presentation list 
 let mainWindow = null as BrowserWindow;
+
+
 
 function sendStatus(text: string) : void {
   mainWindow.webContents.send('status-update', text);
@@ -87,6 +89,23 @@ ipcMain.on('open-viewer', (event, arg) => {
   })
 })
 
+//the user has clicked on a folder name
+ipcMain.on('goto-folder', (event, arg) => {
+  readPresentations(currentDir+'/'+arg)
+})
+
+//the user has clicked on the button for the parent folder
+ipcMain.on('parent-folder', () => {
+  if (currentDir != slajdomatSettings.directory)
+  {
+    console.log('cannot go above parent');
+  }
+  else
+  {
+
+  }
+})
+
 
 function runGitScript() : void {
   const gitScript = slajdomatSettings.directory+'/.gitscript';
@@ -96,18 +115,24 @@ function runGitScript() : void {
     }
     else
     {
-      const gitProcess  = child.spawn('bash', [gitScript]);
+      const gitProcess  = child.spawn('bash', ['.gitscript'], {cwd : slajdomatSettings.directory});
 
       gitProcess.stdout.on('data', function (data) {
-        sendStatus('stdout: ' + data.toString());
+        if (data != null)
+          sendStatus(data.toString());
       });
       
       gitProcess.stderr.on('data', function (data) {
-        sendStatus('stderr: ' + data.toString());
+        if (data != null)
+          sendStatus(data.toString());
       });
       
       gitProcess.on('exit', function (code) {
-        sendStatus('child process exited with code ' + code.toString());
+        if (code == 0)
+          sendStatus('Git script successful.')
+        else  
+          sendStatus('Git script failed.')
+        mainWindow.webContents.send('stop-spin', 'git-script');
       });
     }
 }
@@ -142,7 +167,7 @@ function openFolder()  : Promise<void> {
         {
           console.log('not cancelled')
           slajdomatSettings.directory = result.filePaths[0];
-          readPresentations();
+          readPresentations(slajdomatSettings.directory);
           saveSettings();
         }
     }
@@ -191,7 +216,7 @@ function startApp() : void
   if (fs.existsSync(slajdomatSettings.directory) && 
   fs.lstatSync(slajdomatSettings.directory).isDirectory() )
   {
-    readPresentations();
+    readPresentations(slajdomatSettings.directory);
   }
 
   
