@@ -296,11 +296,11 @@ function createEvent(eventInfo: {
                 sorted.push(item);
             }
         }
-
+        //dx is the maximal difference between x coordinates, likewise for dy
         const dx = Math.max(...xarray) - Math.min(...xarray);
         const dy = Math.max(...yarray) - Math.min(...yarray);
         
-
+        //the events are sorted by x or y depending on which of dx, dy is bigger
         const sortIndex = (a: SceneNode) => {
             if (dx > dy)
                 return a.x
@@ -667,7 +667,6 @@ function setCurrentSlide(slide: FrameNode): void {
             docName: figma.root.name,
             slide: currentSlide.name,
             parent: undefined as string,
-            // slideId: currentSlide.id,
             slideCount: allSlides().length,
         }
         /*
