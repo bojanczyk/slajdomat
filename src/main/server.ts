@@ -6,20 +6,25 @@ export {
     saveSettings,
     loadSettings,
     assignSettings,
-    currentDir
+    gotoParent,
+    gotoChild,
+    PresentationListMessage,
+    upgradePresentation,
+    upgradeAllPresentations
 }
 import {
     sendStatus,
     mainWindow
 } from './index'
 
-
+import { version as versionNumber } from '../..//package.json';
 
 import express from 'express'
 import cors from 'cors'
 import * as http from 'http'
 import * as fs from 'fs'
 import * as child from 'child_process'
+import * as path from 'path'
 
 import {
     app
@@ -36,6 +41,7 @@ import {
 import {
     Database
 } from '../plugin/plugin-types'
+import { writeFileSync } from 'original-fs';
 // import { writeFileSync } from 'original-fs'
 
 /*import {
@@ -44,11 +50,18 @@ import {
 
 
 type PresentationList = {
-    [key: string]: string
+    [key: string]: { file: string, updated: boolean }
 };
 
+//message with list of presentations that is sent to the renderer
+type PresentationListMessage = {
+    dir: string,
+    presentations: PresentationList,
+    subfolders: string[],
+    atRoot: boolean
+}
 
-let currentDir : string;
+let currentDir: string;
 
 
 type SlajdomatSettings = {
@@ -99,6 +112,23 @@ function writeFile(fileName: string, fileContents: string | Buffer) {
     });
 }
 
+//goes to parent directory
+function gotoParent() {
+    if (currentDir == slajdomatSettings.directory) {
+        throw ('cannot go above parent folder');
+    }
+    else {
+        readPresentations(path.join(currentDir, '..'));
+    }
+}
+
+
+
+//goes to child directory
+function gotoChild(arg: string) {
+    readPresentations(currentDir + '/' + arg)
+}
+
 //our choice parameters for stringify
 function myStringify(x: PresentationList | Manifest | SlajdomatSettings): string {
     return JSON.stringify(x, null, 2)
@@ -116,7 +146,7 @@ function presentationDir(presentationName: string) {
         sendStatus('adding ' + dirName)
         fs.mkdirSync(currentDir + '/' + dirName)
     }
-    return currentDir + '/' + presentations[presentationName];
+    return currentDir + '/' + presentations[presentationName].file;
 }
 
 //returns the directory for a slide in a presentation, and if it does not exist, then it creates the directory
@@ -151,13 +181,23 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
     return dir;
 }
 
+
+function copyHTMLFiles(presentation: string) {
+    const presDir = presentationDir(presentation);
+    //copy the latest version of the html files to the slide directory
+    const htmlSourceDir = app.getAppPath() + '/resources';
+    fs.copyFileSync(htmlSourceDir + '/index.html', presDir + '/index.html')
+    fs.copyFileSync(htmlSourceDir + '/viewer.js', presDir + '/viewer.js')
+}
+
+
 //writes the manifest of a presentation to disk
 function writeManifest(manifest: Manifest) {
-    writeFile(presentationDir(manifest.presentation) + '/manifest.json', myStringify(manifest));
+    writeFileSync(presentationDir(manifest.presentation) + '/manifest.json', myStringify(manifest));
 }
 
 //reads the manifest of a presentation 
-function readManifest(presentation: string) {
+function readManifest(presentation: string): Manifest {
     try {
         const data = fs.readFileSync(presentationDir(presentation) + '/manifest.json').toString();
         const json = JSON.parse(data) as Manifest;
@@ -167,46 +207,62 @@ function readManifest(presentation: string) {
     }
 }
 
+//upgrades a presentation to the most recent version. This includes upgrading the manifest file.
+function upgradePresentation(presentation : string) {
+    const manifest = readManifest(presentation);
+    manifest.version = version();
+    writeManifest(manifest);
+    copyHTMLFiles(manifest.presentation);
+}
 
 
+function upgradeAllPresentations () {
+    for (const pres of Object.keys(presentations))
+        upgradePresentation(pres);
+}
+
+
+
+function version() {
+    return parseFloat(versionNumber);
+}
+
+function oldVersion(manifest: Manifest) {
+    return manifest.version != version();
+}
 //scans the present folder for presentations, and sends them the renderer so that buttons can be created
-function readPresentations(where : string): void {
+function readPresentations(dir: string = currentDir): void {
 
-    currentDir = where;
-    
-    function scanFolders(dir: string) {
+    currentDir = dir;
 
-        const retval = {
-            dir : dir,
-            presentations:  {} as PresentationList,
-            subfolders : [] as string[]
-        }        
-        fs.readdirSync(dir).forEach(file => {
-            const fullName = dir + '/' + file;
-            try {
-                //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
-                const data = fs.readFileSync(fullName + '/manifest.json').toString();
-                const json = JSON.parse(data) as Manifest;
-                retval.presentations[json.presentation] = file;
-                console.log('added ', file);
-            } catch (e) {
-                //otherwise, if the file is not a folder with presentations, then run recursively
-                if (!file.startsWith('.')) {
-                    if (fs.lstatSync(fullName).isDirectory())
-                        retval.subfolders.push(file);
-                }
+    const msg: PresentationListMessage = {
+        dir: currentDir,
+        presentations: {} as PresentationList,
+        subfolders: [] as string[],
+        atRoot: currentDir == slajdomatSettings.directory
+    };
+
+    for (const file of fs.readdirSync(currentDir)) {
+        const fullName = currentDir + '/' + file;
+        try {
+            //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
+            const data = fs.readFileSync(fullName + '/manifest.json').toString();
+            const json = JSON.parse(data) as Manifest;
+            msg.presentations[json.presentation] = { file: file, updated: !oldVersion(json) };
+        } catch (e) {
+            //otherwise, if the file is not a folder with presentations, then run recursively
+            if (!file.startsWith('.')) {
+                if (fs.lstatSync(fullName).isDirectory())
+                    msg.subfolders.push(file);
             }
+        }
 
-        })
-        return retval;
     }
 
-    const msg = scanFolders(currentDir);
-    
-
+    presentations = msg.presentations;
     //send the list of presentations to the renderer
     mainWindow.webContents.send('presentationList', msg);
-    
+
 
 }
 
@@ -279,6 +335,7 @@ function onGetSlide(msg: {
     sendStatus("Receiving slides for " + msg.presentation);
 
     const manifest: Manifest = {
+        version: version(),
         presentation: msg.presentation,
         root: msg.slideList[0].database.id,
         slideDict: {},
@@ -303,12 +360,16 @@ function onGetSlide(msg: {
 
         const presDir = presentationDir(manifest.presentation)
 
-        writeFile(presDir + '/manifest.json', myStringify(manifest));
+        writeManifest(manifest);
+        copyHTMLFiles(manifest.presentation);
 
-        //copy the latest version of the html files to the slide directory
-        const htmlSourceDir = app.getAppPath() + '/resources';
-        fs.copyFileSync(htmlSourceDir + '/index.html', presDir + '/index.html')
-        fs.copyFileSync(htmlSourceDir + '/viewer.js', presDir + '/viewer.js')
+
+
+
+
+
+        //reload the presentations in case a new one was added
+        readPresentations();
 
         return {
             status: "ok"

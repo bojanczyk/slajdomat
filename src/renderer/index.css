@@ -24,18 +24,22 @@ body {
     padding : 5px;
 }
 
-.presentation {
+.presentation-line {
     display: flex;
-    padding : 5px;
-    cursor: pointer;
+    flex-direction:  row;
     user-select: none;
 }
 
-.presentation i {
+.presentation-line i {
     margin-right : 5px
 }
 
-.presentation:hover {
+.presentation-name {
+    cursor: pointer;
+    padding : 5px;
+    flex-grow: 1;
+}
+.presentation-name:hover {
     background-color:#daebf7;
 }
 

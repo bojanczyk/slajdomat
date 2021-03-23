@@ -21,6 +21,7 @@ type SlideEvent = {
 
 //this is the type of the file with the slide information
 type Manifest = {
+    version : number,
     root : string,
     presentation: string,
     slideDict: {
