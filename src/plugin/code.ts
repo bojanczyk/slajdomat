@@ -1,8 +1,10 @@
-import {} from '@figma/plugin-typings'
+import { } from '@figma/plugin-typings'
 
 export {
     pluginSettings,
-    sendSettings
+    sendSettings,
+    getDatabase,
+    allSlides
 }
 
 import {
@@ -11,6 +13,10 @@ import {
     LatexState,
     MessageToCode,
 } from './plugin-types'
+
+import {
+    upgradeVersion
+} from './plugin-version'
 
 import {
     matematykData,
@@ -25,6 +31,7 @@ import {
 import {
     SlideEvent
 } from '../viewer/types';
+import { freshName, sanitize } from '../common/helper'
 
 //*** global variables */
 
@@ -62,6 +69,8 @@ function sendSettings(): void {
 //initialize the settings for the plugin
 function initPlugin() {
 
+
+    upgradeVersion();
     figma.clientStorage.getAsync('slajdomat').then(
         x => {
             //the default plugin settings
@@ -92,71 +101,86 @@ function initPlugin() {
 }
 
 //Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
-function createNewSlide(width: number, height: number): FrameNode {
-    const nodes = allSlides();
+function createNewSlide(width: number, height: number, name: string): FrameNode {
 
-    //does rectangle a intersect any frame
-    function intersectsNothing(a: Rect) {
-        function intersects(a: Rect, b: FrameNode) {
-            if (a.x > b.x + b.width || a.x + a.width < b.x)
-                return false;
-            if (a.y > b.y + b.height || a.y + a.height < b.y)
-                return false;
+
+    //finds a place for the new slide, by searching in a spiral around the current slide (or the origin, if there is no current slide)
+    function findPlace(width: number, height: number): Rect {
+        //does rectangle a intersect any frame
+        function intersectsNothing(a: Rect) {
+            function intersects(a: Rect, b: FrameNode) {
+                if (a.x > b.x + b.width || a.x + a.width < b.x)
+                    return false;
+                if (a.y > b.y + b.height || a.y + a.height < b.y)
+                    return false;
+                return true;
+            }
+            for (const b of allSlides())
+                if (intersects(a, b))
+                    return false;
             return true;
         }
-        for (const b of nodes)
-            if (intersects(a, b))
-                return false;
-        return true;
-    }
 
-    const candidate: Rect = {
-        width: width,
-        height: height,
-        x: 0,
-        y: 0
-    };
+        const candidate: Rect = {
+            width: width,
+            height: height,
+            x: 0,
+            y: 0
+        };
 
-    const basex = (currentSlide == null ? 0 : currentSlide.x);
-    const basey = (currentSlide == null ? 0 : currentSlide.y);
+        const basex = (currentSlide == null ? 0 : currentSlide.x);
+        const basey = (currentSlide == null ? 0 : currentSlide.y);
 
-    //search for free space below the current slide,
-    //using the city metric (i.e. the search follows a square spiral pattern)
-    let i = 0;
-    let searching = true;
-    while (searching) {
-        i++;
-        for (let j = 0; j < i && searching; j++) {
-            candidate.x = basex + j * width;
-            candidate.y = basey + (i + 0.2) * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
+        //search for free space below the current slide,
+        //using the city metric (i.e. the search follows a square spiral pattern)
+        let i = 0;
+        let searching = true;
+        while (searching) {
+            i++;
+            for (let j = 0; j < i && searching; j++) {
+                candidate.x = basex + j * width;
+                candidate.y = basey + (i + 0.2) * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = basex + (i + 0.2) * width;
+                candidate.y = basey + j * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = basex - j * width;
+                candidate.y = basey + (i + 0.2) * height;
+                if (intersectsNothing(candidate)) {
+                    searching = false;
+                    break;
+                }
+                candidate.x = basex - (i + 0.2) * width;
+                candidate.y = basey + j * height;
+                if (intersectsNothing(candidate))
+                    searching = false;
             }
-            candidate.x = basex + (i + 0.2) * width;
-            candidate.y = basey + j * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = basex - j * width;
-            candidate.y = basey + (i + 0.2) * height;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = basex - (i + 0.2) * width;
-            candidate.y = basey + j * height;
-            if (intersectsNothing(candidate))
-                searching = false;
         }
+        return candidate;
     }
 
 
+    const place = findPlace(width, height);
     const newSlide = figma.createFrame();
-    newSlide.x = candidate.x;
-    newSlide.y = candidate.y
+    newSlide.name = name;
+    newSlide.x = place.x;
+    newSlide.y = place.y
     newSlide.resize(width, height);
+    const id = freshName(sanitize(newSlide.name), allSlides().map(slideId));
+    const database: Database = {
+        name: newSlide.name,
+        id: id,
+        events: []
+    }
+    newSlide.setPluginData("database", JSON.stringify(database));
+
+
     return newSlide;
 }
 
@@ -168,22 +192,22 @@ function sendDropDownList() {
         slides: [] as {
             name: string,
             id: string
-        } []
+        }[]
     }
 
 
     for (const node of allSlides())
-        if (node.id != currentSlide.id) {
+        if (node != currentSlide) {
             let alreadyChild = false;
             for (const e of database.events) {
-                if (e.type == "child" && e.id == node.id) {
+                if (e.type == "child" && e.id == slideId(node)) {
                     alreadyChild = true;
                 }
             }
             if (!alreadyChild)
                 msg.slides.push({
                     name: node.name,
-                    id: node.id
+                    id: slideId(node)
                 });
         }
 
@@ -285,12 +309,11 @@ function createEvent(eventInfo: {
         let sorted: SceneNode[] = [];
 
         //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
-        let xarray  = [] as number[];
-        let yarray  = [] as number[];
+        const xarray = [] as number[];
+        const yarray = [] as number[];
 
         for (const item of selected) {
-            if (isShowHideNode(item))
-            {
+            if (isShowHideNode(item)) {
                 xarray.push(item.x);
                 yarray.push(item.y);
                 sorted.push(item);
@@ -299,7 +322,7 @@ function createEvent(eventInfo: {
         //dx is the maximal difference between x coordinates, likewise for dy
         const dx = Math.max(...xarray) - Math.min(...xarray);
         const dy = Math.max(...yarray) - Math.min(...yarray);
-        
+
         //the events are sorted by x or y depending on which of dx, dy is bigger
         const sortIndex = (a: SceneNode) => {
             if (dx > dy)
@@ -319,7 +342,7 @@ function createEvent(eventInfo: {
 
             database.events.push({
                 type: eventInfo.subtype,
-                id: item.id,
+                id: overlayId(item),
                 name: item.name,
                 merged: false,
                 children: []
@@ -329,9 +352,8 @@ function createEvent(eventInfo: {
     }
     if (eventInfo.subtype == 'child') {
         if (eventInfo.id == null) {
-            const newSlide = createNewSlide(currentSlide.width, currentSlide.height);
-            newSlide.name = eventInfo.name;
-            eventInfo.id = newSlide.id;
+            const newSlide = createNewSlide(currentSlide.width, currentSlide.height, eventInfo.name);
+            eventInfo.id = slideId(newSlide)
         }
         createChildEvent(eventInfo.id);
     }
@@ -428,12 +450,12 @@ function saveFile(): void {
     const slideList: {
         database: Database,
         svg: Uint8Array
-    } [] = [];
+    }[] = [];
     //stack of the recursion, to find cycles in slides
     const stack: FrameNode[] = [];
 
     //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
-    async function saveRec(slide: FrameNode): Promise < SlideEvent > {
+    async function saveRec(slide: FrameNode): Promise<SlideEvent> {
         let retval;
         if (stack.includes(slide)) {
             let cycle = "The slides contain a cycle: \n";
@@ -451,7 +473,7 @@ function saveFile(): void {
             const changes: {
                 node: SceneNode,
                 savedName: string
-            } [] = [];
+            }[] = [];
             for (const event of database.events) {
                 const node = findEventObject(event, slide);
                 if (node != null) {
@@ -521,46 +543,58 @@ function saveFile(): void {
 
 }
 
+// I use my own id's, instead of those of figma, so that copy and paste between presentations works
+//the id for a slide is stored in its database
+function slideId(slide: FrameNode): string {
+    const database = getDatabase(slide);
+    if (database != undefined)
+        return database.id;
+    else
+        return undefined;
+}
+
+//the id of an overlay is stored in the node 
+function overlayId(node: SceneNode) {
+    let retval = node.getPluginData('id');
+    if (retval == '')
+    {
+        // we need to generate a new id
+        const slide = node.parent;
+        if (!isSlideNode(slide as FrameNode))
+            throw 'asked for overlay id of a node that is not a child of a slide';
+
+        const avoid = slide.children.map( child => child.getPluginData('id'));
+        retval = freshName(sanitize(node.name), avoid)
+    }
+    return retval;
+}
+
+
 
 // save the plugin data, for the current slide, to the file
 function saveCurrentData(): void {
     database.name = currentSlide.name;
-    database.id = currentSlide.id;
     currentSlide.setPluginData("database", JSON.stringify(database));
 }
 
 
+
 // the opposite of the previous function
 function loadCurrentData(): void {
+
     database = getDatabase(currentSlide);
-    if (database == null) {
-        //there is no database
-        database = {
-            name: currentSlide.name,
-            id: currentSlide.id,
-            events: []
-        }
-    }
     cleanDatabase();
 }
 
-//fix the database if it was created in a previous version, by possibly adding attributes
-function fixVersion(database: Database) {
-    for (const event of database.events) {
-        if (event.merged == undefined) {
-            event.merged = false;
-        }
-    }
-}
 
 //get the database for a slide
-function getDatabase(slide: FrameNode) {
+function getDatabase(slide: FrameNode): Database {
     const s = slide.getPluginData("database");
     if (s == '')
-        return null
+        return undefined
     else {
         const parsed = JSON.parse(s);
-        fixVersion(parsed);
+        // fixVersion(parsed);
         return parsed;
     }
 }
@@ -573,19 +607,19 @@ function isShowHideNode(node: SceneNode): boolean {
     return true;
 }
 
-//a node is a slide if it is a frame and its parent is not a frame
-function isSlideNode(node: BaseNode): boolean {
+//a node is a slide if it contains a database
+function isSlideNode(node: FrameNode): boolean {
     if (node == null)
         return false;
-    return (node.type == "COMPONENT" || node.type == 'FRAME') && (node.parent.type === "PAGE")
+    return (getDatabase(node) != null)
 }
 
 //return the list of all slides
 function allSlides(): FrameNode[] {
     const retval = [] as FrameNode[];
-    for (const node of (figma.currentPage.children)) {
+    for (const node of (figma.currentPage.children as FrameNode[])) {
         if (isSlideNode(node))
-            retval.push(node as FrameNode)
+            retval.push(node)
     }
     return retval
 }
@@ -593,7 +627,7 @@ function allSlides(): FrameNode[] {
 //find a slide in the document with the given id
 function findSlide(id: string): FrameNode {
     for (const node of allSlides())
-        if (node.id == id)
+        if (slideId(node) == id)
             return node;
     return null;
 }
@@ -603,7 +637,7 @@ function findSlide(id: string): FrameNode {
 function findEventObject(event: SlideEvent, slide: FrameNode): SceneNode {
     if (event.type == 'show' || event.type == 'hide')
         for (const child of slide.children)
-            if (event.id == child.id)
+            if (event.id ==  overlayId(child))
                 return child as SceneNode;
 
     if (event.type == 'child') {
@@ -647,9 +681,9 @@ function cleanDatabase(): void {
 function parentSlide(slide: FrameNode): FrameNode {
     for (const other of allSlides()) {
         const db = getDatabase(other);
-        if (db != null)
+        if (db != undefined)
             for (const event of db.events)
-                if (event.type == 'child' && event.id == slide.id)
+                if (event.type == 'child' && event.id == slideId(slide))
                     return other;
     }
     return null;
@@ -699,7 +733,7 @@ function slideWithSelection(): FrameNode {
     const sel = figma.currentPage.selection;
     if (sel.length > 0) {
         let node = sel[0];
-        while (!isSlideNode(node) && node != null)
+        while (!isSlideNode(node as FrameNode) && node != null)
             node = node.parent as SceneNode;
         return node as FrameNode;
     } else
@@ -796,7 +830,7 @@ function onMessage(msg: MessageToCode) {
 
         case 'makeFirst':
             //make a first slide
-            setCurrentSlide(createNewSlide(msg.width, msg.height));
+            setCurrentSlide(createNewSlide(msg.width, msg.height, 'new slide'));
             figma.viewport.scrollAndZoomIntoView([currentSlide]);
             break;
 

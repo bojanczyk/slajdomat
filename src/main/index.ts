@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog} from 'electron';
 import { createMenu } from './menubar'
 import * as fs from 'fs';
 import * as child from 'child_process'
 
 
-import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, upgradePresentation, upgradeAllPresentations } from './server'
+import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, upgradePresentation, upgradeAllPresentations,revealFinder } from './server'
+
 export { sendStatus, mainWindow, openPreferences, openFolder }
 
 //this is the link to the main window html, produced by the despicable webpack
@@ -30,7 +31,7 @@ const createWindow = (): void => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     height: 600,
-    width: 800,
+    width: 400,
     webPreferences: {
       nodeIntegration: true
     }
@@ -99,8 +100,8 @@ ipcMain.on('parent-folder', () => { gotoParent() })
 
 //the user has clicked on the button for the parent folder
 ipcMain.on('upgrade', (event, arg) => {
-    upgradePresentation(arg);
-    readPresentations()
+  upgradePresentation(arg);
+  readPresentations()
 }
 )
 
@@ -144,6 +145,7 @@ ipcMain.on('toolbar', (event, arg) => {
       runGitScript();
       break;
 
+
     case 'upgrade-presentations':
       upgradeAllPresentations();
       readPresentations();
@@ -154,6 +156,10 @@ ipcMain.on('toolbar', (event, arg) => {
 
   }
 })
+
+ipcMain.on('reveal-finder', (event,arg) => {
+  revealFinder(arg.name, arg.type);      
+});
 
 
 

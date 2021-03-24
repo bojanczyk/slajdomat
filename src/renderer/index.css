@@ -12,17 +12,21 @@ body {
     height : 100%;
 }
 
+.material-icons {
+    font-size: 20px;
+}
 .panel {
-    padding : 10px;
     overflow : scroll;
 }
 #index-title {
     font-size: large;
 }
 #all-presentations {
-    margin-top: 10px;
-    padding : 5px;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 300;
 }
+
 
 .presentation-line {
     display: flex;
@@ -31,14 +35,20 @@ body {
 }
 
 .presentation-line i {
-    margin-right : 5px
+    margin-top: 2px;
+    margin-right : 10px;
+    margin-left : 10px;
+    font-size: 15px
 }
 
 .presentation-name {
     cursor: pointer;
     padding : 5px;
     flex-grow: 1;
+    display: flex;
+    align-items: center;
 }
+
 .presentation-name:hover {
     background-color:#daebf7;
 }
@@ -55,18 +65,9 @@ body {
     height : 50px;
 }
 
-#folder-link-panel {
-    display: flex;
-    flex-direction: row;
-    align-items: center;    
-}
-#folder-link-panel i {
-    padding : 0px
-}
 #folder-link {
     font-size : 12px;
     font-weight :  100;
-    padding-top : 5px;
     padding-left : 10px;
     cursor: pointer;
 }
@@ -127,6 +128,8 @@ body {
 #toolbar {
     background-color:lightgray;
     padding-left : 5px;
+    display: flex;
+    align-items: center;
 }
 
 .toolbar-button {

@@ -3,10 +3,10 @@ const path = require('path')
 const webpack = require('webpack')
 
 module.exports = (env, argv) => ({
-  mode: 'production', // alternative is  'development',
+  mode: 'development', // alternative is  'development',
 
   // watch: true,
-  // devtool: this.mode === 'production' ? false : 'inline-source-map',
+  devtool: this.mode === 'production' ? false : 'inline-source-map',
 
   entry: {
     ui: './src/plugin/ui.ts', // UI side of figma plugin

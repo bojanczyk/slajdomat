@@ -43,6 +43,7 @@ import {
 } from '../main/server'
 
 
+
 //print a message at the status update at the bottom
 ipcRenderer.on('status-update', (event, arg) => {
     const div = document.createElement('div');
@@ -67,6 +68,36 @@ ipcRenderer.on('stop-spin', (event, arg) => {
 //we receive the list of presentations in the current folder
 ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
 
+   
+    function nameDiv(type : 'folder' | 'presentation', name : string) {
+        const retval = document.createElement('div');
+        retval.classList.add('presentation-name');
+        retval.innerHTML = `<i class="material-icons"> ${type == 'folder' ?  'folder_open' : 'zoom_out_map'} </i> ${name}`;
+        
+        return retval;
+    }
+
+    function updateButton(name : string) {
+        const retval = document.createElement('i');
+        retval.classList.add('material-icons');
+        retval.innerHTML='trending_up';
+        retval.classList.add('toolbar-button');
+        retval.addEventListener('click', () => {
+            ipcRenderer.send('upgrade', name)
+        })
+        return retval;
+    }
+
+    function revealButton(name : string, type : 'folder' | 'presentation') {
+        const retval = document.createElement('i');
+        retval.classList.add('material-icons');
+        retval.innerHTML='folder_open'
+        retval.classList.add('toolbar-button');
+        retval.addEventListener('click', () => {
+            ipcRenderer.send('reveal-finder', {type : type, name : name})
+        })
+        return retval;
+    }
 
     //show or hide the parent folder button depending on whether we are in the root of the current slide directory
     document.getElementById('parent-folder').style.display = (msg.atRoot ? 'none' : '')
@@ -78,44 +109,31 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
     const ul = document.getElementById("all-presentations");
     ul.innerHTML = '';
 
+    //is there at least one presentation that can be upgraded
+    let canUpgrade = false;
 
     if (Object.keys(msg.presentations).length == 0 && msg.subfolders.length == 0) {
         //if there are no presentations in the current directory, then a message is displayed which says that such presentations can be created using the figma plugin
         document.getElementById('empty-folder-text').classList.remove('hidden');
     } else {
 
-        function nameDiv(name : string) {
-            const retval = document.createElement('div');
-            retval.classList.add('presentation-name');
-            retval.innerHTML = name;
-            return retval;
-        }
-
-        function updateButton(name : string) {
-            const retval = document.createElement('i');
-            retval.classList.add('material-icons');
-            retval.innerHTML='trending_up';
-            retval.classList.add('toolbar-button');
-            retval.addEventListener('click', () => {
-                ipcRenderer.send('upgrade', name)
-            })
-            return retval;
-        }
-
         //if there are presentations in the current directory, then they are shown
         document.getElementById('empty-folder-text').classList.add('hidden');
         for (const i of Object.keys(msg.presentations)) {
 
             const li = document.createElement("div");
-            li.classList.add('presentation-line')            
-            li.innerHTML = '<i class="material-icons"> zoom_out_map </i>';
-            if (!msg.presentations[i].updated)
-                li.appendChild(updateButton(i));
-            const name = nameDiv(i)
+            li.classList.add('presentation-line');   
+            const name = nameDiv('presentation',i);
             li.appendChild(name)
             name.addEventListener('click', () => {
                 ipcRenderer.send('open-viewer', msg.dir + '/' + msg.presentations[i].file + '/index.html')
             })
+            li.appendChild(revealButton(i,'presentation'));
+            if (!msg.presentations[i].updated)
+                {
+                    li.appendChild(updateButton(i));
+                    canUpgrade = true;
+                }
             ul.appendChild(li);
         }
 
@@ -124,8 +142,7 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
             console.log(f);
             const li = document.createElement("div");
             li.classList.add('presentation-line')
-            li.innerHTML = '<i class="material-icons"> folder_open </i>';
-            const name = nameDiv(f);
+            const name = nameDiv('folder', f);
             li.appendChild(name);
             name.addEventListener('click', () => {
                 ipcRenderer.send('goto-folder', f)
@@ -133,6 +150,13 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
             ul.appendChild(li);
         }
     }
+
+    const upgradeButton = document.getElementById('upgrade-presentations') as HTMLElement;
+    if (canUpgrade)
+        {upgradeButton.style.display=''}
+    else 
+        {upgradeButton.style.display='none'}
+    
 });
 
 
