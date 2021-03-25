@@ -50,32 +50,32 @@ import { SlideEvent, SoundState } from './types';
 let totalSoundDuration = 0;
 
 //these dictionaries store, for each slide event, the corresponding div and subtreeDiv in the tree panel. The div is the name of the event, while the subtreeDiv is defined only for child events, and it is the subtree.
-const divCache : Map<SlideEvent,HTMLElement> = new Map();
-const subtreeDivCache : Map<SlideEvent,HTMLElement> = new Map();
+const divCache: Map<SlideEvent, HTMLElement> = new Map();
+const subtreeDivCache: Map<SlideEvent, HTMLElement> = new Map();
 
 //this dictionary tells you if the div, for a child event, is open (the tree is unfolded)
-const divOpen : Map<SlideEvent, boolean> = new Map();
+const divOpen: Map<SlideEvent, boolean> = new Map();
 
 //this dictionary associates to each event the corresponding html element in the timeline
-const timelines : Map<SlideEvent,HTMLElement> = new Map();
+const timelines: Map<SlideEvent, HTMLElement> = new Map();
 
 //assigns to each event the number of seconds until that event
-const soundOffset : Map<SlideEvent,number> = new Map();
+const soundOffset: Map<SlideEvent, number> = new Map();
 
 
 //create the tree list of the slides and event that is in the unfolding side panel on the left
-function createTreeHTML() : void {
+function createTreeHTML(): void {
 
-    function createTreeHTMLRec(event : SlideEvent) {
+    function createTreeHTMLRec(event: SlideEvent) {
 
-        function eventClicked(e : MouseEvent) //what happens when an event is clicked in the control panel
+        function eventClicked(e: MouseEvent) //what happens when an event is clicked in the control panel
         {
             if ((e.target as Element).nodeName == 'I') {
                 //the icon was clicked
                 if (event.type == 'child') // for child events, we fold/unfold the list of child events
                 {
                     const open = !divOpen.get(event);
-                    divOpen.set(event,open);
+                    divOpen.set(event, open);
                     openPanelTree(event, open);
                 }
             } else {
@@ -85,13 +85,13 @@ function createTreeHTML() : void {
         }
         divOpen.set(event, false);
         if (parentEvent(event) == undefined) {
-            subtreeDivCache.set(event, document.getElementById('slide-stack'));            
+            subtreeDivCache.set(event, document.getElementById('slide-stack'));
         } else if (event.merged && event.type != 'child') {
             //merged events get no items in the tree view
         } else {
             const parentDiv = subtreeDivCache.get(parentEvent(event));
-            const div =  document.createElement("div");
-            divCache.set(event,div);
+            const div = document.createElement("div");
+            divCache.set(event, div);
             div.classList.add("tree-view-item");
             div.classList.add("tree-view-item-loading");
 
@@ -115,11 +115,11 @@ function createTreeHTML() : void {
 
 
             if (event.type == 'child') {
-                const subdiv =  document.createElement("div");
+                const subdiv = document.createElement("div");
                 subdiv.classList.add("slide-stack");
                 subdiv.classList.add("slide-stack-hidden");
                 parentDiv.appendChild(subdiv);
-                subtreeDivCache.set(event,subdiv);
+                subtreeDivCache.set(event, subdiv);
             }
         }
 
@@ -137,7 +137,7 @@ function createTreeHTML() : void {
 const noSoundDuration = 10;
 
 //updates the duration of an event; the update concerns the timeline
-function updateEventDuration(event : SlideEvent) : void {
+function updateEventDuration(event: SlideEvent): void {
     const timeline = timelines.get(event);
     if (soundDurations.get(event) != undefined) {
         timeline.style.flexGrow = soundDurations.get(event).toString();
@@ -150,15 +150,15 @@ function updateEventDuration(event : SlideEvent) : void {
 }
 
 //creates the timeline at the bottom of the screen
-function makeTimeline() : void {
+function makeTimeline(): void {
 
     //for each element, find the duration of its audio
-    function computeDuration(event : SlideEvent) : void {
+    function computeDuration(event: SlideEvent): void {
         for (let i = 0; i < event.children.length; i++) {
             soundOffset.set(event.children[i], totalSoundDuration);
             try {
                 const duration = manifest.soundDict[event.id][i].duration;
-                soundDurations.set(event.children[i], duration );
+                soundDurations.set(event.children[i], duration);
                 totalSoundDuration += duration;
             } catch (e) {
                 totalSoundDuration += noSoundDuration;
@@ -172,15 +172,15 @@ function makeTimeline() : void {
     }
 
     //create a div in the timeline for every non-root element of the 
-    function makeTimelineRec(event : SlideEvent) : void {
+    function makeTimelineRec(event: SlideEvent): void {
 
         if (parentEvent(event) == undefined) {
             //the root has no element in the timeline
-            
+
         } else if (event.merged) {
             //if an event is merged with the previous one, then also no timeline
-            
-        }  else {
+
+        } else {
             const big = document.createElement('div');
             const small = document.createElement('div');
             small.classList.add('progress-filler');
@@ -193,7 +193,7 @@ function makeTimeline() : void {
             })
             timelines.set(event, big);
             updateEventDuration(event);
-        } 
+        }
         //recursively call for children
         if (event.type == 'child')
             for (const child of event.children)
@@ -207,14 +207,14 @@ function makeTimeline() : void {
 }
 
 //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
-function timelineClicked(event : SlideEvent, e : MouseEvent) : void {
+function timelineClicked(event: SlideEvent, e: MouseEvent): void {
 
     let target = e.target as HTMLElement;
     if (target.classList.contains('progress-filler')) {
         target = target.parentNode as HTMLElement;
     }
-    const a : number = e.offsetX;
-    const b : number = target.offsetWidth;
+    const a: number = e.offsetX;
+    const b: number = target.offsetWidth;
 
     if (event == curEvent) {
         gotoAudio(a / b);
@@ -224,7 +224,7 @@ function timelineClicked(event : SlideEvent, e : MouseEvent) : void {
 }
 
 //mark the tree view and timeline for an event as seen/unseen
-function markSeen(event : SlideEvent, seen : boolean) : void {
+function markSeen(event: SlideEvent, seen: boolean): void {
     const div = divCache.get(event);
     const timeline = timelines.get(event);
     if (seen) {
@@ -248,7 +248,7 @@ function markSeen(event : SlideEvent, seen : boolean) : void {
 }
 
 //mark an event as disabled in the tree view
-function markDisabled(node :SlideEvent) : void {
+function markDisabled(node: SlideEvent): void {
     const div = divCache.get(node);
     if (div != undefined) {
         div.classList.add("disabled-event");
@@ -258,7 +258,7 @@ function markDisabled(node :SlideEvent) : void {
 
 
 //opens or closes the tree view corresponding to a child event
-function openPanelTree(event : SlideEvent, open : boolean) : void {
+function openPanelTree(event: SlideEvent, open: boolean): void {
     const icon = divCache.get(event).childNodes[0] as HTMLElement;
     if (open) {
         subtreeDivCache.get(event).classList.remove('slide-stack-hidden');
@@ -270,21 +270,20 @@ function openPanelTree(event : SlideEvent, open : boolean) : void {
 }
 
 //remove the 'loading' class from the corresponding elements in the slide panel
-function removeLoading(node : SlideEvent) : void
-{
-if (divCache.get(node) != undefined) {
-    divCache.get(node).classList.remove("tree-view-item-loading");
-}
-for (const child of node.children)
-    if (child.type == 'show' || child.type == 'hide') {
-        if (divCache.get(child) != undefined)
-            divCache.get(child).classList.remove("tree-view-item-loading");
+function removeLoading(node: SlideEvent): void {
+    if (divCache.get(node) != undefined) {
+        divCache.get(node).classList.remove("tree-view-item-loading");
     }
+    for (const child of node.children)
+        if (child.type == 'show' || child.type == 'hide') {
+            if (divCache.get(child) != undefined)
+                divCache.get(child).classList.remove("tree-view-item-loading");
+        }
 }
 
 
 //inputs number of seconds and formats it in mm:ss format
-function formatTime(time : number) : string {
+function formatTime(time: number): string {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time) % 60;
     if (seconds < 10)
@@ -294,18 +293,18 @@ function formatTime(time : number) : string {
 }
 
 //this function is called periodically when the audio is playing, and it updates the position of the slider
-function audioPlaying(e : Event) : void {
+function audioPlaying(e: Event): void {
     const audio = e.target as HTMLAudioElement;
     const currentTime = audio.currentTime;
     const duration = audio.duration;
-    const curTime =  currentTime + soundOffset.get(curEvent);
+    const curTime = currentTime + soundOffset.get(curEvent);
     document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
     (timelines.get(curEvent).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
 
 }
 
 // the timeline uses two kinds of display, depending on the whether the sound is playing, or not
-function timelineButtons() : void {
+function timelineButtons(): void {
     if (soundState == SoundState.Play) {
         document.getElementById('progress-panel').classList.add('playing');
     } else {
@@ -314,7 +313,7 @@ function timelineButtons() : void {
 }
 
 //toggles the side panel on the left with the list of slides
-function showPanel(visible : boolean) : void {
+function showPanel(visible: boolean): void {
     if (visible) {
         gsap.to("#left-panel", {
             width: "20%",
@@ -328,41 +327,43 @@ function showPanel(visible : boolean) : void {
     }
 }
 
-function togglePanel() : void {
-    
+function togglePanel(): void {
+
     if ((document.getElementById('left-panel') as HTMLDivElement).clientWidth > 0)
         showPanel(false)
-    else    
+    else
         showPanel(true);
 }
 
-//initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
-function initPanels() : void  {
-    
-    /* I no longer want the left to open automatically on mouseover, this was intrusive
-    document.addEventListener('mousemove', function (e) {
-        if (e.clientX < 20)
-            togglePanel(true);
-    })
-    
 
-    document.getElementById('close-panel').addEventListener('click', function () {
-        showPanel(false)
-    });
-    */
-    
+
+
+//initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
+function initPanels(): void {
+
+
     document.getElementById('open-menu').addEventListener('click', togglePanel);
     document.getElementById('prev-event').addEventListener('click', prevButton);
     document.getElementById('next-event').addEventListener('click', nextButton);
     document.getElementById('play-button').addEventListener('click', playButton);
     document.getElementById('sound-speed').addEventListener('click',
-        playbackRateChange)
+        playbackRateChange);
+
+
+    // document.getElementById('resizer').addEventListener('mousedown', () => { leftPanelResizing = true });
+    // document.getElementById('resizer').addEventListener('mousemove', (e) => {
+    //     if (leftPanelResizing) {
+    //         document.getElementById('left-panel').style.width = e.clientX+'px';
+    // }});
+
+
+
 }
 
 
 
 //displays a panel for a short time
-function shortDisplay(panel : HTMLElement) : void {
+function shortDisplay(panel: HTMLElement): void {
     const tl = gsap.timeline();
     panel.style.display = 'inherit';
     tl.to(panel, {
@@ -385,13 +386,13 @@ function shortDisplay(panel : HTMLElement) : void {
 // }
 
 //displays an alert for the user at the bottom of the screen
-function userAlert(text : string) : void {
+function userAlert(text: string): void {
     document.getElementById("text-alert").innerHTML = text;
     shortDisplay(document.getElementById("text-alert-box"));
 }
 
 //update the page number in the corner
-function updatePageNumber() : void {
+function updatePageNumber(): void {
     document.getElementById("page-count-enumerator").innerHTML = pageNumber(curEvent).toString();
     document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 
@@ -407,3 +408,5 @@ function updatePageNumber() : void {
     else
         document.getElementById("next-event").style.visibility = "visible";
 }
+
+

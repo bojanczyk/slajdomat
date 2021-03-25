@@ -4,7 +4,8 @@
 #left-panel {
     position : relative;
     color : black;
-    display: inline-block;
+    display : flex;
+    flex-direction: column;
     background-color:whitesmoke;
     width : 0%;
     /* height: 100%; */
@@ -13,8 +14,9 @@
     cursor: default;
     font-family: 'Roboto';
     font-weight: 300;
-    overflow : hidden; 
     white-space: nowrap;
+    overflow: hidden;
+    resize :horizontal;
 }
 
 
@@ -62,10 +64,10 @@
 
 
 #made-using-slajdomat {
-    padding : 5px;
-    width : 200px;
-    white-space: normal;
-    margin : 1px;
+    margin : 5px;
+    margin-left : 10px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 
@@ -80,3 +82,13 @@
     margin : 0px;
 }
 
+#resizer {
+    background-color: blue;
+    width : 10px;
+    opacity: 0;
+    height: 100%;
+    position: absolute;
+    top : 0px;
+    right : 0px;
+    cursor:col-resize;
+}
