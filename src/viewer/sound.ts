@@ -308,9 +308,11 @@ function loadSounds(node : SlideEvent) : void {
         const filename = soundFile(child);
         if (filename != null) {
             const audio = new Audio(filename);
+            // audio.autoplay=true;
             audio.addEventListener('ended', function () {
                 changeEvent(1);
-            })
+            });
+
             audio.addEventListener('loadeddata', () => {
                 audioDict.set(child, audio);
                 if (child == eventTree.children[0]) {

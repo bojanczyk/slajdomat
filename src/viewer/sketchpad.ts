@@ -1,6 +1,6 @@
 
 export {
-    toggleSketchpad
+    toggleSketchpad, sketchpadVisible
 };
 
 //the possible tools are a red pencil and a blue pencil
@@ -9,22 +9,22 @@ enum Tool {
     Blue
 }
 
-let is_touch_device : boolean;
+let is_touch_device: boolean;
 let isDrawing = false;
-let sigCanvas : SVGSVGElement;
-let curPath : SVGElement;
-let curPathText : string;
-let selectedColor : string;
+let sigCanvas: SVGSVGElement;
+let curPath: SVGElement;
+let curPathText: string;
+let selectedColor: string;
 
 
-let matrix : SVGMatrix;
-let punkt : SVGPoint;
+let matrix: SVGMatrix;
+let punkt: SVGPoint;
 
-const undoStack : SVGElement[] = [];
+const undoStack: SVGElement[] = [];
 let undoIndex = -1;
 let sketchpadVisible = false;
 
-function draw(event : Event) : void {
+function draw(event: Event): void {
 
 
 
@@ -35,19 +35,18 @@ function draw(event : Event) : void {
         }
     }
 
-    if (isDrawing) {
+
+    if (isDrawing && event.type != 'touchend') {
         if (is_touch_device) {
             punkt.x = (event as TouchEvent).targetTouches[0].pageX;
             punkt.y = (event as TouchEvent).targetTouches[0].pageY;
+
         } else {
             punkt.x = (event as MouseEvent).clientX;
             punkt.y = (event as MouseEvent).clientY;
-
         }
         punkt = punkt.matrixTransform(matrix);
     }
-
-
 
     function addPoint() {
         curPathText += ' L ' + punkt.x + ' ' + punkt.y;
@@ -76,17 +75,17 @@ function draw(event : Event) : void {
 
     if (event.type == 'touchend' || event.type == 'mouseup' || event.type == 'mouseout') {
         if (isDrawing) {
-            addPoint();
             isDrawing = false;
         }
     }
+
 }
 
 
 
 
 
-function toggleSketchpad() : void {
+function toggleSketchpad(): void {
     sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
     punkt = sigCanvas.createSVGPoint();
 
@@ -107,7 +106,7 @@ function toggleSketchpad() : void {
             sigCanvas.addEventListener('touchmove', draw, false);
             sigCanvas.addEventListener('touchend', draw, false);
             // prevent elastic scrolling
-            sigCanvas.addEventListener('touchmove', function (event : Event) {
+            sigCanvas.addEventListener('touchmove', function (event: Event) {
                 event.preventDefault();
             }, false);
         } else {
@@ -121,7 +120,7 @@ function toggleSketchpad() : void {
 }
 
 
-function undo() : void {
+function undo(): void {
     if (undoIndex >= 0) {
         const top = undoStack[undoIndex];
         top.remove();
@@ -130,7 +129,7 @@ function undo() : void {
     undoButtons();
 }
 
-function redo() : void {
+function redo(): void {
 
     if (undoIndex < undoStack.length - 1) {
         undoIndex += 1;
@@ -141,7 +140,7 @@ function redo() : void {
 }
 
 
-function undoButtons() : void {
+function undoButtons(): void {
     if (undoIndex >= 0)
         document.getElementById('sketch-undo').classList.remove('disabled')
     else
@@ -158,7 +157,7 @@ function undoButtons() : void {
 
 
 // the main event dispatcher
-function keyListener(event : KeyboardEvent) : void {
+function keyListener(event: KeyboardEvent): void {
     if (event.key == 'u') {
         undo();
     }
@@ -167,28 +166,26 @@ function keyListener(event : KeyboardEvent) : void {
     }
 }
 
-function selectTool(tool : Tool) : void {
+function selectTool(tool: Tool): void {
     document.getElementById('sketch-red').classList.remove('selected');
     document.getElementById('sketch-blue').classList.remove('selected');
 
     //the red or blue pencil was chosen
-    if (tool == Tool.Red)
-    {
+    if (tool == Tool.Red) {
         document.getElementById('sketch-red').classList.add('selected');
         selectedColor = 'red';
     }
-    else if (tool == Tool.Blue)
-    {
+    else if (tool == Tool.Blue) {
         document.getElementById('sketch-blue').classList.add('selected');
         selectedColor = 'blue';
     }
-    else     
+    else
         selectedColor = null;
 }
 
 
-function buttonClicked(event : MouseEvent) : void {
-    const target  = event.target as HTMLElement;
+function buttonClicked(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
     if (target.id == 'sketch-undo') {
         undo();
     }
