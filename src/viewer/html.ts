@@ -342,7 +342,7 @@ function togglePanel(): void {
 //initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
 function initPanels(): void {
 
-
+    document.getElementById('svg-container').addEventListener('touchstart', touchStart)
     document.getElementById('open-menu').addEventListener('click', togglePanel);
     document.getElementById('prev-event').addEventListener('click', prevButton);
     document.getElementById('next-event').addEventListener('click', nextButton);
@@ -350,7 +350,7 @@ function initPanels(): void {
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
 
-    //if there is at least one sound, then we display the sound controls (play button, and spped button)
+    //if there is at least one sound, then we display the sound controls (play button, and speed button)
     if (Object.keys(manifest.soundDict).length > 0)
     {
         document.body.classList.add('has-sound');
