@@ -198,8 +198,10 @@ function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     //copy the latest version of the html files to the slide directory
     const htmlSourceDir = app.getAppPath() + '/resources';
-    fs.copyFileSync(htmlSourceDir + '/index.html', presDir + '/index.html')
-    fs.copyFileSync(htmlSourceDir + '/viewer.js', presDir + '/viewer.js')
+    for (const file of ['index.html', 'viewer.js', 'favicon.png'])
+    {
+        fs.copyFileSync(htmlSourceDir + '/' + file, presDir + '/' + file)
+        }
 }
 
 

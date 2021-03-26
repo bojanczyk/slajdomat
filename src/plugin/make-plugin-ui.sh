@@ -27,6 +27,7 @@ cp src/viewer/slajdomat.html resources/index.html
 mkdir test-slides
 cp dist/viewer.js test-slides/
 cp src/viewer/slajdomat.html test-slides/index.html
+cp resources/favicon.png test-slides/
 
 
 

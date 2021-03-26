@@ -1,11 +1,6 @@
 :root {
-    --left-panel-width : 20%;
-    --progress-panel-height : 20px;
+    --left-panel-width : 20%
 }
-
-
-
-
 
 body, html {
     height : 100%;
@@ -13,25 +8,17 @@ body, html {
 
 body {
     margin : 0;
+    display: flex;
+    flex-direction: column;
 }
 
 
 #upper-panel {
-    position: fixed;
-    top : 0;
-    bottom : var(--progress-panel-height);
-    width : 100%;
     display: flex;
     flex-direction: row;
+    flex-grow: 1;
     
 }
-
-
-
-
-
-
-
 
 #text-alert-box {
     position : fixed;
@@ -58,10 +45,6 @@ body {
  font-family: 'Roboto';
  z-index: 1;
 }
-
-
-
-
 
 .hidden-svg {
     position: absolute;
@@ -96,11 +79,6 @@ path:not([fill]) {
 .invisible {
     display: none;
 }
-
-
-
-
-
 
 #help-panel {
     position : absolute;

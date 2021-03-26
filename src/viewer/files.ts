@@ -30,8 +30,11 @@ function pathInURL() : void //puts the current path into the url
     while (path.length > 0) {
         string += path.pop() + '/';
     }
-    const presentationURL  = (new URL(window.location.href)).searchParams.get('slides');
-    history.pushState({}, null, '?slides=' + encodeURI(presentationURL) + '&path=' + string);
+    if (string == '0/')
+    //the argument 0/ is default, so it need not be used
+        history.pushState({}, null);
+    else 
+        history.pushState({}, null, '?path=' + string);
 }
 
 //the directory where the slides are

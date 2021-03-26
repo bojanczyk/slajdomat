@@ -149,6 +149,9 @@ function soundPause() : void {
 //set 
 function soundIcon(icon : SoundState) {
     if (icon != SoundState.None) {
+        //we need to make space for the sound buttons, in case this is the first sound that is added
+        document.body.classList.add('has-sound');
+        
         document.getElementById("play-button").style.opacity = '1';
         if (icon == SoundState.Pause) {
             document.getElementById("play-button").innerHTML = "pause"

@@ -349,15 +349,11 @@ function initPanels(): void {
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
 
-
-    // document.getElementById('resizer').addEventListener('mousedown', () => { leftPanelResizing = true });
-    // document.getElementById('resizer').addEventListener('mousemove', (e) => {
-    //     if (leftPanelResizing) {
-    //         document.getElementById('left-panel').style.width = e.clientX+'px';
-    // }});
-
-
-
+    //if there is at least one sound, then we display the sound controls (play button, and spped button)
+    if (Object.keys(manifest.soundDict).length > 0)
+    {
+        document.body.classList.add('has-sound');
+    }
 }
 
 

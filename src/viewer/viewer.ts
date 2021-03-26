@@ -32,7 +32,7 @@ import {
     soundAdvance
 } from "./sound"
 
-import {  
+import {
     fetchJSON,
     presentationDir
 } from './files'
@@ -156,14 +156,12 @@ window.onload = function (): void {
 
     //the opacity is set to 0 for elements of the page, so that it is not display while the styles are loading. Once the document has loaded, we can set the opacity to normal.
     (document.getElementById('loader-text') as HTMLDivElement).remove();
-    (document.getElementById('upper-panel') as HTMLDivElement).style.opacity='';
-    (document.getElementById('progress-panel') as HTMLDivElement).style.opacity='';
+    (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
+    (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
 
 
 
-    // helpPanel();
-    document.addEventListener("keydown", keyListener);
-    initPanels();
+
 
 
 
@@ -174,6 +172,8 @@ window.onload = function (): void {
         document.title = manifest.presentation;
         const path = getPathFromURL();
         createEventTree();
+        document.addEventListener("keydown", keyListener);
+        initPanels();
         gotoPath(path);
     }) //.catch((e) => userAlert(e))
 }

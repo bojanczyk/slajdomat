@@ -1,7 +1,7 @@
 {
   "name": "slajdomat",
   "productName": "Slajdomat",
-  "version": "0.81",
+  "version": "0.82",
   "description": "A slide making program, which plugs into Figma",
   "main": ".webpack/main",
   "scripts": {
