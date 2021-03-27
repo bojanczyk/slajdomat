@@ -19,9 +19,9 @@ import {
     eventTree,
     curEvent,
     numberOfPages,
-    disabledEvent,
     pageNumber,
-    parentEvent
+    parentEvent,
+    lastEvent
 } from './event'
 
 
@@ -38,6 +38,10 @@ import {
     soundState,
     soundDurations
 } from './sound'
+
+import {
+    initSearch
+  } from './search'
 
 import {
     gsap
@@ -97,9 +101,7 @@ function createTreeHTML(): void {
             div.classList.add("tree-view-item-loading");
 
             let icon;
-            if (disabledEvent(event)) {
-                div.classList.add("disabled-event");
-            }
+
 
             if (event.type == "show")
                 icon = "visibility";
@@ -144,8 +146,13 @@ function updateEventDuration(event: SlideEvent): void {
         timeline.style.flexGrow = soundDurations.get(event).toString();
         timeline.classList.remove('nosound');
     } else {
-        timeline.style.flexGrow = noSoundDuration.toString();
-        timeline.classList.add('nosound');
+        if (lastEvent(event)) {
+            timeline.style.display = 'none';
+        }
+        else {
+            timeline.style.flexGrow = noSoundDuration.toString();
+            timeline.classList.add('nosound');
+        }
     }
 
 }
@@ -294,8 +301,7 @@ function formatTime(time: number): string {
 }
 
 //this function is called periodically when the audio is playing, and it updates the position of the slider
-function audioPlaying(e: Event): void {
-    const audio = e.target as HTMLAudioElement;
+function audioPlaying(audio : HTMLAudioElement): void {
     const currentTime = audio.currentTime;
     const duration = audio.duration;
     const curTime = currentTime + soundOffset.get(curEvent);
@@ -313,16 +319,20 @@ function timelineButtons(): void {
     }
 }
 
+
 //toggles the side panel on the left with the list of slides
 function showPanel(visible: boolean): void {
+    const leftPanel = document.getElementById('left-panel');
+    
     if (visible) {
-        gsap.to("#left-panel", {
-            width: "20%",
+        gsap.to(leftPanel, {
+            width: '30%',
             duration: 0.3
         });
     } else {
-        gsap.to("#left-panel", {
-            width: "0%",
+        // savedPanelWidth =  leftPanel.clientWidth;
+        gsap.to(leftPanel, {
+            width: 0,
             duration: 0.3
         });
     }
@@ -342,7 +352,7 @@ function togglePanel(): void {
 //initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
 function initPanels(): void {
 
-    document.getElementById('svg-container').addEventListener('touchstart', touchStart)
+    document.getElementById('svg').addEventListener('touchstart', touchStart)
     document.getElementById('open-menu').addEventListener('click', togglePanel);
     document.getElementById('prev-event').addEventListener('click', prevButton);
     document.getElementById('next-event').addEventListener('click', nextButton);
@@ -350,9 +360,10 @@ function initPanels(): void {
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
 
+    initSearch();
+
     //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.soundDict).length > 0)
-    {
+    if (Object.keys(manifest.soundDict).length > 0) {
         document.body.classList.add('has-sound');
     }
 }
@@ -411,7 +422,7 @@ function touchStart(event: TouchEvent) {
 
     if (event.touches.length == 1 && !sketchpadVisible) {
         //if the user single-touches on the left or right part of the slide, we do a previous/next slide transition
-        const rect = (document.getElementById('svg-container') as HTMLDivElement).getBoundingClientRect();
+        const rect = (document.getElementById('svg') as HTMLDivElement).getBoundingClientRect();
         //this is the relative position of the touch inside the slide panel, ranging from 0 to 1.
         const fraction = (event.touches[0].clientX - rect.x) / rect.width;
         if (fraction > 0.8)

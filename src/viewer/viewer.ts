@@ -111,8 +111,14 @@ function prevButton(): void {
     if (soundState == SoundState.Play) {
         soundAdvance(-1);
     } else {
-        soundStop();
-        changeEvent(-1);
+        if (soundState == SoundState.Pause || soundState == SoundState.Record) {
+            console.log('resetting this sound');
+            soundStop();
+        }
+        else {
+            soundStop();
+            changeEvent(-1);
+        }
     }
 }
 
@@ -123,28 +129,31 @@ function prevButton(): void {
 // the main event dispatcher
 function keyListener(event: KeyboardEvent) {
 
-    if (event.key == 'ArrowRight') {
-        nextButton();
+    if (event.target != document.getElementById('search-input'))
+{
+        if (event.key == 'ArrowRight') {
+            nextButton();
 
-    }
-    if (event.key == 'ArrowLeft') {
-        prevButton();
-    }
+        }
+        if (event.key == 'ArrowLeft') {
+            prevButton();
+        }
 
-    if (event.key == ' ') {
-        playButton();
-    }
+        if (event.key == ' ') {
+            playButton();
+        }
 
-    if (event.key == 'd') {
-        toggleSketchpad();
-    }
+        if (event.key == 'd') {
+            toggleSketchpad();
+        }
 
-    if (event.key == 'r') {
-        if (soundState == SoundState.Record)
-            soundStop();
-        else {
-            soundStop();
-            soundRecord();
+        if (event.key == 'r') {
+            if (soundState == SoundState.Record)
+                soundStop();
+            else {
+                soundStop();
+                soundRecord();
+            }
         }
     }
 }

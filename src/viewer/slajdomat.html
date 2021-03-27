@@ -33,6 +33,15 @@
 				<p id="logo-line">Slajdomat</p>
 				<p id="logo-second-line">zooming slides with Figma</p>
 			</div>
+			<div id='search-panel'>
+				<div id='search-box'>
+					<i class="material-icons">search</i>
+					<input type="input" id='search-input' placeholder='Search in presentation' />
+				</div>
+				<div id='search-results'>
+				</div>
+
+			</div>
 			<div id='slide-stack-container'>
 				<div id="slide-stack" class="slide-stack">
 				</div>
@@ -42,17 +51,14 @@
 		</div>
 
 		<!-- the panel that contains the svg with the slides -->
-		<div id="svg-container">
-			<div></div>
-			<svg id="svg" class="svg-class"></svg>
-			<div></div>
-		</div>
-		
-		
-		
+		<svg id="svg"></svg>
+
+
+
+
 		<!-- a pop-up text for alerts such as "file not found" -->
 		<div id="text-alert-box">
-			<div id="text-alert">  </div>
+			<div id="text-alert"> </div>
 			<div id="text-alert-background"></div>
 		</div>
 	</div>
@@ -80,8 +86,8 @@
 
 
 	<script type="module" src="viewer.js"></script>
-	
-	 
+
+
 
 
 </body>

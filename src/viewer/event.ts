@@ -8,9 +8,9 @@ export {
     eventIndex,
     gotoEvent,
     getPath,
-    disabledEvent,
     pageNumber,
-    parentEvent
+    parentEvent,
+    lastEvent
 }
 
 import {
@@ -44,7 +44,9 @@ import {
     idTransform,
     transformToString,
     applyTransform,
-    getTransform
+    getTransform,
+    Rect,
+    Transform
 } from './transform'
 
 import {
@@ -56,10 +58,7 @@ import {
     updateSoundIcon
 } from "./sound"
 
-import {
-    Rect,
-    Transform
-} from './transform'
+
 
 
 import {
@@ -74,35 +73,35 @@ let curEvent: SlideEvent = null;
 let numberOfPages = 0;
 
 
-const transforms: Map < SlideEvent, Transform > = new Map();
-const pageNumberMap : Map < SlideEvent, number > = new Map();
-const localRect: Map < SlideEvent, Rect > = new Map();
-const svgdefs: Map < SlideEvent, SVGDefsElement > = new Map();
-const svgMap: Map < SlideEvent, SVGElement> = new Map();
-const eventSVGs: Map < SlideEvent, {
+const transforms: Map<SlideEvent, Transform> = new Map();
+const pageNumberMap: Map<SlideEvent, number> = new Map();
+const localRect: Map<SlideEvent, Rect> = new Map();
+const svgdefs: Map<SlideEvent, SVGDefsElement> = new Map();
+const svgMap: Map<SlideEvent, SVGElement> = new Map();
+
+
+const eventSVGs: Map<SlideEvent, {
     svg: SVGElement,
     startVisible: boolean
-} [] > = new Map();
+}[]> = new Map();
+
+
 
 //this is how we can access variables in the browser console
 // (window as any).svgMap = svgMap;
 
 
-const parentMap: Map < SlideEvent, SlideEvent > = new Map();
-function parentEvent(event: SlideEvent) : SlideEvent {
+const parentMap: Map<SlideEvent, SlideEvent> = new Map();
+function parentEvent(event: SlideEvent): SlideEvent {
     return parentMap.get(event);
 }
 
-function pageNumber(event : SlideEvent) : number {
+function pageNumber(event: SlideEvent): number {
     return pageNumberMap.get(event);
 }
 
 
 
-//this is a feature that is not currently used: a disabled event is one that is already known not to work from the manifest, e.g. because the figma file had some errors 
-function disabledEvent( ignored : SlideEvent) : boolean {
-    return   false;
-}
 
 //add a new node to the slide tree
 //the svg
@@ -119,7 +118,7 @@ function svgLoaded(node: SlideEvent, index: number): void {
 
 
     localRect.set(node, getBoundRect(svgMap.get(node)));
-    eventSVGs.set(node,[]);
+    eventSVGs.set(node, []);
     //hide objects that are either a placeholder rectangle, or the first event is show
     for (const c of svgMap.get(node).children) {
         const child = c as SVGElement;
@@ -153,7 +152,7 @@ function svgLoaded(node: SlideEvent, index: number): void {
                     svgMap.set(event, child);
                 }
             }
-           
+
         }
     }
 
@@ -212,7 +211,7 @@ function loadSVG(node: SlideEvent, index = 0, callback: (x: boolean) => void = n
                 //in principle, the right element should be the first child, but Marek Sokołowski mentioned that expressVPN changes inserts some wrong children, hence the following code
                 for (const child of ob.contentDocument.firstElementChild.children) {
                     if (child.nodeName == 'g')
-                        svgMap.set(node,child as SVGElement);
+                        svgMap.set(node, child as SVGElement);
 
                     //the svg has also some definitions, which will contain images
                     if (child.nodeName == 'defs') {
@@ -235,7 +234,7 @@ function loadSVG(node: SlideEvent, index = 0, callback: (x: boolean) => void = n
             } catch (exception) {
                 // this means that the svg failed to load correctly
                 markDisabled(node);
-                svgMap.set(node,undefined); //maybe this line is not needed
+                svgMap.set(node, undefined); //maybe this line is not needed
                 userAlert("Failed to load svg for " + node.name);
                 if (callback != null) {
                     callback(false);
@@ -275,30 +274,29 @@ function createEventTree(): void {
     function createTreeRec(event: SlideEvent, parent: SlideEvent): SlideEvent //recursive function which loads a json for each slide. I might move this to having a single json.
     {
         const retval: SlideEvent = {
-            type: event.type,
-            id: event.id,
-            name: event.name,
-            merged: event.merged,
-            children: []
+            ...event,
+            children : [] 
         }
         if (parent != undefined)
             parentMap.set(retval, parent);
-        pageNumberMap.set(retval,numberOfPages);
+        pageNumberMap.set(retval, numberOfPages);
+        
 
         if (retval.type == 'child') {
             numberOfPages++;
             for (const child of event.children) {
                 retval.children.push(createTreeRec(child, retval));
             }
-            const finishEvent : SlideEvent = {
+            const finishEvent: SlideEvent = {
                 type: 'finish',
                 merged: false,
                 id: null,
                 name: null,
                 children: [],
+                keywords : []
             };
-            parentMap.set(finishEvent,retval);
-            pageNumberMap.set(finishEvent,numberOfPages);
+            parentMap.set(finishEvent, retval);
+            pageNumberMap.set(finishEvent, numberOfPages);
             retval.children.push(finishEvent);
         }
 
@@ -324,7 +322,7 @@ function treeSibling(node: SlideEvent, dir: number): SlideEvent {
 }
 
 //stores for each slide event its index relative to its parent, so that it does not need to be recomputed
-const cacheIndex: Map < SlideEvent, number > = new Map();
+const cacheIndex: Map<SlideEvent, number> = new Map();
 
 //returns the index of an event inside its parent.
 function eventIndex(node: SlideEvent): number {
@@ -344,7 +342,8 @@ function eventIndex(node: SlideEvent): number {
 
 
 //pushes a list of slides. The root is the first slide, which is assumed to be loaded, and then path contains a list of directions (which event number), that defines a path; ordered from last to first. The after parameter is a callback to be performed once the last slide is pushed.
-function pushIndexList(root: SlideEvent, path: number[], after = (ignored : SlideEvent) => {/*do nothing */}): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function pushIndexList(root: SlideEvent, path: number[], after = (ignored: SlideEvent) => {/*do nothing */ }): void {
     if (path.length == 0) {
         curEvent = root;
         if (parentEvent(parentEvent(curEvent)) == null) {
@@ -399,43 +398,43 @@ function changeEvent(dir: number): void {
     }
 
     if (dir == 1) {
-        markSeen(curEvent, true);
-        if (curEvent.type == 'child') {
-            openPanelTree(curEvent, true);
-            pushIndexList(parentEvent(curEvent), [0, eventIndex(curEvent)])
-        } else
-        if (curEvent.type == 'show' || curEvent.type == 'hide') {
-            // hide or show
-            do {
-                showHide(curEvent);
-                curEvent = treeSibling(curEvent, 1);
-            } while (curEvent.merged);
-        } else
-        if (curEvent.type == 'finish') {
-            if (parentEvent(curEvent) == eventTree) {
-                soundStop();
-                // userAlert("Cannot move after last event");
-            } else {
-                const nextEvent = treeSibling(parentEvent(curEvent), 1);
-                openPanelTree(parentEvent(curEvent), false);
-                if (nextEvent.merged) {
-                    //we go directly to the next child
-                    if (nextEvent.type != 'child') {
-                        throw ('a child merged with a non-child');
+        if (lastEvent(curEvent)) {
+            soundStop();
+        }
+        else {
+            markSeen(curEvent, true);
+            if (curEvent.type == 'child') {
+                openPanelTree(curEvent, true);
+                pushIndexList(parentEvent(curEvent), [0, eventIndex(curEvent)])
+            } else
+                if (curEvent.type == 'show' || curEvent.type == 'hide') {
+                    // hide or show
+                    do {
+                        showHide(curEvent);
+                        curEvent = treeSibling(curEvent, 1);
+                    } while (curEvent.merged);
+                } else
+                    if (curEvent.type == 'finish') {
+                        const nextEvent = treeSibling(parentEvent(curEvent), 1);
+                        openPanelTree(parentEvent(curEvent), false);
+                        if (nextEvent.merged) {
+                            //we go directly to the next child
+                            if (nextEvent.type != 'child') {
+                                throw ('a child merged with a non-child');
+                            }
+                            markSeen(nextEvent, true);
+                            openPanelTree(nextEvent, true);
+                            pushIndexList(parentEvent(nextEvent), [0, eventIndex(nextEvent)])
+                        } else {
+                            //we zoom out to the parent
+                            zoomSlide(parentEvent(parentEvent(curEvent)), 1.5);
+                            curEvent = nextEvent;
+                        }
+
+                        // pop the stack
+
+
                     }
-                    markSeen(nextEvent, true);
-                    openPanelTree(nextEvent, true);
-                    pushIndexList(parentEvent(nextEvent), [0, eventIndex(nextEvent)])
-                } else {
-                    //we zoom out to the parent
-                    zoomSlide(parentEvent(parentEvent(curEvent)), 1.5);
-                    curEvent = nextEvent;
-                }
-
-                // pop the stack
-
-
-            }
 
         }
         if (soundState == SoundState.Play) {
@@ -470,19 +469,19 @@ function changeEvent(dir: number): void {
             }
 
         } else
-        if (prevEvent.type == 'show' || prevEvent.type == 'hide') {
-            // hide or show
-            do {
-                curEvent = treeSibling(curEvent, -1);
-                showHide(curEvent);
-            } while (curEvent.merged == true);
-            markSeen(curEvent, false);
-        } else
-        if (prevEvent.type == 'child') {
-            openPanelTree(prevEvent, true);
-            pushIndexList(parentEvent(prevEvent), [prevEvent.children.length - 1, eventIndex(prevEvent)]);
-            markSeen(curEvent, false);
-        }
+            if (prevEvent.type == 'show' || prevEvent.type == 'hide') {
+                // hide or show
+                do {
+                    curEvent = treeSibling(curEvent, -1);
+                    showHide(curEvent);
+                } while (curEvent.merged == true);
+                markSeen(curEvent, false);
+            } else
+                if (prevEvent.type == 'child') {
+                    openPanelTree(prevEvent, true);
+                    pushIndexList(parentEvent(prevEvent), [prevEvent.children.length - 1, eventIndex(prevEvent)]);
+                    markSeen(curEvent, false);
+                }
 
         if (soundState == SoundState.Play) {
             soundPlayCurrentEvent(-1);
@@ -524,7 +523,9 @@ function updateEventsSVG(slide: SlideEvent, index: number): void {
     }
 }
 
-
+function lastEvent(event: SlideEvent): boolean {
+    return (event.type == 'finish' && parentEvent(event) == eventTree)
+}
 
 
 function gotoPath(path: number[]): void //move to an event given by a list of indices, given in shallow-to-deep ordering
@@ -563,5 +564,12 @@ function getPath(event: SlideEvent): number[] {
 
 function gotoEvent(event: SlideEvent): void //move directly to an event
 {
-    gotoPath(getPath(event));
+    const path = getPath(event);
+    //we want to go after the event, i.e. after it has been displayed, so we increment the top of the stack (which is the first element of the array)
+    if (event.type == 'show' || event.type == 'hide')
+        path[0] = path[0] +1;
+    if (event.type == 'child')
+        path.unshift(0);
+
+    gotoPath(path);
 }

@@ -17,6 +17,8 @@ import {
   dragStart
 } from './ui-drag'
 
+
+
 import {
   SlideEvent
 } from '../viewer/types'
@@ -161,11 +163,12 @@ function savePresentation(presentation: {
     database: Database;
     svg: Uint8Array;
   } [],
-  tree: SlideEvent
+  tree: SlideEvent,
+  keywords :  {[slide :string] : string[]}
 }): void {
   //for some reason, TextDecoder does not work on the plugin side
 
-  const newSlideList: {
+  const newSlideList:  {
     database: Database,
     svg: string
   } [] = [];
@@ -183,7 +186,8 @@ function savePresentation(presentation: {
       type: 'slides',
       presentation: presentation.name,
       slideList: newSlideList,
-      tree: presentation.tree
+      tree: presentation.tree,
+      keywords : presentation.keywords
     })
   }).
   then(() => {

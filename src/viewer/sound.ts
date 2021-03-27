@@ -42,7 +42,7 @@ import {
     updateEventDuration,
     timelineButtons,
     userAlert
-} from './html'
+} from "./html"
 
 
 
@@ -68,17 +68,17 @@ const soundDurations : Map < SlideEvent, number > = new Map();
 
 //stop playing or recording, thus making the sound state null
 function soundStop(): void{
-    if (soundState == SoundState.Play) {
+    if (soundState == SoundState.Play || soundState == SoundState.Pause) {
         globalAudio.pause();
+        globalAudio.currentTime=0;
+        audioPlaying(globalAudio); //updates the timeline
     }
 
     if (soundState == SoundState.Record) {
         soundState = SoundState.None;
         mediaRecorder.stop();
     }
-    if (soundState == SoundState.Play) {
-        globalAudio.pause();
-    }
+    
     soundState = SoundState.None;
     updateSoundIcon();
     timelineButtons();
@@ -320,7 +320,8 @@ function loadSounds(node : SlideEvent) : void {
                 }
             })
 
-            audio.addEventListener('timeupdate', audioPlaying)
+            audio.addEventListener('timeupdate', 
+            e => {audioPlaying(e.target as HTMLAudioElement)})
         }
     }
 }
@@ -350,6 +351,7 @@ function soundAdvance(t : number) : void {
         globalAudio.currentTime = Math.min(globalAudio.duration, globalAudio.currentTime + soundIncrement );
     }
 }
+
 
 
 //we begin by loading the sound database

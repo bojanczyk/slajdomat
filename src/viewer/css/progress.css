@@ -1,6 +1,9 @@
 /* ***** progress panel ***/
 #progress-panel {
     width : 100%;
+    position : absolute;
+    bottom : 0;
+    height : 20px;
     display : flex;
     align-items: center;
     font-size : 12px;

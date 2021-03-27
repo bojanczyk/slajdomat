@@ -1,19 +1,19 @@
 {
   "name": "slajdomat",
   "productName": "Slajdomat",
-  "version": "0.82",
+  "version": "0.85",
   "description": "A slide making program, which plugs into Figma",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package;  bash src/main/post-electron.sh",
-    "make" : "electron-forge package; webpack; bash src/plugin/make-plugin-ui.sh; bash src/main/post-electron.sh",
+    "make": "electron-forge package; webpack; bash src/plugin/make-plugin-ui.sh; bash src/main/post-electron.sh",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts .",
     "webpack": "webpack",
     "plugin": "bash src/plugin/make-plugin-ui.sh",
     "watch": "npm-watch & webpack --watch",
-    "viewtest" : "cd test-slides; python3 -m http.server 8000"
+    "viewtest": "cd test-slides; python3 -m http.server 8000"
   },
   "watch": {
     "plugin": {
@@ -114,6 +114,7 @@
     "cors": "^2.8.5",
     "electron-squirrel-startup": "^1.0.0",
     "file-loader": "^6.2.0",
+    "fuse.js": "^6.4.6",
     "gsap": "^3.6.0",
     "html-webpack-plugin": "^5.2.0",
     "material-design-icons": "^3.0.1",

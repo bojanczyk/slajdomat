@@ -150,7 +150,7 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
             ul.appendChild(li);
         }
     }
-
+    canUpgrade = true;
     const upgradeButton = document.getElementById('upgrade-presentations') as HTMLElement;
     if (canUpgrade)
         {upgradeButton.style.display=''}

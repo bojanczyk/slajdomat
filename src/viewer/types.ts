@@ -16,13 +16,13 @@ type SlideEvent = {
     name: string,
     children: SlideEvent[],
     merged: boolean,
-    disabled? : boolean
+    disabled? : boolean,
+    keywords : string[]
 }
 
 //this is the type of the file with the slide information
 type Manifest = {
     version : number,
-    root : string,
     presentation: string,
     slideDict: {
         [id: string]: string
@@ -34,7 +34,7 @@ type Manifest = {
                 duration ? : number
             }
         }
-    },
+    },  
     tree: SlideEvent
 }
 
@@ -54,6 +54,7 @@ type MessageToServerSound = {
     file : number[]
 }
 
+
 type MessageToServer =  MessageToServerSound |
  {
     type : 'slides',
@@ -61,8 +62,9 @@ type MessageToServer =  MessageToServerSound |
     tree : SlideEvent,
     slideList : {
         database : Database,
-        svg : string
-    }[]
+        svg : string,
+    }[],
+    keywords : {[slide :string] : string[]}
 } |
 {
     type : 'probe'

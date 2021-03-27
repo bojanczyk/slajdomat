@@ -12,6 +12,7 @@ import {
     Database,
     LatexState,
     MessageToCode,
+    MessageToUI
 } from './plugin-types'
 
 import {
@@ -48,7 +49,9 @@ let pluginSettings: PluginSettings;
 
 
 
-
+function sendToUI(msg : MessageToUI) {
+    figma.ui.postMessage(msg)
+}
 
 //********* settings *********/
 //get the settings from the ui
@@ -60,7 +63,7 @@ function getSettings(settings: PluginSettings): void {
 
 //send the settings to the ui
 function sendSettings(): void {
-    figma.ui.postMessage({
+    sendToUI({
         type: 'settings',
         settings: pluginSettings
     });
@@ -187,7 +190,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
 
 //send the  list which says what are the possible candidates for child slides. 
 function sendDropDownList() {
-    const msg = {
+    const msg : MessageToUI = {
         type: 'dropDownContents',
         slides: [] as {
             name: string,
@@ -212,14 +215,14 @@ function sendDropDownList() {
         }
 
 
-    figma.ui.postMessage(msg);
+    sendToUI(msg);
 }
 
 
 //send the event list of the current slide
 function sendEventList() {
     cleanDatabase();
-    figma.ui.postMessage({
+    sendToUI({
         type: 'eventList',
         events: database.events
     });
@@ -236,7 +239,8 @@ function createChildEvent(id: string): RectangleNode {
         id: id,
         name: slide.name,
         merged: false,
-        children: []
+        children: [],
+        keywords : []
     });
 
     const width = 100;
@@ -260,6 +264,21 @@ function createChildEvent(id: string): RectangleNode {
 
 }
 
+//give the list of all texts used in descendants
+function allTexts(n: SceneNode): string[] {
+    if (n.type == 'TEXT') {
+        return [n.name];
+    }
+    if (n.type == 'GROUP' || n.type == 'FRAME') {
+        let retval: string[] = [];
+        for (const child of n.children) {
+            retval = retval.concat(allTexts(child as SceneNode))
+        }
+        return retval;
+    }
+    //otherwise there are no strings
+    return [];
+}
 
 // create new event 
 //msg.subtype says what kind it is, values are 'child', 'show', 'hide', etc.
@@ -273,21 +292,6 @@ function createEvent(eventInfo: {
 
     //returns the contents the longest text node in the descendants. Used to select a name for a group node
     function goodName(node: SceneNode): string {
-        //give the list of all texts used in descendants
-        function allTexts(n: SceneNode): string[] {
-            if (n.type == 'TEXT') {
-                return [n.name];
-            }
-            if (n.type == 'GROUP') {
-                let retval: string[] = [];
-                for (const child of n.children) {
-                    retval = retval.concat(allTexts(child as SceneNode))
-                }
-                return retval;
-            }
-            //otherwise there are no strings
-            return [];
-        }
         const texts = allTexts(node);
 
         //if there is no text, do not change the name
@@ -345,7 +349,8 @@ function createEvent(eventInfo: {
                 id: overlayId(item),
                 name: item.name,
                 merged: false,
-                children: []
+                children: [],
+                keywords : []
             })
         }
 
@@ -451,6 +456,10 @@ function saveFile(): void {
         database: Database,
         svg: Uint8Array
     }[] = [];
+
+    //an index of keywords for searching the slides
+    const keywords : {[slide :string] : string[]} = {};
+
     //stack of the recursion, to find cycles in slides
     const stack: FrameNode[] = [];
 
@@ -502,8 +511,13 @@ function saveFile(): void {
                 name: database.name,
                 id: database.id,
                 merged: false,
-                children: []
+                children: [],
+                keywords: []
             }
+
+            keywords[database.id] = allTexts(slide);
+            keywords[database.id].push(database.name);
+            
 
             saveCurrentData();
             slideList.push({
@@ -531,11 +545,12 @@ function saveFile(): void {
 
     const savedSlide = currentSlide;
     saveRec(currentSlide).then(x => {
-        figma.ui.postMessage({
+        sendToUI({
             type: 'savePresentation',
             name: figma.root.name,
             slideList: slideList,
-            tree: x
+            tree: x,
+            keywords : keywords
         });
         currentSlide = savedSlide;
         loadCurrentData();
@@ -696,13 +711,13 @@ function setCurrentSlide(slide: FrameNode): void {
 
     if (slide != null) {
         loadCurrentData();
-        const msg = {
+        const msg : MessageToUI = {
             type: 'slideChange',
             docName: figma.root.name,
             slide: currentSlide.name,
             parent: undefined as string,
             slideCount: allSlides().length,
-        }
+        } 
         /*
         //this code runs too long and creates trouble
         const parent = parentSlide(slide);
@@ -712,10 +727,10 @@ function setCurrentSlide(slide: FrameNode): void {
             msg.parent = parent.name;
         */
 
-        figma.ui.postMessage(msg);
+        sendToUI(msg);
         sendEventList();
     } else {
-        figma.ui.postMessage({
+        sendToUI({
             type: 'noSlide'
         })
     }
@@ -748,7 +763,7 @@ function selChange(): void {
     if (savedSelection == null) {
         const slide = slideWithSelection();
 
-        const msg = {
+        const msg : MessageToUI = {
             type: 'selChange',
             selected: false, // is there at least one object that can be used for show/hide
             latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
@@ -779,7 +794,7 @@ function selChange(): void {
 
 
         //send the information about the updated selection
-        figma.ui.postMessage(msg)
+        sendToUI(msg)
 
 
         //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 

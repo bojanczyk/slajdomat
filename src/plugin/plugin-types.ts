@@ -116,7 +116,8 @@ type MessageToUI = {
     database: Database;
     svg: Uint8Array;
   } [],
-  tree: SlideEvent
+  tree: SlideEvent,
+  keywords : {[slide :string] : string[]}
 } | {
   type: 'selChange',
   selected: boolean,

@@ -7,7 +7,7 @@
     display : flex;
     flex-direction: column;
     background-color:whitesmoke;
-    width : 0%;
+    width : 0;
     /* height: 100%; */
     vertical-align: top;
     z-index : +1;
@@ -83,13 +83,42 @@
     margin : 0px;
 }
 
-#resizer {
-    background-color: blue;
-    width : 10px;
-    opacity: 0;
-    height: 100%;
-    position: absolute;
-    top : 0px;
-    right : 0px;
-    cursor:col-resize;
+#search-panel {
+    display: flex;
+    flex-direction: column;
+    margin : 10px;
+    font-size: 14px;
+}
+
+#search-box {
+    display: flex;
+}
+
+#search-box i {
+    margin : 3px;
+    font-size: 18px;
+}
+
+#search-box input {
+    width : 100%;
+}
+
+#search-results {
+    margin-left : 5px;
+    margin-top : 5px;
+}
+
+.one-result {
+    padding : 5px;
+}
+
+.one-result:hover {
+    background-color: white;
+    cursor: pointer;
+}
+
+.search-result-text {
+    font-size : 12px;
+    color: grey;
+
 }

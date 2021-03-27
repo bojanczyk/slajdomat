@@ -19,11 +19,16 @@ import {
 } from './index'
 
 import {
+    upgradeManifest,
+    oldVersion,
+    version
+} from './server-version'
+
+import {
     freshName,
     sanitize
 } from '../common/helper'
 
-import { version as versionNumber } from '../..//package.json';
 
 import express from 'express'
 import cors from 'cors'
@@ -224,26 +229,37 @@ function readManifest(presentation: string): Manifest {
 //upgrades a presentation to the most recent version. This includes upgrading the manifest file.
 function upgradePresentation(presentation: string): void {
     const manifest = readManifest(presentation);
-    manifest.version = version();
+    upgradeManifest(manifest);
     writeManifest(manifest);
     copyHTMLFiles(manifest.presentation);
 }
 
 
-function upgradeAllPresentations(): void {
+
+//upgrades all presentations in current directory and its descendants
+function upgradeAllPresentations(dir = currentDir) : void {
+    
+    //silently call read presentations and remember its folders and presentation list
+    const folders = readPresentations(dir, true);
+    const savedPresentations = presentations;
+
+    //upgrade all presentations in the current directory
     for (const pres of Object.keys(presentations))
         upgradePresentation(pres);
+    
+    //recursively call for children
+    for (const child of folders)
+        {
+            upgradeAllPresentations(dir+'/'+child)
+        }
+
+    //restore saved values
+    currentDir = dir;
+    presentations = savedPresentations;
+
 }
 
 
-
-function version() {
-    return parseFloat(versionNumber);
-}
-
-function oldVersion(manifest: Manifest) {
-    return manifest.version != version();
-}
 
 
 //returns all names of directories in the currentDirectory
@@ -257,7 +273,7 @@ function dirList(): string[] {
 }
 
 //scans the present folder for presentations, and sends them the renderer so that buttons can be created
-function readPresentations(dir: string = currentDir): void {
+function readPresentations(dir: string = currentDir, silent = false): string[] {
 
     currentDir = dir;
 
@@ -268,8 +284,6 @@ function readPresentations(dir: string = currentDir): void {
         atRoot: currentDir == slajdomatSettings.directory
     };
 
-
-    console.log(dirList());
     for (const file of dirList()) {
         const fullName = currentDir + '/' + file;
         try {
@@ -285,12 +299,19 @@ function readPresentations(dir: string = currentDir): void {
 
     }
 
+
     presentations = msg.presentations;
-    //send the list of presentations to the renderer
+
+    if (!silent)
+    {
+        //send the list of presentations to the renderer
     mainWindow.webContents.send('presentationList', msg);
+    }
+
+    return msg.subfolders;
 
 
-}
+} 
 
 
 //we get a single sound, in the wav format
@@ -356,14 +377,14 @@ function onGetSlide(msg: {
     slideList: {
         database: Database,
         svg: string
-    }[]
+    }[],
+    keywords : {[slide :string] : string[]}
 }): ServerResponse {
     sendStatus("Receiving slides for " + msg.presentation);
 
     const manifest: Manifest = {
         version: version(),
         presentation: msg.presentation,
-        root: msg.slideList[0].database.id,
         slideDict: {},
         tree: msg.tree,
         soundDict: {}
