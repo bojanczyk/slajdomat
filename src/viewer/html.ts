@@ -49,7 +49,7 @@ import {
 
 
 import { SlideEvent, SoundState } from './types';
-import { toggleSketchpad, sketchpadVisible } from './sketchpad';
+import { toggleSketchpad, currentTool } from './sketchpad';
 
 
 let totalSoundDuration = 0;
@@ -419,15 +419,14 @@ function updatePageNumber(): void {
 
 
 function touchStart(event: TouchEvent) {
-
-    if (event.touches.length == 1 && !sketchpadVisible) {
+    if (event.touches.length == 1 && currentTool == 'none') {
         //if the user single-touches on the left or right part of the slide, we do a previous/next slide transition
         const rect = (document.getElementById('svg') as HTMLDivElement).getBoundingClientRect();
         //this is the relative position of the touch inside the slide panel, ranging from 0 to 1.
         const fraction = (event.touches[0].clientX - rect.x) / rect.width;
-        if (fraction > 0.8)
+        if (fraction > 0.9)
             nextButton();
-        if (fraction < 0.2)
+        if (fraction < 0.1)
             prevButton();
     }
 

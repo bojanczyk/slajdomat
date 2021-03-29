@@ -1,78 +1,106 @@
-
 export {
-    toggleSketchpad, sketchpadVisible
+    toggleSketchpad, currentTool
 };
 
-//the possible tools are a red pencil and a blue pencil
-enum Tool {
-    Red,
-    Blue
-}
+//the possible tools are a red pencil and a blue pencil, and None means that drawing is inactive, in which case a highlighter is used
 
-let is_touch_device: boolean;
-let isDrawing = false;
-let sigCanvas: SVGSVGElement;
-let curPath: SVGElement;
-let curPathText: string;
-let selectedColor: string;
-
-
-let matrix: SVGMatrix;
-let punkt: SVGPoint;
+type Tool = 'red' | 'blue' | 'none'
+let currentTool: Tool = 'none'
 
 const undoStack: SVGElement[] = [];
 let undoIndex = -1;
-let sketchpadVisible = false;
+
+
+
+const drawState = {
+    sigCanvas: undefined as SVGSVGElement,
+    matrix: undefined as SVGMatrix,
+    punkt: undefined as SVGPoint,
+    curPath: undefined as SVGElement,
+    curPathText: undefined as string,
+    original: { x: 0, y: 0 },
+    rect: undefined as SVGRectElement
+}
+
 
 
 function draw(event: Event): void {
 
-
     if (event.type == 'pointerdown') {
-        if (selectedColor != null) {
-            matrix = sigCanvas.getScreenCTM().inverse();
-            isDrawing = true;
+        drawState.sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
+        drawState.punkt = drawState.sigCanvas.createSVGPoint();
+        drawState.matrix = drawState.sigCanvas.getScreenCTM().inverse();
+        drawState.sigCanvas.addEventListener('pointermove', draw, false);
+        drawState.sigCanvas.addEventListener('pointerup', draw, false);
+    }
+
+    drawState.punkt.x = (event as PointerEvent).clientX;
+    drawState.punkt.y = (event as PointerEvent).clientY;
+    drawState.punkt = drawState.punkt.matrixTransform(drawState.matrix);
+
+    //if the sketchpad is not active, and hence we use the highlighter
+    if (currentTool == 'none') {
+        if (event.type == 'pointerdown') {
+            drawState.original = { x: drawState.punkt.x, y: drawState.punkt.y };
+            drawState.rect = document.createElementNS('http://www.w3.org/2000/svg', "rect");
+            drawState.rect.setAttributeNS(null, 'x', drawState.punkt.x.toString());
+            drawState.rect.setAttributeNS(null, 'y', drawState.punkt.y.toString());
+            drawState.rect.setAttributeNS(null, 'fill', 'yellow');
+            drawState.rect.setAttributeNS(null, 'opacity', '20%');
+            drawState.sigCanvas.appendChild(drawState.rect);
+        }
+        if (event.type == 'pointermove') {
+            let height = drawState.punkt.y - drawState.original.y;
+            let width = drawState.punkt.x - drawState.original.x;
+            let x, y: number;
+
+            //negative height and width are not allowed, so we need to set the corner appropriately
+            if (height >= 0) { y = drawState.original.y; }
+            else {
+                height = - height;
+                y = drawState.punkt.y;
+            }
+            if (width >= 0) { x = drawState.original.x; }
+            else {
+                width = - width;
+                x = drawState.punkt.x;
+            }
+            drawState.rect.setAttributeNS(null, 'x', x.toString());
+            drawState.rect.setAttributeNS(null, 'y', y.toString());
+            drawState.rect.setAttributeNS(null, 'height', height.toString());
+            drawState.rect.setAttributeNS(null, 'width', width.toString());
         }
 
-        sigCanvas.addEventListener('pointermove', draw, false);
-        sigCanvas.addEventListener('pointerup', draw, false);
+        if (event.type == 'pointerup')
+            drawState.rect.remove();
     }
 
-    if (isDrawing) {
-        punkt.x = (event as PointerEvent).clientX;
-        punkt.y = (event as PointerEvent).clientY;
-        punkt = punkt.matrixTransform(matrix);
+    //if the pen is the active tool
+    if (currentTool == 'blue' || currentTool == 'red') {
+        if (event.type == 'pointerdown') {
+            drawState.curPath = document.createElementNS('http://www.w3.org/2000/svg', "path");
+            drawState.curPathText = 'M ' + drawState.punkt.x + ' ' + drawState.punkt.y;
+            drawState.curPath.setAttributeNS(null, 'd', drawState.curPathText);
+
+            const color = currentTool == 'blue' ? 'blue' : 'red';
+            drawState.curPath.setAttributeNS(null, 'stroke', color);
+            drawState.curPath.setAttributeNS(null, 'stroke-width', drawState.matrix.a.toString());
+            drawState.sigCanvas.appendChild(drawState.curPath);
+
+            undoStack.splice(undoIndex + 1);
+            undoStack.push(drawState.curPath);
+            undoIndex += 1;
+            undoButtons();
+        }
+        if (event.type == 'pointermove') {
+            drawState.curPathText += ' L ' + drawState.punkt.x + ' ' + drawState.punkt.y;
+            drawState.curPath.setAttributeNS(null, 'd', drawState.curPathText);
+        }
     }
-
-
-
-    if (event.type == 'pointerdown' && isDrawing) {
-        curPath = document.createElementNS('http://www.w3.org/2000/svg', "path");
-        curPathText = 'M ' + punkt.x + ' ' + punkt.y;
-        curPath.setAttributeNS(null, 'd', curPathText);
-        curPath.setAttributeNS(null, 'stroke', selectedColor);
-        curPath.setAttributeNS(null, 'stroke-width', matrix.a.toString());
-        sigCanvas.appendChild(curPath);
-
-        undoStack.splice(undoIndex + 1);
-        undoStack.push(curPath);
-        undoIndex += 1;
-        undoButtons();
-    }
-
-    if (event.type == 'pointermove' && isDrawing) {
-        curPathText += ' L ' + punkt.x + ' ' + punkt.y;
-        curPath.setAttributeNS(null, 'd', curPathText);
-    }
-
 
     if (event.type == 'pointerup' || event.type == 'pointerout') {
-        if (isDrawing) {
-            isDrawing = false;
-        }
-
-        sigCanvas.removeEventListener('pointermove', draw, false);
-        sigCanvas.removeEventListener('pointerup', draw, false);
+        drawState.sigCanvas.removeEventListener('pointermove', draw, false);
+        drawState.sigCanvas.removeEventListener('pointerup', draw, false);
     }
 
 }
@@ -82,16 +110,23 @@ function draw(event: Event): void {
 
 
 function toggleSketchpad(): void {
-    if (sketchpadVisible) {
-        sketchpadVisible = !sketchpadVisible;
-        document.getElementById('sketch-panel').style.display = 'none';
-        selectTool(null);
-    } else {
-        sketchpadVisible = !sketchpadVisible;
-        selectTool(Tool.Red);
-        document.getElementById('sketch-panel').style.display = 'flex';
-        undoButtons();
+    switch (currentTool) {
+        case 'red':
+        case 'blue':
+            document.getElementById('sketch-panel').style.display = 'none';
+            selectTool('none');
+            break;
+
+        case 'none':
+            selectTool('red');
+            document.getElementById('sketch-panel').style.display = 'flex';
+            undoButtons();
+            break;
+
+        default:
+            throw 'unsupported sketchpad case'
     }
+
 }
 
 
@@ -109,7 +144,7 @@ function redo(): void {
     if (undoIndex < undoStack.length - 1) {
         undoIndex += 1;
         const top = undoStack[undoIndex];
-        sigCanvas.appendChild(top);
+        drawState.sigCanvas.appendChild(top);
     }
     undoButtons();
 }
@@ -146,16 +181,13 @@ function selectTool(tool: Tool): void {
     document.getElementById('sketch-blue').classList.remove('selected');
 
     //the red or blue pencil was chosen
-    if (tool == Tool.Red) {
+    if (tool == 'red') {
         document.getElementById('sketch-red').classList.add('selected');
-        selectedColor = 'red';
     }
-    else if (tool == Tool.Blue) {
+    else if (tool == 'blue') {
         document.getElementById('sketch-blue').classList.add('selected');
-        selectedColor = 'blue';
     }
-    else
-        selectedColor = null;
+    currentTool = tool;
 }
 
 
@@ -168,10 +200,10 @@ function buttonClicked(event: MouseEvent): void {
         redo();
     }
     if (target.id == 'sketch-red') {
-        selectTool(Tool.Red);
+        selectTool('red');
     }
     if (target.id == 'sketch-blue') {
-        selectTool(Tool.Blue);
+        selectTool('blue');
     }
 
 }
@@ -179,14 +211,12 @@ function buttonClicked(event: MouseEvent): void {
 function initSketchpad() {
     document.getElementById('sketch-panel').addEventListener('click', buttonClicked);
     document.addEventListener("keydown", keyListener);
-    sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
-    punkt = sigCanvas.createSVGPoint();
 
     if ('ontouchstart' in document.documentElement)
-        sigCanvas.addEventListener('touchmove', function (event: Event) {
+        document.getElementById('svg').addEventListener('touchmove', function (event: Event) {
             event.preventDefault();
         })
-    sigCanvas.addEventListener('pointerdown', draw, false);
+    document.getElementById('svg').addEventListener('pointerdown', draw, false);
 }
 
 initSketchpad();
