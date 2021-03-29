@@ -24,36 +24,29 @@ const undoStack: SVGElement[] = [];
 let undoIndex = -1;
 let sketchpadVisible = false;
 
+
 function draw(event: Event): void {
 
 
-
-    if (event.type == 'touchstart' || event.type == 'mousedown') {
+    if (event.type == 'pointerdown') {
         if (selectedColor != null) {
             matrix = sigCanvas.getScreenCTM().inverse();
             isDrawing = true;
         }
+
+        sigCanvas.addEventListener('pointermove', draw, false);
+        sigCanvas.addEventListener('pointerup', draw, false);
     }
 
-
-    if (isDrawing && event.type != 'touchend') {
-        if (is_touch_device) {
-            punkt.x = (event as TouchEvent).targetTouches[0].pageX;
-            punkt.y = (event as TouchEvent).targetTouches[0].pageY;
-
-        } else {
-            punkt.x = (event as MouseEvent).clientX;
-            punkt.y = (event as MouseEvent).clientY;
-        }
+    if (isDrawing) {
+        punkt.x = (event as PointerEvent).clientX;
+        punkt.y = (event as PointerEvent).clientY;
         punkt = punkt.matrixTransform(matrix);
     }
 
-    function addPoint() {
-        curPathText += ' L ' + punkt.x + ' ' + punkt.y;
-        curPath.setAttributeNS(null, 'd', curPathText);
-    }
 
-    if (event.type == 'touchstart' || event.type == 'mousedown') {
+
+    if (event.type == 'pointerdown' && isDrawing) {
         curPath = document.createElementNS('http://www.w3.org/2000/svg', "path");
         curPathText = 'M ' + punkt.x + ' ' + punkt.y;
         curPath.setAttributeNS(null, 'd', curPathText);
@@ -67,16 +60,19 @@ function draw(event: Event): void {
         undoButtons();
     }
 
-    if (event.type == 'touchmove' || event.type == 'mousemove') {
-        if (isDrawing) {
-            addPoint();
-        }
+    if (event.type == 'pointermove' && isDrawing) {
+        curPathText += ' L ' + punkt.x + ' ' + punkt.y;
+        curPath.setAttributeNS(null, 'd', curPathText);
     }
 
-    if (event.type == 'touchend' || event.type == 'mouseup' || event.type == 'mouseout') {
+
+    if (event.type == 'pointerup' || event.type == 'pointerout') {
         if (isDrawing) {
             isDrawing = false;
         }
+
+        sigCanvas.removeEventListener('pointermove', draw, false);
+        sigCanvas.removeEventListener('pointerup', draw, false);
     }
 
 }
@@ -86,9 +82,6 @@ function draw(event: Event): void {
 
 
 function toggleSketchpad(): void {
-    sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
-    punkt = sigCanvas.createSVGPoint();
-
     if (sketchpadVisible) {
         sketchpadVisible = !sketchpadVisible;
         document.getElementById('sketch-panel').style.display = 'none';
@@ -97,26 +90,8 @@ function toggleSketchpad(): void {
         sketchpadVisible = !sketchpadVisible;
         selectTool(Tool.Red);
         document.getElementById('sketch-panel').style.display = 'flex';
-
-        // This will be defined on a TOUCH device such as iPad or Android, etc.
-        is_touch_device = 'ontouchstart' in document.documentElement;
-        if (is_touch_device) {
-            // attach the touchstart, touchmove, touchend event listeners.
-            sigCanvas.addEventListener('touchstart', draw, false);
-            sigCanvas.addEventListener('touchmove', draw, false);
-            sigCanvas.addEventListener('touchend', draw, false);
-            // prevent elastic scrolling
-            sigCanvas.addEventListener('touchmove', function (event: Event) {
-                event.preventDefault();
-            }, false);
-        } else {
-            sigCanvas.addEventListener('mousedown', draw, false);
-            sigCanvas.addEventListener('mousemove', draw, false);
-            sigCanvas.addEventListener('mouseup', draw, false);
-            // sigCanvas.addEventListener('mouseout', draw,false);
-        }
+        undoButtons();
     }
-    undoButtons();
 }
 
 
@@ -201,5 +176,17 @@ function buttonClicked(event: MouseEvent): void {
 
 }
 
-document.getElementById('sketch-panel').addEventListener('click', buttonClicked);
-document.addEventListener("keydown", keyListener);
+function initSketchpad() {
+    document.getElementById('sketch-panel').addEventListener('click', buttonClicked);
+    document.addEventListener("keydown", keyListener);
+    sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
+    punkt = sigCanvas.createSVGPoint();
+
+    if ('ontouchstart' in document.documentElement)
+        sigCanvas.addEventListener('touchmove', function (event: Event) {
+            event.preventDefault();
+        })
+    sigCanvas.addEventListener('pointerdown', draw, false);
+}
+
+initSketchpad();
