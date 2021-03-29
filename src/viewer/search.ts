@@ -7,7 +7,7 @@ export {
 
 
 import Fuse from 'fuse.js'
-import {  gotoEvent, eventTree, parentEvent } from './event'
+import { gotoEvent, eventTree, parentEvent } from './event'
 import { SlideEvent } from './types'
 
 
@@ -19,10 +19,10 @@ let search: Fuse<SearchKeyword>
 
 function initSearch(): void {
 
-    
+
     const allStrings: SearchKeyword[] = [];
 
-    function addStrings(slide : SlideEvent){
+    function addStrings(slide: SlideEvent) {
         for (const keyword of slide.keywords)
             allStrings.push({ slide: slide, text: keyword });
         for (const child of slide.children)
@@ -30,32 +30,39 @@ function initSearch(): void {
     }
     addStrings(eventTree);
 
-    search = new Fuse(allStrings, { keys: ['text']});
-    document.getElementById('search-input').addEventListener('input', searchType);
+    search = new Fuse(allStrings, { keys: ['text'] });
+
+    const searchBox = document.getElementById('search-input') as HTMLInputElement;
+    searchBox.addEventListener('input', searchType);
+    searchBox.addEventListener('keyup',
+        e => { if (e.key == 'Escape') { searchBox.value = ''; searchType() } })
+
 }
 
-function searchType(e: Event): void {
-    const word = (e.target as HTMLInputElement).value;
+function searchType(): void {
+    const searchBox = document.getElementById('search-input') as HTMLInputElement;
+    const word = searchBox.value;
     const allResults = document.getElementById('search-results') as HTMLDivElement;
 
-    
+
     allResults.innerHTML = '';
     for (const result of search.search(word)) {
         const event = result.item.slide;
-        let name : string;
+        let name: string;
 
-        
+
         //we display the name of the containing slide
         if (event.type == 'child')
             name = event.name;
-        else 
+        else
             name = parentEvent(event).name;
 
         const oneResult = document.createElement('div');
         oneResult.classList.add('one-result');
         oneResult.innerHTML = `<div class='search-result-slide'> ${name}</div> <div class='search-result-text'>${result.item.text}</div>`
         oneResult.addEventListener('click', () => {
-            gotoEvent(event)} )
+            gotoEvent(event)
+        })
         allResults.appendChild(oneResult)
 
     }

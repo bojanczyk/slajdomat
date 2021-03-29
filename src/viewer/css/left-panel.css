@@ -8,14 +8,12 @@
     flex-direction: column;
     background-color:whitesmoke;
     width : 0;
-    /* height: 100%; */
     vertical-align: top;
-    z-index : +1;
     cursor: default;
-    font-weight: 300;
     white-space: nowrap;
     overflow: hidden;
     resize :horizontal;
+    font-size: 12px;
 }
 
 
@@ -26,6 +24,7 @@
     display:block;
     color : darkgray;
     margin-bottom : 5px;
+    cursor: pointer;
 }
 
 .tree-view-item-seen {    
@@ -37,10 +36,9 @@
 }
 
 .tree-view-item i {
-    font-size: 12px;
-    /* margin-bottom: 10px; */
     margin-right: 5px;
     cursor : pointer;
+    font-size: 10px;
 }
 
 .slide-stack {
@@ -56,6 +54,7 @@
 
 #slide-stack-container {
    overflow : scroll; 
+   margin-top : 10px
 }
 
 .disabled-event {
@@ -68,6 +67,7 @@
     margin-left : 10px;
     overflow: hidden;
     white-space: nowrap;
+    margin-bottom : 10px;
 }
 
 
@@ -77,20 +77,21 @@
     margin-bottom : 5px;
     }
 
-#logo-second-line {
-    font-size: 14px;
+#logo-second-line {    
     margin : 0px;
 }
 
 #search-panel {
     display: flex;
     flex-direction: column;
-    margin : 10px;
-    font-size: 14px;
+    padding : 10px;
+    border-top : 1px solid lightgray;
+    border-bottom : 1px solid lightgray;
 }
 
 #search-box {
     display: flex;
+    margin-top : 5px;
 }
 
 #search-box i {
@@ -116,8 +117,7 @@
     cursor: pointer;
 }
 
-.search-result-text {
-    font-size : 12px;
+.search-result-text {    
     color: grey;
 
 }

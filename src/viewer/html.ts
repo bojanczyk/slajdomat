@@ -8,6 +8,7 @@ export {
     totalSoundDuration,
     initPanels,
     openPanelTree,
+    openPanelTreeRec,
     removeLoading,
     updatePageNumber,
     userAlert,
@@ -50,6 +51,7 @@ import {
 
 import { SlideEvent, SoundState } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
+import { pathInURL } from './files'
 
 
 let totalSoundDuration = 0;
@@ -86,6 +88,7 @@ function createTreeHTML(): void {
             } else {
                 //the name of the event was clicked
                 gotoEvent(event);
+                pathInURL(event);
             }
         }
         divOpen.set(event, false);
@@ -276,6 +279,17 @@ function openPanelTree(event: SlideEvent, open: boolean): void {
         icon.innerHTML = 'chevron_right';
     }
 }
+
+ //unfolds the tree in the left panel for this event and its parents
+function openPanelTreeRec(event :SlideEvent) {
+    if (parentEvent(event) == undefined)
+        return;
+    if (event.type == 'child') {
+        openPanelTree(event,true);
+    }
+    openPanelTreeRec(parentEvent(event));
+}
+
 
 //remove the 'loading' class from the corresponding elements in the slide panel
 function removeLoading(node: SlideEvent): void {

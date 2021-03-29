@@ -25,6 +25,7 @@ import {
     markSeen,
     markDisabled,
     openPanelTree,
+    openPanelTreeRec,
     removeLoading,
     userAlert,
     updatePageNumber
@@ -533,7 +534,7 @@ function gotoPath(path: number[]): void //move to an event given by a list of in
     soundStop();
     //after moving to the event, we will call the following function
     function updateSeen(event: SlideEvent): void //update the seen information for items in the slide panel, and the visibility
-    {
+    {   
         let before = true;
 
         function updateRec(e: SlideEvent) {
@@ -547,7 +548,6 @@ function gotoPath(path: number[]): void //move to an event given by a list of in
                     updateRec(child);
         }
         updateRec(eventTree);
-        pathInURL();
     }
     pushIndexList(eventTree, path, updateSeen);
 }
@@ -572,4 +572,5 @@ function gotoEvent(event: SlideEvent): void //move directly to an event
         path.unshift(0);
 
     gotoPath(path);
+    openPanelTreeRec(event);
 }
