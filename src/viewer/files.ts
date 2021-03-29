@@ -15,7 +15,7 @@ import {
     userAlert
 } from './html'
 
-import { MessageToServer } from './types';
+import { MessageToServer, SlideEvent } from './types';
 
 
 import {
@@ -23,9 +23,9 @@ import {
 } from './viewer'
 
 
-function pathInURL() : void //puts the current path into the url
+function pathInURL(event : SlideEvent) : void //puts the current path into the url
 {
-    const path = getPath(curEvent);
+    const path = getPath(event);
     let string = '';
     while (path.length > 0) {
         string += path.pop() + '/';
