@@ -4,7 +4,14 @@ export {
     pluginSettings,
     sendSettings,
     getDatabase,
-    allSlides
+    allSlides,
+    findEventObject,
+    state,
+    saveCurrentData,
+    loadCurrentData,
+    findSlide,
+    allTexts,
+    sendToUI
 }
 
 import {
@@ -18,6 +25,10 @@ import {
 import {
     upgradeVersion
 } from './plugin-version'
+
+import {
+    exportSlides
+} from './export'
 
 import {
     matematykData,
@@ -36,13 +47,16 @@ import { freshName, sanitize } from '../common/helper'
 
 //*** global variables */
 
+let state = {
 //saved selection when temporarily selecting an object through mouseover 
-let savedSelection: readonly SceneNode[];
+savedSelection: [] as readonly SceneNode[],
 
 //the data for the current slide, mainly the event list
-let database: Database = null;
+database : null  as Database,
 //the current slide, as a frame of figma
-let currentSlide: FrameNode = null;
+currentSlide: null as FrameNode
+}
+
 
 //the plugin settings
 let pluginSettings: PluginSettings;
@@ -103,6 +117,7 @@ function initPlugin() {
     )
 }
 
+
 //Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
 function createNewSlide(width: number, height: number, name: string): FrameNode {
 
@@ -131,8 +146,8 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
             y: 0
         };
 
-        const basex = (currentSlide == null ? 0 : currentSlide.x);
-        const basey = (currentSlide == null ? 0 : currentSlide.y);
+        const basex = (state.currentSlide == null ? 0 : state.currentSlide.x);
+        const basey = (state.currentSlide == null ? 0 : state.currentSlide.y);
 
         //search for free space below the current slide,
         //using the city metric (i.e. the search follows a square spiral pattern)
@@ -200,9 +215,9 @@ function sendDropDownList() {
 
 
     for (const node of allSlides())
-        if (node != currentSlide) {
+        if (node != state.currentSlide) {
             let alreadyChild = false;
-            for (const e of database.events) {
+            for (const e of state.database.events) {
                 if (e.type == "child" && e.id == slideId(node)) {
                     alreadyChild = true;
                 }
@@ -224,7 +239,7 @@ function sendEventList() {
     cleanDatabase();
     sendToUI({
         type: 'eventList',
-        events: database.events
+        events: state.database.events
     });
 }
 
@@ -234,7 +249,7 @@ function sendEventList() {
 function createChildEvent(id: string): RectangleNode {
 
     const slide: FrameNode = findSlide(id);
-    database.events.push({
+    state.database.events.push({
         type: "child",
         id: id,
         name: slide.name,
@@ -257,7 +272,7 @@ function createChildEvent(id: string): RectangleNode {
     rect.opacity = 0.5;
     rect.setPluginData("childLink", id)
     rect.name = "Link to " + slide.name;
-    currentSlide.appendChild(rect);
+    state.currentSlide.appendChild(rect);
     rect.x = 100
     rect.y = 100
     return rect;
@@ -265,14 +280,18 @@ function createChildEvent(id: string): RectangleNode {
 }
 
 //give the list of all texts used in descendants
-function allTexts(n: SceneNode): string[] {
+function allTexts(n: SceneNode, avoid : SceneNode [] = []): string[] {
+    
+    if (avoid.includes(n))
+        return [];
+
     if (n.type == 'TEXT') {
         return [n.name];
     }
     if (n.type == 'GROUP' || n.type == 'FRAME') {
         let retval: string[] = [];
         for (const child of n.children) {
-            retval = retval.concat(allTexts(child as SceneNode))
+            retval = retval.concat(allTexts(child as SceneNode, avoid))
         }
         return retval;
     }
@@ -344,7 +363,7 @@ function createEvent(eventInfo: {
                 item.name = goodName(item);
             }
 
-            database.events.push({
+            state.database.events.push({
                 type: eventInfo.subtype,
                 id: overlayId(item),
                 name: item.name,
@@ -357,7 +376,7 @@ function createEvent(eventInfo: {
     }
     if (eventInfo.subtype == 'child') {
         if (eventInfo.id == null) {
-            const newSlide = createNewSlide(currentSlide.width, currentSlide.height, eventInfo.name);
+            const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
             eventInfo.id = slideId(newSlide)
         }
         createChildEvent(eventInfo.id);
@@ -368,20 +387,20 @@ function createEvent(eventInfo: {
 
 //remove an event from the current event list
 function removeEvent(index: number): void {
-    const event = database.events[index];
+    const event = state.database.events[index];
     if (event.type == "child") {
-        const rect = findEventObject(event, currentSlide);
+        const rect = findEventObject(event, state.currentSlide);
         if (rect != null)
             rect.remove();
     }
-    database.events.splice(index, 1);
+    state.database.events.splice(index, 1);
     saveCurrentData();
     sendEventList();
 }
 
 //merge or de-merge an event with the previous one 
 function mergeEvent(index: number): void {
-    const event = database.events[index];
+    const event = state.database.events[index];
     event.merged = !event.merged;
     saveCurrentData();
     sendEventList();
@@ -394,8 +413,8 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     //the source is a block, and so is the target
     const blockStarts: number[] = [];
     let i: number;
-    for (i = 0; i < database.events.length; i++) {
-        if (database.events[i].merged == false)
+    for (i = 0; i < state.database.events.length; i++) {
+        if (state.database.events[i].merged == false)
             blockStarts.push(i);
     }
     blockStarts.push(i);
@@ -411,9 +430,9 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
         realTarget = target + targetCount - sourceCount;
     }
 
-    const block = database.events.splice(source, sourceCount);
+    const block = state.database.events.splice(source, sourceCount);
     while (block.length > 0) {
-        database.events.splice(realTarget, 0, block.pop());
+        state.database.events.splice(realTarget, 0, block.pop());
     }
 
     saveCurrentData();
@@ -424,16 +443,16 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
 //when the mouse hovers over an event, then it should be highlighted by figma, with a pretend selection
 function hoverEvent(index: number): void {
     if (index == -1) {
-        if (savedSelection != null) {
-            figma.currentPage.selection = savedSelection;
+        if (state.savedSelection != null) {
+            figma.currentPage.selection = state.savedSelection;
         }
-        savedSelection = null;
+        state.savedSelection = null;
     } else {
-        if (savedSelection == null)
-            savedSelection = figma.currentPage.selection;
+        if (state.savedSelection == null)
+            state.savedSelection = figma.currentPage.selection;
 
-        const event = database.events[index];
-        const link = findEventObject(event, currentSlide);
+        const event = state.database.events[index];
+        const link = findEventObject(event, state.currentSlide);
         if (link != null)
             figma.currentPage.selection = [link];
     }
@@ -441,121 +460,11 @@ function hoverEvent(index: number): void {
 
 //if the event on a plugin is clicked, then the corresponding object in figma should be selected
 function clickEvent(index: number): void {
-    const event = database.events[index];
+    const event = state.database.events[index];
     if (event.type == 'child') {
         gotoSlide(findSlide(event.id));
     } else
-        savedSelection = figma.currentPage.selection;
-}
-
-//send the svg file to the ui, which then sends it to the server
-function saveFile(): void {
-
-    //the list of slides and their svg files
-    const slideList: {
-        database: Database,
-        svg: Uint8Array
-    }[] = [];
-
-    //an index of keywords for searching the slides
-    const keywords : {[slide :string] : string[]} = {};
-
-    //stack of the recursion, to find cycles in slides
-    const stack: FrameNode[] = [];
-
-    //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
-    async function saveRec(slide: FrameNode): Promise<SlideEvent> {
-        let retval;
-        if (stack.includes(slide)) {
-            let cycle = "The slides contain a cycle: \n";
-            for (const n of stack)
-                cycle += (n.name + "\n");
-            figma.notify(cycle + slide.name);
-            return null;
-        } else {
-            stack.push(slide);
-            currentSlide = slide;
-            loadCurrentData();
-
-            //We temporarily change the names of the children to their id's, so that the svg will have them as id's. (This is because Figma's svg export uses the object's name as the id for the svg. )
-            //the function returns a list of pairs (node, old name) that can be used to revert these changes
-            const changes: {
-                node: SceneNode,
-                savedName: string
-            }[] = [];
-            for (const event of database.events) {
-                const node = findEventObject(event, slide);
-                if (node != null) {
-                    //we store the changes in reverse order,  so that the original names are at the end of the change list 
-                    changes.unshift({ //unshift instead of push makes the order reversed
-                        node: node,
-                        savedName: node.name
-                    });
-                    node.name = event.id;
-                }
-            }
-
-            const svg = await slide.exportAsync({
-                format: 'SVG',
-                svgOutlineText: true,
-                svgIdAttribute: true
-            });
-
-            //we now undo the name changes. This needs to be done in reverse order to recover the original names
-            for (const change of changes) {
-                change.node.name = change.savedName;
-            }
-
-            retval = {
-                type: 'child',
-                name: database.name,
-                id: database.id,
-                merged: false,
-                children: [],
-                keywords: []
-            }
-
-            keywords[database.id] = allTexts(slide);
-            keywords[database.id].push(database.name);
-            
-
-            saveCurrentData();
-            slideList.push({
-                database: database,
-                svg: svg
-            });
-            for (const event of database.events) {
-                if (!event.disabled) {
-                    if (event.type == "child") {
-                        const child = await saveRec(findSlide(event.id));
-                        child.merged = event.merged;
-                        retval.children.push(child);
-
-                    } else
-                        retval.children.push(event);
-                }
-
-            }
-
-            stack.pop();
-            return retval;
-        }
-    }
-
-
-    const savedSlide = currentSlide;
-    saveRec(currentSlide).then(x => {
-        sendToUI({
-            type: 'savePresentation',
-            name: figma.root.name,
-            slideList: slideList,
-            tree: x,
-            keywords : keywords
-        });
-        currentSlide = savedSlide;
-        loadCurrentData();
-    });
-
+        state.savedSelection = figma.currentPage.selection;
 }
 
 // I use my own id's, instead of those of figma, so that copy and paste between presentations works
@@ -588,8 +497,8 @@ function overlayId(node: SceneNode) {
 
 // save the plugin data, for the current slide, to the file
 function saveCurrentData(): void {
-    database.name = currentSlide.name;
-    currentSlide.setPluginData("database", JSON.stringify(database));
+    state.database.name = state.currentSlide.name;
+    state.currentSlide.setPluginData("database", JSON.stringify(state.database));
 }
 
 
@@ -597,7 +506,7 @@ function saveCurrentData(): void {
 // the opposite of the previous function
 function loadCurrentData(): void {
 
-    database = getDatabase(currentSlide);
+    state.database = getDatabase(state.currentSlide);
     cleanDatabase();
 }
 
@@ -617,7 +526,7 @@ function getDatabase(slide: FrameNode): Database {
 
 //says if the node is a possible target for a show/hide event
 function isShowHideNode(node: SceneNode): boolean {
-    if (node.parent != currentSlide || node.getPluginData('childLink') != '')
+    if (node.parent != state.currentSlide || node.getPluginData('childLink') != '')
         return false;
     return true;
 }
@@ -670,10 +579,10 @@ function findEventObject(event: SlideEvent, slide: FrameNode): SceneNode {
 // a show/hide event is active if the linked object exists
 // for the active show/hide events, store the index of the corresponding item
 function cleanDatabase(): void {
-    database.name = currentSlide.name;
-    for (const event of database.events) {
+    state.database.name = state.currentSlide.name;
+    for (const event of state.database.events) {
         event.disabled = true;
-        const node = findEventObject(event, currentSlide);
+        const node = findEventObject(event, state.currentSlide);
         if (node != null) {
             if (event.type == "child") {
                 const f = findSlide(event.id);
@@ -706,7 +615,7 @@ function parentSlide(slide: FrameNode): FrameNode {
 
 //set the current slide of the plugin
 function setCurrentSlide(slide: FrameNode): void {
-    currentSlide = slide;
+    state.currentSlide = slide;
 
 
     if (slide != null) {
@@ -714,7 +623,7 @@ function setCurrentSlide(slide: FrameNode): void {
         const msg : MessageToUI = {
             type: 'slideChange',
             docName: figma.root.name,
-            slide: currentSlide.name,
+            slide: state.currentSlide.name,
             parent: undefined as string,
             slideCount: allSlides().length,
         } 
@@ -760,7 +669,7 @@ function slideWithSelection(): FrameNode {
 function selChange(): void {
 
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
-    if (savedSelection == null) {
+    if (state.savedSelection == null) {
         const slide = slideWithSelection();
 
         const msg : MessageToUI = {
@@ -798,9 +707,9 @@ function selChange(): void {
 
 
         //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
-        if ((currentSlide != null && currentSlide.removed) || (slide != currentSlide && slide != null))
+        if ((state.currentSlide != null && state.currentSlide.removed) || (slide != state.currentSlide && slide != null))
             setCurrentSlide(slide);
-        else if (currentSlide != null)
+        else if (state.currentSlide != null)
             sendEventList();
 
     }
@@ -846,17 +755,18 @@ function onMessage(msg: MessageToCode) {
         case 'makeFirst':
             //make a first slide
             setCurrentSlide(createNewSlide(msg.width, msg.height, 'new slide'));
-            figma.viewport.scrollAndZoomIntoView([currentSlide]);
+            figma.viewport.scrollAndZoomIntoView([state.currentSlide]);
             break;
 
         case 'saveFile':
+
             //export the files to svg files
-            saveFile();
+            exportSlides();
             break;
 
         case 'mouseEnterPlugin':
             //I'm not sure if this is necessary, but just in case I refresh the event list when the mouse enters the plugin.
-            if (currentSlide != null)
+            if (state.currentSlide != null)
                 sendEventList();
             break;
 
@@ -872,7 +782,7 @@ function onMessage(msg: MessageToCode) {
 
         case 'mouseLeave':
             //unselect the action from the previous event
-            figma.currentPage.selection = savedSelection;
+            figma.currentPage.selection = state.savedSelection;
             break;
 
         case 'clickEvent':
@@ -882,7 +792,7 @@ function onMessage(msg: MessageToCode) {
 
         case 'gotoParent':
             //the parent button is clicked
-            gotoSlide(parentSlide(currentSlide));
+            gotoSlide(parentSlide(state.currentSlide));
             break;
 
         case 'addWord':

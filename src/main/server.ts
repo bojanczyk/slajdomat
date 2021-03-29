@@ -44,6 +44,7 @@ import {
 import {
     MessageToServer,
     MessageToServerSound,
+    MessageToServerSlide,
     Manifest,
     SlideEvent,
     ServerResponse
@@ -370,16 +371,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
 //receive the slides from the figma plugin. The slides are copied to the appropriate directory, together with the latest versions of the html code.
-function onGetSlide(msg: {
-    type: 'slides',
-    presentation: string,
-    tree: SlideEvent,
-    slideList: {
-        database: Database,
-        svg: string
-    }[],
-    keywords : {[slide :string] : string[]}
-}): ServerResponse {
+function onGetSlide(msg: MessageToServerSlide): ServerResponse {
     sendStatus("Receiving slides for " + msg.presentation);
 
     const manifest: Manifest = {

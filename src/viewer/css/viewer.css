@@ -7,6 +7,11 @@
 
 body, html {
     height : 100%;
+    overflow: hidden;
+}
+
+body, div {
+    font-family: 'Roboto';
 }
 
 body {
@@ -47,7 +52,6 @@ body {
 
 #text-alert {
  padding: 10px;
- font-family: 'Roboto';
  z-index: 1;
 }
 

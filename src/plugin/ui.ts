@@ -163,8 +163,7 @@ function savePresentation(presentation: {
     database: Database;
     svg: Uint8Array;
   } [],
-  tree: SlideEvent,
-  keywords :  {[slide :string] : string[]}
+  tree: SlideEvent
 }): void {
   //for some reason, TextDecoder does not work on the plugin side
 
@@ -186,9 +185,8 @@ function savePresentation(presentation: {
       type: 'slides',
       presentation: presentation.name,
       slideList: newSlideList,
-      tree: presentation.tree,
-      keywords : presentation.keywords
-    })
+      tree: presentation.tree
+    }) 
   }).
   then(() => {
       exportWaiting(false);
