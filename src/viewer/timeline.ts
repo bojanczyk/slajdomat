@@ -1,11 +1,11 @@
 export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, getStepFromURL, stepInURL, numberOfPages, stepSoundIndex , allSteps}
 
 import { isOverlay, parentEvent, runOverlay, zoomSlide, } from "./event";
-import { SlideEvent, SoundState } from "./types";
+import { SlideEvent} from "./types";
 
 import { markSeen, openPanelTree, openPanelTreeRec } from "./html";
 import { manifest, updatePageNumber } from "./viewer";
-import { loadSound, resetSound, soundIcon, soundPaused, soundPlay, soundRecord, sounds, soundState} from "./sound";
+import { loadSound, soundIcon} from "./sound";
 import { addToQueue } from "./loadSVG";
 
 
@@ -197,13 +197,7 @@ function doOverlayStep(step: Step, direction: -1 | 1, silent: 'silent' | 'animat
 function moveHead(direction: -1 | 1): void {
     let source, target: Step[];
 
-    if (soundPaused())
-        {
-            console.log('not going back');
-            resetSound();
-            if (direction == -1)
-                return;
-        }
+    
 
 
     //depending on the direction, we will shift an event from future to past or in the other direction
@@ -255,15 +249,9 @@ function moveHead(direction: -1 | 1): void {
             openPanelTree(source, false);
 
     }
-
-    if (soundState == SoundState.Play)
-        soundPlay();
-    if (soundState == SoundState.Record)
-        soundRecord();
     
     loadNearbySounds();
     updatePageNumber();
-    soundIcon();
 }
 
 

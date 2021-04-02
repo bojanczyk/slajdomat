@@ -38,10 +38,9 @@ import {
 import {
     audioPlaying,
     timelineButtons as updateTimelineDisplay,
-    timelineHTML,
     userAlert
 } from "./html"
-import { allSteps, currentStep, moveHead, OverlayStep, Step,  zoomsIn, ZoomStep } from './timeline'
+import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
 
 
 
@@ -50,13 +49,10 @@ import { allSteps, currentStep, moveHead, OverlayStep, Step,  zoomsIn, ZoomStep 
 
 
 
-//there are four possible states for the sound
+//there are three possible states for the sound
 //"recording" means that we are recording sound
 //"play" means that we are playing sound
-//"pause" means that we have paused playing sound
-//null means none of the above
-
-
+//"none"  means none of the above
 
 let soundState: SoundState = SoundState.None;
 let globalAudio: HTMLAudioElement;
@@ -72,11 +68,12 @@ type SoundInfo = {
 
 const sounds: Map<Step, SoundInfo> = new Map();
 
-function soundPaused() : boolean {
+
+function soundPaused(): boolean {
     console.log(globalAudio.currentTime);
     if (globalAudio != undefined && globalAudio.currentTime > 0)
         return true;
-    else 
+    else
         return false;
 }
 
@@ -122,6 +119,119 @@ function soundRecord(): void {
 
 
 
+function afterSound(): void {
+    if (timeline.future.length > 0) {
+        //there is something to still play
+        moveHead(1);
+        soundPlay();
+    }
+    else {
+        //we have finished playing the last sound
+        soundStop();
+    }
+}
+
+
+
+let mediaRecorder: MediaRecorder;
+
+async function recordSound(step: Step): Promise<void> {
+
+
+    if (mediaRecorder != null) {
+        if (mediaRecorder.state == "recording")
+            mediaRecorder.stop();
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    })
+    mediaRecorder = new MediaRecorder(stream)
+    mediaRecorder.start()
+    const audioChunks: Blob[] = []
+    mediaRecorder.addEventListener("dataavailable", event => {
+        audioChunks.push(event.data)
+    })
+    mediaRecorder.addEventListener("stop", () => {
+        const audioBlob = new Blob(audioChunks)
+        const audioURL = window.URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioURL)
+        audio.addEventListener('ended', afterSound)
+
+        const where = whereToSave.get(step);
+
+
+        const fr = new FileReader()
+        fr.onload = function (e) {
+            const target = e.target as FileReader
+            const x = target.result as ArrayBuffer
+            const y = new Uint8Array(x)
+            const retmsg: MessageToServerSound = {
+                presentation: undefined,
+                type: 'wav',
+                slideId: where.id,
+                index: where.index,
+                name: where.index.toString(),
+                file: Array.from(y)
+            }
+            sendToServer(retmsg)
+                .then(r => r.json())
+                .then(r_1 => {
+                    if (r_1.status != 'Sound recorded successfully')
+                        throw r_1.status;
+                    if (soundState == SoundState.None) {
+                        console.log('should refresh');
+                    }
+                }).catch((e) => {
+                    console.log(e);
+                    userAlert("Failed to record sound.")
+                })
+
+        }
+        fr.readAsArrayBuffer(audioBlob)
+    })
+}
+
+
+
+const playbackRates = [1, 1.5, 2, 0.7];
+let playbackRateIndex = 0;
+//the possible values are 1, 1.5, 2
+function playbackRateChange(): void {
+
+    playbackRateIndex = (playbackRateIndex + 1) % playbackRates.length;
+    globalAudio.playbackRate = playbackRates[playbackRateIndex];
+    document.getElementById('sound-speed').innerHTML = '×' + playbackRates[playbackRateIndex];
+}
+
+
+
+function soundPlay(mode: 'normal' | 'fromEnd' = 'normal'): boolean {
+    try {
+        const audio = sounds.get(currentStep()).audio;
+        if (audio == undefined)
+            throw 'no audio';
+
+
+        globalAudio = audio;
+        globalAudio.playbackRate = playbackRates[playbackRateIndex];
+
+        if (mode == 'fromEnd')
+            globalAudio.currentTime = Math.max(0, globalAudio.duration - 10);
+
+        globalAudio.play();
+        soundState = SoundState.Play;
+        soundIcon();
+        updateTimelineDisplay();
+        return true;
+    }
+    catch (e) {
+        //if the sound is not in the database
+        userAlert("No sounds for this event");
+        soundStop();
+        return false;
+    }
+}
 
 
 
@@ -159,112 +269,6 @@ function soundIcon(): void {
 }
 
 
-let mediaRecorder: MediaRecorder;
-
-async function recordSound(step: Step): Promise<void> {
-
-
-    if (mediaRecorder != null) {
-        if (mediaRecorder.state == "recording")
-            mediaRecorder.stop();
-    }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-    })
-    mediaRecorder = new MediaRecorder(stream)
-    mediaRecorder.start()
-    const audioChunks: Blob[] = []
-    mediaRecorder.addEventListener("dataavailable", event => {
-        audioChunks.push(event.data)
-    })
-    mediaRecorder.addEventListener("stop", () => {
-        const audioBlob = new Blob(audioChunks)
-        const audioURL = window.URL.createObjectURL(audioBlob)
-        const audio = new Audio(audioURL)
-        audio.addEventListener('ended', function () {
-            moveHead(1)
-        })
-
-        const where = whereToSave.get(step);
-        
-        
-        const fr = new FileReader()
-        fr.onload = function (e) {
-            const target = e.target as FileReader
-            const x = target.result as ArrayBuffer
-            const y = new Uint8Array(x)
-            const retmsg: MessageToServerSound = {
-                presentation: undefined,
-                type: 'wav',
-                slideId: where.id,
-                index: where.index,
-                name: where.index.toString(),
-                file: Array.from(y)
-            }
-            sendToServer(retmsg)
-                .then(r => r.json())
-                .then(r_1 => {
-                    if (r_1.status != 'Sound recorded successfully')
-                        throw r_1.status;
-                }).catch((e) => {
-                    console.log(e);
-                    userAlert("Failed to record sound.")
-                })
-
-        }
-        fr.readAsArrayBuffer(audioBlob)
-    })
-}
-
-
-const playbackRates = [1, 1.5, 2, 0.7];
-let playbackRateIndex = 0;
-//the possible values are 1, 1.5, 2
-function playbackRateChange(): void {
-
-    playbackRateIndex = (playbackRateIndex + 1) % playbackRates.length;
-    globalAudio.playbackRate = playbackRates[playbackRateIndex];
-    document.getElementById('sound-speed').innerHTML = '×' + playbackRates[playbackRateIndex];
-}
-
-
-
-function soundPlay(): boolean {
-    try {
-        const audio = sounds.get(currentStep()).audio;
-        if (audio == undefined)
-            throw 'no audio';
-
-
-        globalAudio = audio;
-        globalAudio.playbackRate = playbackRates[playbackRateIndex];
-
-        // if (time != undefined) {
-        //     if (time < 0) {
-        //         //negative time is counted from the end of the audio
-        //         globalAudio.currentTime = Math.max(0, globalAudio.duration - time);
-        //     }
-        //     else {
-        //         //non-negative time is counted in the usual way
-        //         globalAudio.currentTime = time;
-        //     }
-        // }
-        globalAudio.play();
-        soundState = SoundState.Play;
-        soundIcon();
-        updateTimelineDisplay();
-        return true;
-    }
-    catch (e) {
-        //if the sound is not in the database
-        userAlert("No sounds for this event");
-        soundStop();
-        return false;
-    }
-}
-
-
 const whereToSave: Map<Step, { id: string, index: number }> = new Map();
 
 //for each step in the timeline, get its file name and duration
@@ -275,7 +279,7 @@ function initSoundTimeline(): void {
 
     totalSoundDuration = 0;
 
-    
+
     for (const step of allSteps()) {
         //the sound for a step is stored in the sound dict under the parent event, and the index of the current event. Therefore, we need to compute these values
         let index: number;
@@ -285,20 +289,20 @@ function initSoundTimeline(): void {
             parent = parentEvent(event);
             index = parent.children.indexOf(event);
         }
-        else 
-        if (step instanceof ZoomStep) {
-            parent = step.source;
-            if (zoomsIn(step))
-                index = parent.children.indexOf(step.target);
+        else
+            if (step instanceof ZoomStep) {
+                parent = step.source;
+                if (zoomsIn(step))
+                    index = parent.children.indexOf(step.target);
+                else {
+                    index = parent.children.length;
+                }
+            }
             else {
+                //this is a finish event
+                parent = manifest.tree;
                 index = parent.children.length;
             }
-        }
-        else {
-            //this is a finish event
-            parent = manifest.tree;
-            index = parent.children.length;
-        }
 
         whereToSave.set(step, { id: parent.id, index: index });
 
@@ -332,9 +336,7 @@ function loadSound(step: Step): Promise<void> {
             const filename = sound.filename;
             const audio = new Audio(filename);
             // audio.autoplay=true;
-            audio.addEventListener('ended', function () {
-                moveHead(1);
-            });
+            audio.addEventListener('ended', afterSound);
 
             audio.addEventListener('progress', () => {
                 sound.audio = audio;
@@ -369,9 +371,10 @@ const soundIncrement = 10;
 function soundAdvance(t: 1 | -1): void {
     if (t < 0) {
         if (globalAudio.currentTime < 1) {//if we are close to the beginning then we move to the previous event
-            globalAudio.pause();
+            resetSound();
             moveHead(-1);
-            throw 'this should be redone'
+            soundPlay('fromEnd')
+
         }
         else {
             globalAudio.currentTime = Math.max(0, globalAudio.currentTime - soundIncrement);
@@ -384,8 +387,10 @@ function soundAdvance(t: 1 | -1): void {
 
 //resets the current sound to zero
 function resetSound(): void {
-    if (globalAudio != undefined)
+    if (globalAudio != undefined) {
+        globalAudio.pause();
         globalAudio.currentTime = 0;
+    }
 }
 
 //we begin by loading the sound database

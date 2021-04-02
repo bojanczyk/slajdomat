@@ -28,7 +28,9 @@ import {
     soundPlay,
     soundRecord,
     soundAdvance,
-    resetSound
+    resetSound,
+    soundPaused,
+    soundIcon
 } from "./sound"
 
 import {
@@ -43,7 +45,7 @@ import {
 import {
     toggleSketchpad
 } from "./sketchpad";
-import { getStepFromURL, gotoStep, moveHead } from './timeline'
+import { getStepFromURL, gotoStep, moveHead, timeline } from './timeline'
 
 
 let manifest: Manifest;
@@ -67,47 +69,70 @@ function userAgent(): string {
 
 
 
-
-
+/*
+if (soundPaused())
+        {
+            console.log('not going back');
+            resetSound();
+            if (direction == -1)
+                return;
+        }
+        */
 
 
 function playButton(): void {
-    if (soundState == SoundState.Record || soundState == SoundState.Play)
-        soundStop();
-    else if (soundState == SoundState.None)
-        soundPlay();
+    switch (soundState) {
+        case SoundState.Play:
+            soundStop();
+            break;
+        case SoundState.Record:
+            soundStop();
+            break;
+        case SoundState.None:
+            soundPlay();
+            break;
+    }
+    soundIcon();
 }
 
 
 function nextButton(): void {
-    switch (soundState) {
-        case SoundState.Play:
-            soundAdvance(1);
-            break;
-        case SoundState.Record:
-            moveHead(1);
-            break;
-        case SoundState.None:
-            resetSound();
-            moveHead(1);
+    if (timeline.future.length > 0) {
+        switch (soundState) {
+            case SoundState.Play:
+                soundAdvance(1);
+                break;
+            case SoundState.Record:
+                moveHead(1);
+                soundRecord();
+                break;
+            case SoundState.None:
+                resetSound();
+                moveHead(1);
+        }
+        soundIcon();
     }
 }
 
 function prevButton(): void {
-    switch (soundState) {
-        case SoundState.Play:
-            soundAdvance(-1);
-            break;
+    if (timeline.past.length > 0) {
+        switch (soundState) {
+            case SoundState.Play:
+                soundAdvance(-1);
+                break;
 
-        case SoundState.Record:
-            soundStop();
-            break;
+            case SoundState.Record:
+                soundStop();
+                break;
 
-        case SoundState.None:
-            soundStop();
-            resetSound();
-            moveHead(-1);
+            case SoundState.None:
+                if (soundPaused())
+                    resetSound();
+                else
+                    moveHead(-1);
 
+        }
+        soundIcon();
     }
 }
 
