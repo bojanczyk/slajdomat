@@ -46,13 +46,10 @@ import {
     MessageToServerSound,
     MessageToServerSlide,
     Manifest,
-    SlideEvent,
     ServerResponse
 } from '../viewer/types'
 
-import {
-    Database
-} from '../plugin/plugin-types'
+
 
 // import { writeFileSync } from 'original-fs'
 
@@ -204,7 +201,7 @@ function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     //copy the latest version of the html files to the slide directory
     const htmlSourceDir = app.getAppPath() + '/resources';
-    for (const file of ['index.html', 'viewer.js', 'favicon.png'])
+    for (const file of ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg']) 
     {
         fs.copyFileSync(htmlSourceDir + '/' + file, presDir + '/' + file)
         }

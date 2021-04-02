@@ -47,7 +47,7 @@ import { freshName, sanitize } from '../common/helper'
 
 //*** global variables */
 
-let state = {
+const state = {
 //saved selection when temporarily selecting an object through mouseover 
 savedSelection: [] as readonly SceneNode[],
 
@@ -63,7 +63,7 @@ let pluginSettings: PluginSettings;
 
 
 
-function sendToUI(msg : MessageToUI) {
+function sendToUI(msg : MessageToUI)  : void {
     figma.ui.postMessage(msg)
 }
 

@@ -16,7 +16,7 @@ type SlideEvent = {
     id: string,
     name: string,
     children: SlideEvent[],
-    merged: boolean,
+    merged: boolean, //merged with the previous event
     disabled?: boolean,
     keywords: string[]
 }
@@ -42,7 +42,6 @@ type Manifest = {
 enum SoundState {
     Record = "Record",
     Play = "Play",
-    Pause = "Pause",
     None = "Right"
 }
 

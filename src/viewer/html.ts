@@ -1,28 +1,20 @@
 export {
     createTreeHTML,
-    makeTimeline,
     markSeen,
     audioPlaying,
-    updateEventDuration,
-    timelineButtons,
-    totalSoundDuration,
+    updateTimelineDisplay as timelineButtons,
     initPanels,
     openPanelTree,
     openPanelTreeRec,
     removeLoading,
     updatePageNumber,
     userAlert,
-    markDisabled
+    markDisabled,
+    timelineHTML
 }
 
 import {
-    gotoEvent,
-    eventTree,
-    curEvent,
-    numberOfPages,
-    pageNumber,
-    parentEvent,
-    lastEvent
+    parentEvent
 } from './event'
 
 
@@ -34,15 +26,16 @@ import {
 } from './viewer'
 
 import {
-    gotoAudio,
     playbackRateChange,
     soundState,
-    soundDurations
+    gotoAudio,
+    sounds,
+    totalSoundDuration
 } from './sound'
 
 import {
     initSearch
-  } from './search'
+} from './search'
 
 import {
     gsap
@@ -51,23 +44,23 @@ import {
 
 import { SlideEvent, SoundState } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
-import { pathInURL } from './files'
+import { currentStep,  gotoEvent,  gotoStep, Step, timeline, zoomsIn, numberOfPages, OverlayStep, ZoomStep, allSteps } from './timeline'
 
 
-let totalSoundDuration = 0;
+
+
+
+
 
 //these dictionaries store, for each slide event, the corresponding div and subtreeDiv in the tree panel. The div is the name of the event, while the subtreeDiv is defined only for child events, and it is the subtree.
-const divCache: Map<SlideEvent, HTMLElement> = new Map();
-const subtreeDivCache: Map<SlideEvent, HTMLElement> = new Map();
+const divCache: Map<SlideEvent, HTMLDivElement> = new Map();
+const subtreeDivCache: Map<SlideEvent, HTMLDivElement> = new Map();
+//this is a link to the progress item in the progress bar at the bottom
+const progressCache: Map<Step, HTMLDivElement> = new Map();
 
-//this dictionary tells you if the div, for a child event, is open (the tree is unfolded)
+//this dictionary tells you if the div, for a child event, is open (the tree is unfolded
 const divOpen: Map<SlideEvent, boolean> = new Map();
 
-//this dictionary associates to each event the corresponding html element in the timeline
-const timelines: Map<SlideEvent, HTMLElement> = new Map();
-
-//assigns to each event the number of seconds until that event
-const soundOffset: Map<SlideEvent, number> = new Map();
 
 
 //create the tree list of the slides and event that is in the unfolding side panel on the left
@@ -88,12 +81,11 @@ function createTreeHTML(): void {
             } else {
                 //the name of the event was clicked
                 gotoEvent(event);
-                pathInURL(event);
             }
         }
         divOpen.set(event, false);
         if (parentEvent(event) == undefined) {
-            subtreeDivCache.set(event, document.getElementById('slide-stack'));
+            subtreeDivCache.set(event, document.getElementById('slide-stack') as HTMLDivElement);
         } else if (event.merged && event.type != 'child') {
             //merged events get no items in the tree view
         } else {
@@ -136,126 +128,90 @@ function createTreeHTML(): void {
                     createTreeHTMLRec(child)
         }
     }
-    createTreeHTMLRec(eventTree);
+    createTreeHTMLRec(manifest.tree);
 
 }
 
-const noSoundDuration = 10;
+function timelineHTML() : void {
 
-//updates the duration of an event; the update concerns the timeline
-function updateEventDuration(event: SlideEvent): void {
-    const timeline = timelines.get(event);
-    if (soundDurations.get(event) != undefined) {
-        timeline.style.flexGrow = soundDurations.get(event).toString();
-        timeline.classList.remove('nosound');
-    } else {
-        if (lastEvent(event)) {
-            timeline.style.display = 'none';
+    progressCache.clear();
+
+    
+
+    const timelineDIV = document.getElementById('progress-line');
+    timelineDIV.innerHTML = '';
+    for (const step of allSteps()) {
+        const big = document.createElement('div');
+        const small = document.createElement('div');
+        small.classList.add('progress-filler');
+        small.style.width = '0%';
+        big.appendChild(small);
+        timelineDIV.appendChild(big);
+        big.addEventListener('click', function (e) {
+            timelineClicked(step, e);
+        })
+
+        let duration : number;
+        try {
+            duration = sounds.get(step).duration;
         }
-        else {
-            timeline.style.flexGrow = noSoundDuration.toString();
-            timeline.classList.add('nosound');
-        }
+        catch (e) {duration = 10;}
+        
+        big.style.flexGrow =  duration.toString();
+        if (sounds.get(step) != undefined)
+            big.classList.add('nosound');
+        else    
+            big.classList.remove('nosound');
+
+        progressCache.set(step, big);
     }
-
 }
 
-//creates the timeline at the bottom of the screen
-function makeTimeline(): void {
-
-    //for each element, find the duration of its audio
-    function computeDuration(event: SlideEvent): void {
-        for (let i = 0; i < event.children.length; i++) {
-            soundOffset.set(event.children[i], totalSoundDuration);
-            try {
-                const duration = manifest.soundDict[event.id][i].duration;
-                soundDurations.set(event.children[i], duration);
-                totalSoundDuration += duration;
-            } catch (e) {
-                totalSoundDuration += noSoundDuration;
-            }
-
-
-            if (event.children[i].type == 'child')
-                computeDuration(event.children[i]);
-        }
-
-    }
-
-    //create a div in the timeline for every non-root element of the 
-    function makeTimelineRec(event: SlideEvent): void {
-
-        if (parentEvent(event) == undefined) {
-            //the root has no element in the timeline
-
-        } else if (event.merged) {
-            //if an event is merged with the previous one, then also no timeline
-
-        } else {
-            const big = document.createElement('div');
-            const small = document.createElement('div');
-            small.classList.add('progress-filler');
-            small.style.width = '0%';
-            big.appendChild(small);
-            timeLine.appendChild(big);
-
-            big.addEventListener('click', function (e) {
-                timelineClicked(event, e);
-            })
-            timelines.set(event, big);
-            updateEventDuration(event);
-        }
-        //recursively call for children
-        if (event.type == 'child')
-            for (const child of event.children)
-                makeTimelineRec(child);
-    }
-
-    const timeLine = document.getElementById('progress-line');
-    computeDuration(eventTree);
-    makeTimelineRec(eventTree);
-
-}
 
 //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
-function timelineClicked(event: SlideEvent, e: MouseEvent): void {
+function timelineClicked(step: Step, e: MouseEvent): void {
 
-    let target = e.target as HTMLElement;
-    if (target.classList.contains('progress-filler')) {
-        target = target.parentNode as HTMLElement;
-    }
+    
     const a: number = e.offsetX;
-    const b: number = target.offsetWidth;
-
-    if (event == curEvent) {
+    const b: number = progressCache.get(step).offsetWidth;
+    if (step == currentStep()) {
         gotoAudio(a / b);
     } else {
-        gotoEvent(event)
+        gotoStep(step)
     }
 }
 
-//mark the tree view and timeline for an event as seen/unseen
-function markSeen(event: SlideEvent, seen: boolean): void {
-    const div = divCache.get(event);
-    const timeline = timelines.get(event);
-    if (seen) {
+
+//update the html (both left panel and progress bar) after a step has been processed in either direction
+function markSeen(step: Step, direction : -1 | 1) : void {
+    let div : HTMLElement;
+
+    if (step instanceof OverlayStep)
+        div = divCache.get(step.overlays[0]);
+    if (step instanceof ZoomStep && zoomsIn(step))
+        div = divCache.get(step.target)
+    
+    const timelineDIV = progressCache.get(step);
+    if (direction == 1) {
+                
         if (div != undefined) //final events have no div
-            div.classList.add('tree-view-item-seen');
-        if (timeline != undefined) {
-            const firstChild = timeline.firstChild as HTMLElement;
-            firstChild.style.width = "100%";
-            timeline.classList.add('seen');
-        }
+            div.classList.add('tree-view-item-seen');            
+
+        const firstChild = timelineDIV.firstChild as HTMLElement;
+        firstChild.style.width = "100%";
+        timelineDIV.classList.add('seen');
+
     } else {
+        
         if (div != undefined) //final events have no div
             div.classList.remove('tree-view-item-seen');
-        if (timeline != undefined) {
-            const firstChild = timeline.firstChild as HTMLElement;
+
+        if (timelineDIV != undefined) {
+            const firstChild = timelineDIV.firstChild as HTMLElement;
             firstChild.style.width = "0%";
-            timeline.classList.remove('seen');
+            timelineDIV.classList.remove('seen');
         }
     }
-
 }
 
 //mark an event as disabled in the tree view
@@ -280,12 +236,12 @@ function openPanelTree(event: SlideEvent, open: boolean): void {
     }
 }
 
- //unfolds the tree in the left panel for this event and its parents
-function openPanelTreeRec(event :SlideEvent) {
+//unfolds the tree in the left panel for this event and its parents
+function openPanelTreeRec(event: SlideEvent): void {
     if (parentEvent(event) == undefined)
         return;
     if (event.type == 'child') {
-        openPanelTree(event,true);
+        openPanelTree(event, true);
     }
     openPanelTreeRec(parentEvent(event));
 }
@@ -315,17 +271,24 @@ function formatTime(time: number): string {
 }
 
 //this function is called periodically when the audio is playing, and it updates the position of the slider
-function audioPlaying(audio : HTMLAudioElement): void {
+function audioPlaying(audio: HTMLAudioElement): void {
+    
+    try {
     const currentTime = audio.currentTime;
     const duration = audio.duration;
-    const curTime = currentTime + soundOffset.get(curEvent);
+    const curTime = currentTime + sounds.get(currentStep()).previousDuration;
     document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
-    (timelines.get(curEvent).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
+    (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
+    }
+    catch (e)
+    {
+        console.log('tired to play illegally')
+    }
 
 }
 
 // the timeline uses two kinds of display, depending on the whether the sound is playing, or not
-function timelineButtons(): void {
+function updateTimelineDisplay(): void {
     if (soundState == SoundState.Play) {
         document.getElementById('progress-panel').classList.add('playing');
     } else {
@@ -337,7 +300,7 @@ function timelineButtons(): void {
 //toggles the side panel on the left with the list of slides
 function showPanel(visible: boolean): void {
     const leftPanel = document.getElementById('left-panel');
-    
+
     if (visible) {
         gsap.to(leftPanel, {
             width: '30%',
@@ -415,17 +378,24 @@ function userAlert(text: string): void {
 
 //update the page number in the corner
 function updatePageNumber(): void {
-    document.getElementById("page-count-enumerator").innerHTML = pageNumber(curEvent).toString();
+
+    let currentPage = numberOfPages;
+    if (currentStep() != undefined) {
+        //not at the last page
+        currentPage = currentStep().pageNumber
+    }
+    document.getElementById("page-count-enumerator").innerHTML = 
+    currentPage.toString();
     document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 
     // the "previous" arrow should be invisible at the first event of the first slide
     // analogously for the "next" arrow
-    if (curEvent == eventTree.children[0])
+    if (timeline.past.length == 0)
         document.getElementById("prev-event").style.visibility = "hidden";
     else
         document.getElementById("prev-event").style.visibility = "visible";
 
-    if (curEvent.type == 'finish' && parentEvent(curEvent) == eventTree)
+    if (timeline.future.length == 0)
         document.getElementById("next-event").style.visibility = "hidden";
     else
         document.getElementById("next-event").style.visibility = "visible";

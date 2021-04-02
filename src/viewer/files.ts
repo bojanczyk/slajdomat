@@ -1,21 +1,17 @@
 export {
-    pathInURL,
     presentationDir,
     fileName,
     sendToServer,
     fetchJSON
 }
 
-import {
-    curEvent,
-    getPath,
-} from './event'
+
 
 import {
     userAlert
 } from './html'
 
-import { MessageToServer, SlideEvent } from './types';
+import { MessageToServer} from './types';
 
 
 import {
@@ -23,19 +19,6 @@ import {
 } from './viewer'
 
 
-function pathInURL(event : SlideEvent) : void //puts the current path into the url
-{
-    const path = getPath(event);
-    let string = '';
-    while (path.length > 0) {
-        string += path.pop() + '/';
-    }
-    if (string == '0/')
-    //the argument 0/ is default, so it need not be used
-        history.pushState({}, null);
-    else 
-        history.pushState({}, null, '?path=' + string);
-}
 
 //the directory where the slides are
 function presentationDir() : string {
@@ -60,33 +43,32 @@ function fileName(slide: string, file: string): string {
 }
 
 //send an object to the server
-function sendToServer(msg: MessageToServer): Promise < Response > {
+async function sendToServer(msg: MessageToServer): Promise < Response > {
     if (msg.type == 'slides' || msg.type == 'wav')
         msg.presentation = manifest.presentation;
     const json = JSON.stringify(msg);
-    return fetch(getServer(), {
+    const response = await fetch(getServer(), {
         method: 'POST',
         body: json
-    }).
-    then(response => {
-        if (!response.ok) {
-            throw "not connected";
-        } else return response;
     });
+    if (!response.ok) {
+        throw "not connected";
+    } else
+        return response;
 }
 
 
 //get a json file and parse it
-function fetchJSON(filename: string): Promise < unknown > {
-    return fetch(filename).
-    then(function (res) {
+async function fetchJSON(filename: string): Promise < unknown > {
+    try {
+        const res = await fetch(filename);
         if (!(res.ok))
             throw "not connected";
+
         else
             return res.json();
-    }).
-    catch((e) => {        
+    } catch (e) {
         userAlert("Could not load slide file " + filename);
         return null;
-    });
+    }
 }

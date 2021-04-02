@@ -7,8 +7,10 @@ export {
 
 
 import Fuse from 'fuse.js'
-import { gotoEvent, eventTree, parentEvent } from './event'
+import {parentEvent } from './event'
+import { gotoEvent } from './timeline'
 import { SlideEvent } from './types'
+import { manifest } from './viewer'
 
 
 type SearchKeyword = {
@@ -28,7 +30,7 @@ function initSearch(): void {
         for (const child of slide.children)
             addStrings(child);
     }
-    addStrings(eventTree);
+    addStrings(manifest.tree);
 
     search = new Fuse(allStrings, { keys: ['text'] });
 
@@ -61,7 +63,7 @@ function searchType(): void {
         oneResult.classList.add('one-result');
         oneResult.innerHTML = `<div class='search-result-slide'> ${name}</div> <div class='search-result-text'>${result.item.text}</div>`
         oneResult.addEventListener('click', () => {
-            gotoEvent(event)
+            gotoEvent(event);
         })
         allResults.appendChild(oneResult)
 

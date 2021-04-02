@@ -13,10 +13,9 @@ import './css/progress.css'
 import './css/sketch.css'
 
 import {
-    createEventTree,
-    gotoPath,
-    changeEvent
+    createEventTree
 } from "./event"
+
 
 import {
     initPanels,
@@ -27,9 +26,9 @@ import {
     soundStop,
     soundState,
     soundPlay,
-    soundPause,
     soundRecord,
-    soundAdvance
+    soundAdvance,
+    resetSound
 } from "./sound"
 
 import {
@@ -44,6 +43,7 @@ import {
 import {
     toggleSketchpad
 } from "./sketchpad";
+import { getStepFromURL, gotoStep, moveHead } from './timeline'
 
 
 let manifest: Manifest;
@@ -68,57 +68,46 @@ function userAgent(): string {
 
 
 
-//the path is an array of numbers, which indicates the path in the event tree to the current event 
-function getPathFromURL(): number[] {
-    const path = [];
-    try {
-        const pathString = (new URL(window.location.href)).searchParams.get('path').split('/');
-        while (pathString.length > 0) {
-            const index = pathString.pop();
-            if (index != '')
-                path.push(parseInt(index));
-        }
-        return path;
-
-    } catch (e) {
-        return [0]; // default path is the first event of the root
-    }
-}
 
 
 
 function playButton(): void {
-    if (soundState == SoundState.Record)
+    if (soundState == SoundState.Record || soundState == SoundState.Play)
         soundStop();
-    else if (soundState == SoundState.Play)
-        soundPause();
-    else
+    else if (soundState == SoundState.None)
         soundPlay();
 }
 
 
 function nextButton(): void {
-    if (soundState == SoundState.Play) {
-        soundAdvance(1);
-    } else {
-        if (soundState == SoundState.Pause)
-            soundStop();
-        changeEvent(1);
+    switch (soundState) {
+        case SoundState.Play:
+            soundAdvance(1);
+            break;
+        case SoundState.Record:
+            moveHead(1);
+            break;
+        case SoundState.None:
+            resetSound();
+            moveHead(1);
     }
 }
 
 function prevButton(): void {
-    if (soundState == SoundState.Play) {
-        soundAdvance(-1);
-    } else {
-        if (soundState == SoundState.Pause || soundState == SoundState.Record) {
-            console.log('resetting this sound');
+    switch (soundState) {
+        case SoundState.Play:
+            soundAdvance(-1);
+            break;
+
+        case SoundState.Record:
             soundStop();
-        }
-        else {
+            break;
+
+        case SoundState.None:
             soundStop();
-            changeEvent(-1);
-        }
+            resetSound();
+            moveHead(-1);
+
     }
 }
 
@@ -129,8 +118,7 @@ function prevButton(): void {
 // the main event dispatcher
 function keyListener(event: KeyboardEvent) {
 
-    if (event.target != document.getElementById('search-input'))
-{
+    if (event.target != document.getElementById('search-input')) {
         if (event.key == 'ArrowRight') {
             nextButton();
 
@@ -179,10 +167,10 @@ window.onload = function (): void {
             throw "The manifest is missing for the presentation"
         manifest = j as Manifest;
         document.title = manifest.presentation;
-        const path = getPathFromURL();
         createEventTree();
         document.addEventListener("keydown", keyListener);
         initPanels();
-        gotoPath(path);
+        const step = getStepFromURL();
+        gotoStep(step);
     }) //.catch((e) => userAlert(e))
 }
