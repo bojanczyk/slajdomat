@@ -1,15 +1,17 @@
 import { Database } from "../plugin/plugin-types"
+import { Step } from "./timeline"
 
 
 export {
     SlideEvent,
     OverlayEvent,
     ZoomEvent,
-    SoundState,
     Manifest,
     MessageToServer,
     MessageToServerSound,
     MessageToServerSlide,
+    MessageToServerLive,
+    LiveRecording,
     ServerResponse
 }
 
@@ -42,7 +44,7 @@ interface ZoomEvent extends GenericEvent {
 
 
 //this is the type of the file with the slide information
-type Manifest = {
+interface Manifest  {
     version: number,
     presentation: string,
     slideDict: {
@@ -53,14 +55,20 @@ type Manifest = {
             [eventId: string]: number 
         }
     },
-    tree: ZoomEvent
+    tree: ZoomEvent,
+    live? : LiveRecording[]
 }
 
-enum SoundState {
-    Record = "Record",
-    Play = "Play",
-    None = "Right"
+interface LiveRecording {
+    date : number,
+    steps : {step : StepDescription, soundFile : string}[]
 }
+
+interface StepDescription {
+    slide : string,
+    event : string
+}
+
 
 type MessageToServerSound = {
     type: 'wav',
@@ -81,7 +89,12 @@ type MessageToServerSlide = {
     }[]
 }
 
-type MessageToServer = MessageToServerSound | MessageToServerSlide
+type MessageToServerLive = {
+    type : 'startLive',
+    presentation : string
+}
+
+type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive
     |
 {
     type: 'probe'

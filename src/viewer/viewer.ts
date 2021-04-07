@@ -31,7 +31,8 @@ import {
     resetSound,
     soundPaused,
     endOfSound,
-    cacheFlush
+    cacheFlush,
+    SoundState
 } from "./sound"
 
 import {
@@ -40,8 +41,7 @@ import {
 } from './files'
 
 import {
-    Manifest,
-    SoundState
+    Manifest
 } from "./types";
 import {
     toggleSketchpad
@@ -164,6 +164,9 @@ function keyListener(event: KeyboardEvent) {
                     soundRecord();
                 }
                 break;
+            
+            case 'l':
+
 
             /*case 'p':
                 exportPdf(); */

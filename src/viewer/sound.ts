@@ -13,12 +13,13 @@ export {
     resetSound,
     soundPaused,
     endOfSound,
-    cacheFlush
+    cacheFlush,
+    SoundState
 }
 
 import {
-    SoundState,
-    MessageToServerSound
+    MessageToServerSound,
+    MessageToServerLive
 } from './types'
 
 import {
@@ -48,6 +49,11 @@ import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, 
 
 
 
+enum SoundState {
+    Record = "Record",
+    Play = "Play",
+    None = "Right"
+}
 
 
 //there are three possible states for the sound
@@ -140,7 +146,7 @@ let mediaRecorder: MediaRecorder;
 
 async function recordSound(step: Step): Promise<void> {
 
-    
+
 
     if (mediaRecorder != null) {
         if (mediaRecorder.state == "recording")
@@ -156,7 +162,7 @@ async function recordSound(step: Step): Promise<void> {
     mediaRecorder.addEventListener("dataavailable", event => {
         audioChunks.push(event.data)
     })
-   
+
     mediaRecorder.addEventListener("stop", () => {
         const audioBlob = new Blob(audioChunks)
         const audioURL = window.URL.createObjectURL(audioBlob)
@@ -171,15 +177,15 @@ async function recordSound(step: Step): Promise<void> {
             const target = e.target as FileReader
             const x = target.result as ArrayBuffer
             const y = new Uint8Array(x)
-            const retmsg: MessageToServerSound = {
+            const retval: MessageToServerSound = {
                 presentation: undefined,
                 type: 'wav',
                 slideId: where.slide,
                 eventId: where.eventId,
                 file: Array.from(y),
-                live : false
+                live: isLive
             }
-            sendToServer(retmsg)
+            sendToServer(retval)
                 .then(r => r.json())
                 .then(r_1 => {
                     if (r_1.status != 'Sound recorded successfully')
@@ -202,7 +208,19 @@ async function recordSound(step: Step): Promise<void> {
     })
 }
 
+let isLive = false;
+//starts a new live recording 
+function toggleLive() {
+    isLive = !isLive;
+    if (isLive) {
+        const msg: MessageToServerLive = {
+            type: 'startLive',
+            presentation: manifest.presentation,
+        }
+        sendToServer(msg);
+    }
 
+}
 
 const playbackRates = [1, 1.5, 2, 0.7];
 let playbackRateIndex = 0;
@@ -243,18 +261,18 @@ function soundPlay(mode: 'normal' | 'fromEnd' = 'normal'): boolean {
 }
 
 
-function soundFile (step : Step) :  {slide : string, eventId : string} {
-    const retval  = {slide : undefined as string, eventId : undefined as string};
+function soundFile(step: Step): { slide: string, eventId: string } {
+    const retval = { slide: undefined as string, eventId: undefined as string };
     if (step instanceof OverlayStep) {
         retval.slide = parentEvent(step.overlays[0]).id;
         retval.eventId = step.overlays[0].eventId;
     }
     else if (step instanceof ZoomStep) {
         retval.slide = step.source.id;
-        if (zoomsIn(step)) 
+        if (zoomsIn(step))
             retval.eventId = step.target.eventId;
-        else 
-            retval.eventId = 'finish';        
+        else
+            retval.eventId = 'finish';
     }
     else {
         //the last step

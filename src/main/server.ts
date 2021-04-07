@@ -47,7 +47,9 @@ import {
     MessageToServerSound,
     MessageToServerSlide,
     Manifest,
-    ServerResponse
+    ServerResponse,
+    MessageToServerLive,
+    LiveRecording
 } from '../viewer/types'
 
 
@@ -417,6 +419,22 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
 }
 
+function createLive(msg : MessageToServerLive): ServerResponse {
+    const oldManifest: Manifest = readManifest(msg.presentation);
+    if (oldManifest.live == undefined)
+        oldManifest.live = [];
+    
+    oldManifest.live.push(
+    {
+        date : Date.now(),
+        steps : []
+    });
+    
+    return  {
+        status: 'ok'
+    };
+}
+
 
 
 const expressApp = express();
@@ -455,6 +473,10 @@ function startServer(): void {
                         status: 'ok'
                     };
                     break
+                
+                case 'startLive':
+                    response = createLive(msg);
+                    break;
 
                 default:
                     throw "unexpected message type "
@@ -476,3 +498,5 @@ function startServer(): void {
     })
 
 }
+
+

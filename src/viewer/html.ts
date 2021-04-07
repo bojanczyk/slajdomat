@@ -33,7 +33,8 @@ import {
     gotoAudio,
     sounds,
     totalSoundDuration,
-    endOfSound
+    endOfSound,
+    SoundState
 } from './sound'
 
 import {
@@ -45,7 +46,7 @@ import {
 } from "gsap";
 
 
-import { SlideEvent, SoundState, ZoomEvent } from './types';
+import { SlideEvent, ZoomEvent } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
 import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, numberOfPages, OverlayStep, ZoomStep, allSteps } from './timeline'
 
