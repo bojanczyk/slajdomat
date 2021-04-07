@@ -1,19 +1,16 @@
-export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, getStepFromURL, stepInURL, numberOfPages, stepSoundIndex , allSteps}
+export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, numberOfPages, allSteps }
 
 import { isOverlay, parentEvent, runOverlay, zoomSlide, } from "./event";
-import { SlideEvent} from "./types";
+import { OverlayEvent, SlideEvent, ZoomEvent } from "./types";
 
-import { markSeen, openPanelTree, openPanelTreeRec } from "./html";
+import { markSeen, openPanelTree, openPanelTreeRec, soundIcon, timelineSeen } from "./html";
 import { manifest, updatePageNumber } from "./viewer";
-import { loadSound, soundIcon} from "./sound";
+import { loadSound } from "./sound";
 import { addToQueue } from "./loadSVG";
 
 
 
 let numberOfPages = 0;
-
-//the index of the event corresponding to a step, relative to its parent event. This is used to compute the sound files
-const stepSoundIndex: Map<Step, number> = new Map();
 
 //the presentation is a sequence of timeline events. Each such event is either a zoom transition from a source slide to a target slide, or an overlay
 class Step {
@@ -22,12 +19,12 @@ class Step {
 }
 
 class OverlayStep extends Step {
-    overlays: SlideEvent[]
+    overlays: OverlayEvent[]
 }
 
 class ZoomStep extends Step {
-    source: SlideEvent;
-    target: SlideEvent
+    source: ZoomEvent;
+    target: ZoomEvent
 }
 
 
@@ -46,25 +43,16 @@ const timeline: Timeline = {
     future: [] as Step[]
 }
 
-//the step that is about to be executed, i.e. the first step in the future
-function currentStep(): Step {
-    if (timeline.future.length > 0)
-        return timeline.future[timeline.future.length - 1]
-    else 
-        return timeline.lastStep;
+//the step that is about to be executed, i.e. the offset-th in the future
+function currentStep(offset = 0): Step {
+    if (timeline.future.length > offset)
+        return timeline.future[timeline.future.length - 1 - offset]
+    else if (timeline.future.length == offset)
+        return timeline.lastStep
+    else throw 'tried to access step that does not exist'
 }
 
 
-/*
-//returns the step after the current one
-function afterCurrent() {
-    if (timeline.future.length >1)
-        return timeline.future[timeline.future.length - 2];
-    if (timeline.future.length == 1)
-        return timeline.lastProgress;
-    return undefined;
-}
-*/
 
 
 
@@ -74,10 +62,10 @@ function createTimeline(): void {
 
 
     //should be called only for child events, not overlays
-    function createTimelineRec(event: SlideEvent) {
+    function createTimelineRec(event: ZoomEvent) {
         //add a step to the timeline
 
-        type AddStep = { type: 'zoom', source: SlideEvent, target: SlideEvent } | { type: 'overlay', overlays: SlideEvent[] }
+        type AddStep = { type: 'zoom', source: ZoomEvent, target: ZoomEvent } | { type: 'overlay', overlays: OverlayEvent[] }
         function addStep(subtype: AddStep) {
             let step: Step;
 
@@ -88,8 +76,7 @@ function createTimeline(): void {
                 step = retval;
 
             }
-            if (subtype.type == 'overlay')
-            {
+            if (subtype.type == 'overlay') {
                 const retval = new OverlayStep;
                 retval.overlays = subtype.overlays;
                 step = retval;
@@ -103,15 +90,15 @@ function createTimeline(): void {
         //we group the child events into blocks according to the merged bit
         const mergedBlocks = [] as SlideEvent[][];
         for (const child of event.children) {
-            if (child.type != 'finish') {
-                if (child.merged) {
-                    const currentBlock = mergedBlocks.pop();
-                    currentBlock.push(child);
-                    mergedBlocks.push(currentBlock);
-                }
-                else {
-                    mergedBlocks.push([child]);
-                }
+
+            if (child.merged) {
+                const currentBlock = mergedBlocks.pop();
+                currentBlock.push(child);
+                mergedBlocks.push(currentBlock);
+            }
+            else {
+                mergedBlocks.push([child]);
+
             }
         }
 
@@ -122,22 +109,23 @@ function createTimeline(): void {
             //all events in a block should have same overlay/non-overlay type, hence it is enough to test the first one
             if (isOverlay(block[0])) {
                 //a block of overlay events
-                addStep({ type: 'overlay', overlays: block });
+                addStep({ type: 'overlay', overlays: block as OverlayEvent[] });
             }
             else {
-                //a block of zoom events
+                //a block of zoom events, so we can type it better
+                const zoomBlock = block as ZoomEvent[];
 
                 //we first zoom from the current to the first in the block
-                addStep({ type: 'zoom', source: event, target: block[0] });
+                addStep({ type: 'zoom', source: event, target: zoomBlock[0] });
 
                 //next, we recursively call for all children, and between each of them we do a direct zoom from i-1 to i
-                createTimelineRec(block[0]);
-                for (let i = 1; i < block.length; i++) {
-                    addStep({ type: 'zoom', source: block[i - 1], target: block[i] });
-                    createTimelineRec(block[i]);
+                createTimelineRec(zoomBlock[0]);
+                for (let i = 1; i < zoomBlock.length; i++) {
+                    addStep({ type: 'zoom', source: zoomBlock[i - 1], target: zoomBlock[i] });
+                    createTimelineRec(zoomBlock[i]);
                 }
                 //finally, we zoom out from the last event in the block to the current
-                addStep({ type: 'zoom', source: block[block.length - 1], target: event });
+                addStep({ type: 'zoom', source: zoomBlock[zoomBlock.length - 1], target: event });
             }
         }
     }
@@ -160,17 +148,27 @@ function futureSlide(event: SlideEvent): boolean {
 //the  first step where this event is used
 function eventToStep(event: SlideEvent): Step {
 
+    if (event == manifest.tree)
+        return timeline.lastStep;
+
     const allSteps = timeline.past.concat(timeline.future);
-    for (const step of allSteps) {
-        if (step instanceof ZoomStep) {
-            if (step.target == event)
-                return step;
+
+    if (event.type == 'child')
+        for (const step of allSteps)
+            if (step instanceof ZoomStep) {
+                if (step.target == event)
+                    return step;
+            }
+
+    if (event.type == 'show' || event.type == 'hide')
+        for (const step of allSteps) {
+            if (step instanceof OverlayStep) {
+                if (step.overlays.includes(event))
+                    return step;
+            }
         }
-        if (step instanceof OverlayStep) {
-            if (step.overlays.includes(event))
-                return step;
-        }
-    }
+
+
     throw 'Could not find step'
 }
 
@@ -197,7 +195,7 @@ function doOverlayStep(step: Step, direction: -1 | 1, silent: 'silent' | 'animat
 function moveHead(direction: -1 | 1): void {
     let source, target: Step[];
 
-    
+
 
 
     //depending on the direction, we will shift an event from future to past or in the other direction
@@ -240,7 +238,7 @@ function moveHead(direction: -1 | 1): void {
         }
 
         addToQueue(target.children);
-        zoomSlide(target, 1.5);
+        zoomSlide(target);
 
         //we open or close the suitable subtree in the left panel, 
         if (parentEvent(target) != undefined)
@@ -249,8 +247,9 @@ function moveHead(direction: -1 | 1): void {
             openPanelTree(source, false);
 
     }
-    
+
     loadNearbySounds();
+    soundIcon();
     updatePageNumber();
 }
 
@@ -265,24 +264,28 @@ function resetTimeline() {
 
 
 //goes to a given step, after loading enough svg files to make this possible
-async function gotoStep(targetStep: Step): Promise<void> {
+async function gotoStep(targetStep: Step, mode: 'immediate' = undefined): Promise<void> {
     let slide: SlideEvent;
     if (targetStep instanceof OverlayStep) { slide = targetStep.overlays[0]; }
     else if (targetStep instanceof ZoomStep) { slide = targetStep.target; }
-    else {
-        if (targetStep instanceof OverlayStep)
-            console.log('strange');
-        console.log(targetStep);
-        throw 'Can only go to overlays or zoom step'
-    }
+    else if (targetStep == timeline.lastStep) { slide = manifest.tree }
+    else
+        throw 'Wanted to go to a step that does not exist'
+
 
 
     //we load the slide of the step, plus its ancestors, and their children
-    let slidesToLoad: SlideEvent[] = [];
-    let ancestor = slide;
+    const slidesToLoad: ZoomEvent[] = [];
+    let ancestor : ZoomEvent;
+    if (slide.type == 'child')
+        ancestor = slide;
+    else
+        ancestor = parentEvent(slide);
     while (ancestor != undefined) {
         slidesToLoad.push(ancestor);
-        slidesToLoad = slidesToLoad.concat(ancestor.children);
+        for (const cousin of ancestor.children)
+            if (cousin.type == 'child')
+                slidesToLoad.push(cousin);
         ancestor = parentEvent(ancestor);
     }
 
@@ -301,13 +304,21 @@ async function gotoStep(targetStep: Step): Promise<void> {
         markSeen(step_3, -1);
         doOverlayStep(step_3, -1, 'silent');
     }
+    if (timeline.lastStep != undefined)
+        timelineSeen(timeline.lastStep, false);
+
     let zoom = slide;
     if (slide.type != 'child')
         zoom = parentEvent(slide);
-    zoomSlide(zoom);
+
+    if (mode == 'immediate')
+        zoomSlide(zoom, 'immediate')
+    else
+        zoomSlide(zoom);
+
     loadNearbySounds();
     soundIcon();
-
+    updatePageNumber();
 }
 
 //goes to the first step after the event becomes visible
@@ -320,47 +331,15 @@ function gotoEvent(event: SlideEvent): void {
 }
 
 
-//the path is an array of numbers, which indicates the path in the event tree to the current event 
-function getStepFromURL(): Step {
-    return currentStep();
-    /*
-    const path = [];
-    try {
-        const pathString = (new URL(window.location.href)).searchParams.get('path').split('/');
-        while (pathString.length > 0) {
-            const index = pathString.pop();
-            if (index != '')
-                path.push(parseInt(index));
-        }
-        return path;
-
-    } catch (e) {
-        return [0]; // default path is the first event of the root
-    }*/
-}
 
 
-function stepInURL(): void //puts the current path into the url
-{
-    /*
-    const path = getPath(event);
-    let string = '';
-    while (path.length > 0) {
-        string += path.pop() + '/';
-    }
-    if (string == '0/')
-    //the argument 0/ is default, so it need not be used
-        history.pushState({}, null);
-    else 
-        history.pushState({}, null, '?path=' + string);
-        */
-}
+
 
 function loadNearbySounds() {
     loadSound(currentStep());
     //load sound for previous step, which could be useful when moving to the left on the timelines
     if (timeline.past.length > 0)
-        loadSound(timeline.past[timeline.past.length -1]);
+        loadSound(timeline.past[timeline.past.length - 1]);
 
     //load sound for the next step, which might be the special last step
     if (timeline.future.length > 1)
@@ -369,12 +348,12 @@ function loadNearbySounds() {
         loadSound(timeline.lastStep);
 }
 
-function allSteps() : Step[] {
+function allSteps(): Step[] {
     const retval = timeline.past.slice().concat(timeline.future.slice().reverse());
 
-      //if there is at least one sound, then there is also an item for the last event, which is only for its sound
-      if (Object.keys(manifest.soundDict).length > 0) {
-        retval.push(timeline.lastStep);        
+    //if there is at least one sound, then there is also an item for the last event, which is only for its sound
+    if (Object.keys(manifest.soundDict).length > 0) {
+        retval.push(timeline.lastStep);
     }
     return retval;
 }

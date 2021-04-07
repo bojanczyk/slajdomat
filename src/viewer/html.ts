@@ -2,7 +2,7 @@ export {
     createTreeHTML,
     markSeen,
     audioPlaying,
-    updateTimelineDisplay as timelineButtons,
+    updateTimelineDisplay,
     initPanels,
     openPanelTree,
     openPanelTreeRec,
@@ -10,7 +10,9 @@ export {
     updatePageNumber,
     userAlert,
     markDisabled,
-    timelineHTML
+    timelineHTML,
+    soundIcon,
+    timelineSeen
 }
 
 import {
@@ -30,7 +32,8 @@ import {
     soundState,
     gotoAudio,
     sounds,
-    totalSoundDuration
+    totalSoundDuration,
+    endOfSound
 } from './sound'
 
 import {
@@ -42,9 +45,9 @@ import {
 } from "gsap";
 
 
-import { SlideEvent, SoundState } from './types';
+import { SlideEvent, SoundState, ZoomEvent } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
-import { currentStep,  gotoEvent,  gotoStep, Step, timeline, zoomsIn, numberOfPages, OverlayStep, ZoomStep, allSteps } from './timeline'
+import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, numberOfPages, OverlayStep, ZoomStep, allSteps } from './timeline'
 
 
 
@@ -124,19 +127,18 @@ function createTreeHTML(): void {
         //recursively call for all children
         if (event.type == 'child') {
             for (const child of event.children)
-                if (child.type != 'finish')
-                    createTreeHTMLRec(child)
+                createTreeHTMLRec(child)
         }
     }
     createTreeHTMLRec(manifest.tree);
 
 }
 
-function timelineHTML() : void {
+function timelineHTML(): void {
 
     progressCache.clear();
 
-    
+
 
     const timelineDIV = document.getElementById('progress-line');
     timelineDIV.innerHTML = '';
@@ -151,19 +153,20 @@ function timelineHTML() : void {
             timelineClicked(step, e);
         })
 
-        let duration : number;
+        let duration: number;
         try {
             duration = sounds.get(step).duration;
         }
-        catch (e) {duration = 10;}
-        
-        big.style.flexGrow =  duration.toString();
+        catch (e) { duration = 10; }
+
+        big.style.flexGrow = duration.toString();
         if (sounds.get(step) != undefined)
             big.classList.add('nosound');
-        else    
+        else
             big.classList.remove('nosound');
 
         progressCache.set(step, big);
+        timelineSeen(step, timeline.past.includes(step));
     }
 }
 
@@ -171,7 +174,7 @@ function timelineHTML() : void {
 //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
 function timelineClicked(step: Step, e: MouseEvent): void {
 
-    
+
     const a: number = e.offsetX;
     const b: number = progressCache.get(step).offsetWidth;
     if (step == currentStep()) {
@@ -182,35 +185,45 @@ function timelineClicked(step: Step, e: MouseEvent): void {
 }
 
 
+function timelineSeen(step: Step, seen: boolean): void {
+    const div = progressCache.get(step);
+    if (seen) {
+        const firstChild = div.firstChild as HTMLElement;
+        firstChild.style.width = "100%";
+        div.classList.add('seen');
+    }
+    else {
+        const firstChild = div.firstChild as HTMLElement;
+        firstChild.style.width = "0%";
+        div.classList.remove('seen');
+    }
+}
+
 //update the html (both left panel and progress bar) after a step has been processed in either direction
-function markSeen(step: Step, direction : -1 | 1) : void {
-    let div : HTMLElement;
+function markSeen(step: Step, direction: -1 | 1): void {
+    let div: HTMLElement;
 
     if (step instanceof OverlayStep)
         div = divCache.get(step.overlays[0]);
     if (step instanceof ZoomStep && zoomsIn(step))
         div = divCache.get(step.target)
-    
+
     const timelineDIV = progressCache.get(step);
     if (direction == 1) {
-                
-        if (div != undefined) //final events have no div
-            div.classList.add('tree-view-item-seen');            
 
-        const firstChild = timelineDIV.firstChild as HTMLElement;
-        firstChild.style.width = "100%";
-        timelineDIV.classList.add('seen');
+        if (div != undefined) //final events have no div
+            div.classList.add('tree-view-item-seen');
+
+        timelineSeen(step, true);
+
 
     } else {
-        
+
         if (div != undefined) //final events have no div
             div.classList.remove('tree-view-item-seen');
 
-        if (timelineDIV != undefined) {
-            const firstChild = timelineDIV.firstChild as HTMLElement;
-            firstChild.style.width = "0%";
-            timelineDIV.classList.remove('seen');
-        }
+        if (timelineDIV != undefined)
+            timelineSeen(step, false);
     }
 }
 
@@ -248,7 +261,7 @@ function openPanelTreeRec(event: SlideEvent): void {
 
 
 //remove the 'loading' class from the corresponding elements in the slide panel
-function removeLoading(node: SlideEvent): void {
+function removeLoading(node: ZoomEvent): void {
     if (divCache.get(node) != undefined) {
         divCache.get(node).classList.remove("tree-view-item-loading");
     }
@@ -272,16 +285,15 @@ function formatTime(time: number): string {
 
 //this function is called periodically when the audio is playing, and it updates the position of the slider
 function audioPlaying(audio: HTMLAudioElement): void {
-    
+
     try {
-    const currentTime = audio.currentTime;
-    const duration = audio.duration;
-    const curTime = currentTime + sounds.get(currentStep()).previousDuration;
-    document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
-    (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
+        const currentTime = audio.currentTime;
+        const duration = audio.duration;
+        const curTime = currentTime + sounds.get(currentStep()).previousDuration;
+        document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
+        (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
     }
-    catch (e)
-    {
+    catch (e) {
         console.log('tired to play illegally')
     }
 
@@ -294,6 +306,46 @@ function updateTimelineDisplay(): void {
     } else {
         document.getElementById('progress-panel').classList.remove('playing');
     }
+}
+
+//choose the right button for playing sound
+function soundIcon(): void {
+    const playButton = document.getElementById("play-button");
+
+    if (endOfSound())
+        playButton.style.opacity = '0';
+    else
+        playButton.style.opacity = '1';
+
+    if (soundState != SoundState.None) {
+        //we need to make space for the sound buttons, in case this is the first sound that is added
+        document.body.classList.add('has-sound');
+    }
+
+    switch (soundState) {
+        case SoundState.Play:
+            playButton.innerHTML = "pause"
+            break;
+        case SoundState.None:
+            {
+                const sound = sounds.get(currentStep());
+                if (sound == undefined)
+                    playButton.innerHTML = "play_disabled";
+                else {
+                    if (sound.audio != undefined)
+                        playButton.innerHTML = "play_arrow"
+                    else
+                        playButton.innerHTML = 'cached';
+                }
+
+                break;
+            }
+        case SoundState.Record:
+            playButton.innerHTML = "mic"
+            break;
+    }
+
+    updateTimelineDisplay();
 }
 
 
@@ -343,6 +395,8 @@ function initPanels(): void {
     if (Object.keys(manifest.soundDict).length > 0) {
         document.body.classList.add('has-sound');
     }
+
+    soundIcon();
 }
 
 
@@ -376,16 +430,21 @@ function userAlert(text: string): void {
     shortDisplay(document.getElementById("text-alert-box"));
 }
 
-//update the page number in the corner
+//update the page number in the corner, and put the step number in the url
 function updatePageNumber(): void {
+
+    const index = timeline.past.length;
+    history.pushState({}, null, '?step=' + index);
+
+
 
     let currentPage = numberOfPages;
     if (currentStep() != undefined) {
         //not at the last page
         currentPage = currentStep().pageNumber
     }
-    document.getElementById("page-count-enumerator").innerHTML = 
-    currentPage.toString();
+    document.getElementById("page-count-enumerator").innerHTML =
+        currentPage.toString();
     document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
 
     // the "previous" arrow should be invisible at the first event of the first slide

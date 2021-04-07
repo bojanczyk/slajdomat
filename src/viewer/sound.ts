@@ -1,7 +1,6 @@
 export {
     soundStop,
     soundPlay,
-    soundIcon,
     soundRecord,
     loadSound,
     soundState,
@@ -12,12 +11,13 @@ export {
     totalSoundDuration,
     initSoundTimeline,
     resetSound,
-    soundPaused
+    soundPaused,
+    endOfSound,
+    cacheFlush
 }
 
 import {
     SoundState,
-    SlideEvent,
     MessageToServerSound
 } from './types'
 
@@ -37,7 +37,8 @@ import {
 
 import {
     audioPlaying,
-    timelineButtons as updateTimelineDisplay,
+    soundIcon,
+    timelineHTML,
     userAlert
 } from "./html"
 import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
@@ -68,9 +69,13 @@ type SoundInfo = {
 
 const sounds: Map<Step, SoundInfo> = new Map();
 
+//to get new sounds, we use a trick where the audio name is extended with meaningless, but changing, string parameters
+let cacheFlushString = ''
+function cacheFlush(): void {
+    cacheFlushString += '?' + Date.now();
+}
 
 function soundPaused(): boolean {
-    console.log(globalAudio.currentTime);
     if (globalAudio != undefined && globalAudio.currentTime > 0)
         return true;
     else
@@ -92,7 +97,6 @@ function soundStop(): void {
 
     soundState = SoundState.None;
     soundIcon();
-    updateTimelineDisplay();
 }
 
 
@@ -104,7 +108,6 @@ function soundRecord(): void {
     recordSound(currentStep()).then(() => {
         soundState = SoundState.Record;
         soundIcon();
-        updateTimelineDisplay();
     }).catch((error) => {
         soundState = SoundState.None;
         soundIcon();
@@ -112,8 +115,6 @@ function soundRecord(): void {
             userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
         } else
             userAlert(error)
-        updateTimelineDisplay();
-
     })
 }
 
@@ -133,10 +134,13 @@ function afterSound(): void {
 
 
 
+
+
 let mediaRecorder: MediaRecorder;
 
 async function recordSound(step: Step): Promise<void> {
 
+    
 
     if (mediaRecorder != null) {
         if (mediaRecorder.state == "recording")
@@ -152,13 +156,14 @@ async function recordSound(step: Step): Promise<void> {
     mediaRecorder.addEventListener("dataavailable", event => {
         audioChunks.push(event.data)
     })
+   
     mediaRecorder.addEventListener("stop", () => {
         const audioBlob = new Blob(audioChunks)
         const audioURL = window.URL.createObjectURL(audioBlob)
         const audio = new Audio(audioURL)
         audio.addEventListener('ended', afterSound)
 
-        const where = whereToSave.get(step);
+        const where = soundFile(step);
 
 
         const fr = new FileReader()
@@ -169,10 +174,10 @@ async function recordSound(step: Step): Promise<void> {
             const retmsg: MessageToServerSound = {
                 presentation: undefined,
                 type: 'wav',
-                slideId: where.id,
-                index: where.index,
-                name: where.index.toString(),
-                file: Array.from(y)
+                slideId: where.slide,
+                eventId: where.eventId,
+                file: Array.from(y),
+                live : false
             }
             sendToServer(retmsg)
                 .then(r => r.json())
@@ -180,7 +185,12 @@ async function recordSound(step: Step): Promise<void> {
                     if (r_1.status != 'Sound recorded successfully')
                         throw r_1.status;
                     if (soundState == SoundState.None) {
-                        console.log('should refresh');
+                        {
+                            //add some salt to the audio urls to flush the cache
+                            cacheFlush();
+                            initSoundTimeline();
+                            timelineHTML();
+                        }
                     }
                 }).catch((e) => {
                     console.log(e);
@@ -222,7 +232,6 @@ function soundPlay(mode: 'normal' | 'fromEnd' = 'normal'): boolean {
         globalAudio.play();
         soundState = SoundState.Play;
         soundIcon();
-        updateTimelineDisplay();
         return true;
     }
     catch (e) {
@@ -234,88 +243,46 @@ function soundPlay(mode: 'normal' | 'fromEnd' = 'normal'): boolean {
 }
 
 
-
-//set 
-function soundIcon(): void {
-    const playButton = document.getElementById("play-button");
-
-    if (soundState != SoundState.None) {
-        //we need to make space for the sound buttons, in case this is the first sound that is added
-        document.body.classList.add('has-sound');
+function soundFile (step : Step) :  {slide : string, eventId : string} {
+    const retval  = {slide : undefined as string, eventId : undefined as string};
+    if (step instanceof OverlayStep) {
+        retval.slide = parentEvent(step.overlays[0]).id;
+        retval.eventId = step.overlays[0].eventId;
     }
-
-    switch (soundState) {
-        case SoundState.Play:
-            playButton.innerHTML = "pause"
-            break;
-        case SoundState.None:
-            {
-                const sound = sounds.get(currentStep());
-                if (sound == undefined)
-                    playButton.innerHTML = "play_disabled";
-                else {
-                    if (sound.audio != undefined)
-                        playButton.innerHTML = "play_arrow"
-                    else
-                        playButton.innerHTML = 'cached';
-                }
-
-                break;
-            }
-        case SoundState.Record:
-            playButton.innerHTML = "mic"
-            break;
+    else if (step instanceof ZoomStep) {
+        retval.slide = step.source.id;
+        if (zoomsIn(step)) 
+            retval.eventId = step.target.eventId;
+        else 
+            retval.eventId = 'finish';        
     }
+    else {
+        //the last step
+        retval.slide = manifest.tree.id;
+        retval.eventId = 'finish';
+    }
+    return retval;
 }
 
 
-const whereToSave: Map<Step, { id: string, index: number }> = new Map();
 
 //for each step in the timeline, get its file name and duration
 function initSoundTimeline(): void {
 
     sounds.clear();
-    whereToSave.clear();
-
     totalSoundDuration = 0;
-
-
     for (const step of allSteps()) {
-        //the sound for a step is stored in the sound dict under the parent event, and the index of the current event. Therefore, we need to compute these values
-        let index: number;
-        let parent: SlideEvent;
-        if (step instanceof OverlayStep) {
-            const event = step.overlays[0];
-            parent = parentEvent(event);
-            index = parent.children.indexOf(event);
-        }
-        else
-            if (step instanceof ZoomStep) {
-                parent = step.source;
-                if (zoomsIn(step))
-                    index = parent.children.indexOf(step.target);
-                else {
-                    index = parent.children.length;
-                }
-            }
-            else {
-                //this is a finish event
-                parent = manifest.tree;
-                index = parent.children.length;
-            }
-
-        whereToSave.set(step, { id: parent.id, index: index });
-
         //try to get the sound information
         try {
-            const x = manifest.soundDict[parent.id][index];
+            const where = soundFile(step);
+            const duration = manifest.soundDict[where.slide][where.eventId];
             sounds.set(step, {
-                filename: fileName(parent.id, x.file + '.mp3'),
+                filename: fileName(where.slide, where.eventId + '.mp3' + cacheFlushString),
                 audio: undefined,
-                duration: x.duration,
+                duration: duration,
                 previousDuration: totalSoundDuration
             })
-            totalSoundDuration += x.duration;
+            totalSoundDuration += duration;
         }
         catch (e) {
             console.log('found no sound file')
@@ -378,10 +345,11 @@ function soundAdvance(t: 1 | -1): void {
         }
         else {
             globalAudio.currentTime = Math.max(0, globalAudio.currentTime - soundIncrement);
+            soundIcon();
         }
     }
     else {
-        globalAudio.currentTime = Math.min(globalAudio.duration, globalAudio.currentTime + soundIncrement);
+        globalAudio.currentTime = Math.min(globalAudio.duration - 0.01, globalAudio.currentTime + soundIncrement);
     }
 }
 
@@ -390,8 +358,16 @@ function resetSound(): void {
     if (globalAudio != undefined) {
         globalAudio.pause();
         globalAudio.currentTime = 0;
+        audioPlaying(globalAudio);
+        soundIcon();
     }
 }
 
-//we begin by loading the sound database
-soundIcon();
+function endOfSound(): boolean {
+    if (timeline.future.length == 0 && globalAudio != undefined && globalAudio.currentTime == globalAudio.duration)
+        return true;
+    else
+        return false;
+
+}
+

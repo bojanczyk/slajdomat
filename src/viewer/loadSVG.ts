@@ -6,16 +6,16 @@ import { markDisabled, removeLoading, userAlert } from './html';
 import { futureSlide } from './timeline';
 import { applyTransform, getBoundRect, getTransform, idTransform, Transform, transformToString } from './transform';
 import {
-    SlideEvent
+    SlideEvent, ZoomEvent
 } from './types'
 import { updatePageNumber } from './viewer';
 
 
 const loadStruct = {
     //the queue of slides waiting to be loaded. We assume that for each slide x in the queue, either the parent of x is in the queue, or already loaded
-    waiting: new Set() as Set<SlideEvent>,
+    waiting: new Set() as Set<ZoomEvent>,
     //the queue of slides that have already started downloading their svg
-    loading: new Set() as Set<SlideEvent>,
+    loading: new Set() as Set<ZoomEvent>,
     //the functions to be called once no more slides are in the waiting and loading queues
     onceEmpty: [] as (() => void)[],
     //the functions to be called if there is an error in loading the slides
@@ -38,7 +38,7 @@ function addToQueue(slides: SlideEvent[]): Promise<void> {
         loadStruct.onError.push(reject);
         for (const slide of slides) {
             if (slide.type == 'child') {
-                let ancestor = slide;
+                let ancestor : SlideEvent = slide;
                 while (ancestor != undefined && svgMap.get(ancestor) == undefined) {
                     if (!loadStruct.waiting.has(ancestor) && !loadStruct.loading.has(ancestor))
                         loadStruct.waiting.add(slide);
@@ -52,7 +52,7 @@ function addToQueue(slides: SlideEvent[]): Promise<void> {
 }
 
 function processQueue() {
-    const newWaiting = new Set() as Set<SlideEvent>
+    const newWaiting = new Set() as Set<ZoomEvent>
     for (const slide of loadStruct.waiting) {
         //we start loading those slides which are either the root, or have a loaded parent
         if (parentEvent(slide) == undefined || svgMap.get(parentEvent(slide)) != undefined) {
@@ -92,7 +92,7 @@ function queueError() {
 }
 
 //function that is called once the svg for a slide finishes loading. The function extracts the svg from the loaded object, attaches the svg to the event and its overlays, and sets the initial visibility of overlays accordingly. Finally, the svg of the slide is attached to the main svg, using a separate function.
-function finishedLoading(slide: SlideEvent, object: HTMLObjectElement) {
+function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
 
     try {
@@ -216,7 +216,7 @@ function attachSVG(node: SlideEvent) {
     
     //after loading the root of the event tree, we zoom to the right place immediately, without animation
     if (parentEvent(node)== undefined) 
-        {zoomSlide(node,0);
+        {zoomSlide(node,'immediate');
         updatePageNumber()}
 
 }

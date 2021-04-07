@@ -11,7 +11,8 @@ export {
     PresentationListMessage,
     upgradePresentation,
     upgradeAllPresentations,
-    revealFinder
+    revealFinder,
+    slideDir
 }
 import {
     sendStatus,
@@ -318,7 +319,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
     try {
         const manifest = readManifest(msg.presentation);
         const buffer = new Uint8Array(msg.file)
-        const fileName = slideDir(manifest, msg.slideId) + '/' + msg.name;
+        const fileName = slideDir(manifest, msg.slideId) + '/' + msg.eventId;
         fs.writeFileSync(fileName + '.wav', Buffer.from(buffer));
 
         //create a new entry in the sound dictionary 
@@ -344,19 +345,16 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
 
         duration = parseFloat(probeString.toString());
-        manifest.soundDict[msg.slideId][msg.index] = {
-            file: msg.name,
-            duration: duration
-        };
+        manifest.soundDict[msg.slideId][msg.eventId] = duration;
         writeManifest(manifest);
-        sendStatus(`Recorded ${duration.toFixed(2)}s for event ${msg.index} in slide ${manifest.slideDict[msg.slideId]}`);
+        sendStatus(`Recorded ${duration.toFixed(2)}s for event ${msg.eventId} in slide ${manifest.slideDict[msg.slideId]}`);
 
         retval.duration = duration;
         return retval;
 
 
     } catch (e) {
-        sendStatus(`Failed to record sound for event ${msg.index} in slide ${msg.slideId}`);
+        sendStatus(`Failed to record sound for event ${msg.eventId} in slide ${msg.slideId}`);
         sendStatus('Error: ' + e);
         return {
             status: e

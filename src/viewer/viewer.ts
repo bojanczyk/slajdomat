@@ -30,7 +30,8 @@ import {
     soundAdvance,
     resetSound,
     soundPaused,
-    soundIcon
+    endOfSound,
+    cacheFlush
 } from "./sound"
 
 import {
@@ -45,7 +46,9 @@ import {
 import {
     toggleSketchpad
 } from "./sketchpad";
-import { getStepFromURL, gotoStep, moveHead, timeline } from './timeline'
+import { currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
+
+// import { exportPdf } from './print'
 
 
 let manifest: Manifest;
@@ -69,17 +72,9 @@ function userAgent(): string {
 
 
 
-/*
-if (soundPaused())
-        {
-            console.log('not going back');
-            resetSound();
-            if (direction == -1)
-                return;
-        }
-        */
 
 
+//what happens when the sound play button or the space bar are pressed
 function playButton(): void {
     switch (soundState) {
         case SoundState.Play:
@@ -89,13 +84,13 @@ function playButton(): void {
             soundStop();
             break;
         case SoundState.None:
-            soundPlay();
+            if (!endOfSound())
+                soundPlay();
             break;
     }
-    soundIcon();
 }
 
-
+//what happens when the next button or right arrow are pressed
 function nextButton(): void {
     if (timeline.future.length > 0) {
         switch (soundState) {
@@ -110,10 +105,10 @@ function nextButton(): void {
                 resetSound();
                 moveHead(1);
         }
-        soundIcon();
     }
 }
 
+//what happens when the prev button or left arrow are pressed
 function prevButton(): void {
     if (timeline.past.length > 0) {
         switch (soundState) {
@@ -132,7 +127,6 @@ function prevButton(): void {
                     moveHead(-1);
 
         }
-        soundIcon();
     }
 }
 
@@ -144,32 +138,56 @@ function prevButton(): void {
 function keyListener(event: KeyboardEvent) {
 
     if (event.target != document.getElementById('search-input')) {
-        if (event.key == 'ArrowRight') {
-            nextButton();
 
-        }
-        if (event.key == 'ArrowLeft') {
-            prevButton();
-        }
+        switch (event.key) {
+            case 'ArrowRight':
+                nextButton();
+                break;
 
-        if (event.key == ' ') {
-            playButton();
-        }
+            case 'ArrowLeft':
+                prevButton();
+                break;
 
-        if (event.key == 'd') {
-            toggleSketchpad();
-        }
+            case ' ':
+                playButton();
+                break;
 
-        if (event.key == 'r') {
-            if (soundState == SoundState.Record)
-                soundStop();
-            else {
-                soundStop();
-                soundRecord();
-            }
+            case 'd':
+                toggleSketchpad();
+                break;
+
+            case 'r':
+                if (soundState == SoundState.Record)
+                    soundStop();
+                else {
+                    soundStop();
+                    soundRecord();
+                }
+                break;
+
+            /*case 'p':
+                exportPdf(); */
         }
     }
 }
+
+//the path is an array of numbers, which indicates the path in the event tree to the current event 
+function getStepFromURL(): Step {
+    const searchParams = (new URL(window.location.href)).searchParams;
+
+    //this makes sure that the cache is ignored when downloading sounds, if a nocache string is present in the url
+    if (searchParams.get('nocache') != undefined)
+        cacheFlush();
+
+    //we try to return the step, but several things could go wrong: (a) the step parameter is undefined or not a number; (b) the number is out of bounds
+    try {
+        return currentStep(parseInt(searchParams.get('step')));
+    } catch (e) {
+        //otherwise return the first step
+        return currentStep();
+    }
+}
+
 
 
 //startup code
@@ -180,12 +198,6 @@ window.onload = function (): void {
     (document.getElementById('loader-text') as HTMLDivElement).remove();
     (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
     (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
-
-
-
-
-
-
 
     fetchJSON(presentationDir() + '/manifest.json').then(j => {
         if (j == null)

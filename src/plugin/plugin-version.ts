@@ -6,12 +6,11 @@ import { } from '@figma/plugin-typings'
 
 import {
     allSlides,
-    getDatabase
+    loadCurrentData,
+    saveCurrentData,
+    state
 } from './code'
 
-import {
-    Database
-} from './plugin-types'
 
 // import { version as versionNumber } from '../..//package.json';
 
@@ -26,8 +25,9 @@ import {
 function upgradeVersion(): void {
 
 
-    const storedVersion = figma.root.getPluginData('version');
+    const storedVersion = parseFloat(figma.root.getPluginData('version'));
 
+    /*
     //we upgrade incrementally, version after version
     if (storedVersion == '') {
         for (const slide of allSlides()) {
@@ -51,6 +51,30 @@ function upgradeVersion(): void {
         }
         console.log('Upgraded to slajdomat data version 0.81');
         figma.root.setPluginData('version', '0.81');
+    }
+    */
+
+    if (storedVersion < 0.88) {
+        //before this version, there was no eventId attribute
+        const savedSlide = state.currentSlide;
+        for (const slide of allSlides()) {
+            //in old versions, the eventId attribute did not exist
+            loadCurrentData(slide);
+            let i = -1;
+            for (const event of state.database.events) {
+                i++;
+                event.eventId = i.toString();
+
+            }
+            state.currentSlide.setPluginData('eventId', i.toString());
+            saveCurrentData();
+        }
+        if (savedSlide == null)
+            console.log('it was null')
+        else
+            loadCurrentData(savedSlide);
+        console.log('Upgraded to slajdomat data version 0.88');
+        figma.root.setPluginData('version', '0.88');
     }
 
 }
