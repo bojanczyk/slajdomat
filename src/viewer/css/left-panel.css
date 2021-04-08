@@ -1,12 +1,13 @@
 /* style sheet for the panel on the left, which contains the tree view of the slides */
 
 
+
 #left-panel {
     position : relative;
     color : black;
     display : flex;
     flex-direction: column;
-    background-color:whitesmoke;
+    background-color: var(--very-light-blue);
     width : 0;
     vertical-align: top;
     cursor: default;
@@ -22,7 +23,7 @@
     overflow: hidden;    
     white-space: nowrap;
     display:block;
-    color : darkgray;
+    color :gray;
     margin-bottom : 5px;
     cursor: pointer;
 }
@@ -63,11 +64,12 @@
 
 
 #made-using-slajdomat {
-    margin : 5px;
-    margin-left : 10px;
-    overflow: hidden;
-    white-space: nowrap;
-    margin-bottom : 10px;
+    margin : 10px;
+    padding-left: 7px;
+}
+
+#made-using-slajdomat img {
+    width : 100px;
 }
 
 
@@ -85,8 +87,8 @@
     display: flex;
     flex-direction: column;
     padding : 10px;
-    border-top : 1px solid lightgray;
-    border-bottom : 1px solid lightgray;
+    border-top : 1px solid var(--light-blue);
+    border-bottom : 1px solid var(--light-blue);
 }
 
 #search-box {

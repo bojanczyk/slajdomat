@@ -25,9 +25,6 @@ cp src/viewer/slajdomat.html resources/index.html
 
 #also copies the viewer slides into a directory for testing slides
 mkdir test-slides
-cp dist/viewer.js test-slides/
-cp src/viewer/slajdomat.html test-slides/index.html
-cp resources/favicon.png test-slides/
-
+cp resources/* test-slides/
 
 

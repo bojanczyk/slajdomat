@@ -24,23 +24,22 @@
     height : 100%;
     background-color: lightgray;
     /* width : 50px; */
-    border-left : 1px solid grey;
-    opacity :30%;
+    border-left : 1px solid white;
     display:  flex;
 }
 
 #progress-line .seen {
- border-left : 1px solid rgb(230, 0, 0);
+ border-left : 1px solid white;
 }
 
 #progress-line .nosound {
-    background-color:blue;
+    background-color: var(--very-light-blue);
 }
 
 
 .progress-filler {
     height: 100%;
-    background-color: red;
+    background-color: var(--light-blue);
 }
 
 #progress-controls {

@@ -15,7 +15,7 @@ let undoIndex = -1;
 const drawState = {
     sigCanvas: undefined as SVGSVGElement,
     matrix: undefined as SVGMatrix,
-    punkt: undefined as SVGPoint,
+    point: undefined as SVGPoint,
     curPath: undefined as SVGElement,
     curPathText: undefined as string,
     original: { x: 0, y: 0 },
@@ -28,42 +28,42 @@ function draw(event: Event): void {
 
     if (event.type == 'pointerdown') {
         drawState.sigCanvas = (document.getElementById('svg') as unknown) as SVGSVGElement;
-        drawState.punkt = drawState.sigCanvas.createSVGPoint();
+        drawState.point = drawState.sigCanvas.createSVGPoint();
         drawState.matrix = drawState.sigCanvas.getScreenCTM().inverse();
         drawState.sigCanvas.addEventListener('pointermove', draw, false);
         drawState.sigCanvas.addEventListener('pointerup', draw, false);
     }
 
-    drawState.punkt.x = (event as PointerEvent).clientX;
-    drawState.punkt.y = (event as PointerEvent).clientY;
-    drawState.punkt = drawState.punkt.matrixTransform(drawState.matrix);
+    drawState.point.x = (event as PointerEvent).clientX;
+    drawState.point.y = (event as PointerEvent).clientY;
+    drawState.point = drawState.point.matrixTransform(drawState.matrix);
 
     //if the sketchpad is not active, and hence we use the highlighter
     if (currentTool == 'none') {
         if (event.type == 'pointerdown') {
-            drawState.original = { x: drawState.punkt.x, y: drawState.punkt.y };
+            drawState.original = { x: drawState.point.x, y: drawState.point.y };
             drawState.rect = document.createElementNS('http://www.w3.org/2000/svg', "rect");
-            drawState.rect.setAttributeNS(null, 'x', drawState.punkt.x.toString());
-            drawState.rect.setAttributeNS(null, 'y', drawState.punkt.y.toString());
+            drawState.rect.setAttributeNS(null, 'x', drawState.point.x.toString());
+            drawState.rect.setAttributeNS(null, 'y', drawState.point.y.toString());
             drawState.rect.setAttributeNS(null, 'fill', 'yellow');
             drawState.rect.setAttributeNS(null, 'opacity', '20%');
             drawState.sigCanvas.appendChild(drawState.rect);
         }
         if (event.type == 'pointermove') {
-            let height = drawState.punkt.y - drawState.original.y;
-            let width = drawState.punkt.x - drawState.original.x;
+            let height = drawState.point.y - drawState.original.y;
+            let width = drawState.point.x - drawState.original.x;
             let x, y: number;
 
             //negative height and width are not allowed, so we need to set the corner appropriately
             if (height >= 0) { y = drawState.original.y; }
             else {
                 height = - height;
-                y = drawState.punkt.y;
+                y = drawState.point.y;
             }
             if (width >= 0) { x = drawState.original.x; }
             else {
                 width = - width;
-                x = drawState.punkt.x;
+                x = drawState.point.x;
             }
             drawState.rect.setAttributeNS(null, 'x', x.toString());
             drawState.rect.setAttributeNS(null, 'y', y.toString());
@@ -79,7 +79,7 @@ function draw(event: Event): void {
     if (currentTool == 'blue' || currentTool == 'red') {
         if (event.type == 'pointerdown') {
             drawState.curPath = document.createElementNS('http://www.w3.org/2000/svg', "path");
-            drawState.curPathText = 'M ' + drawState.punkt.x + ' ' + drawState.punkt.y;
+            drawState.curPathText = 'M ' + drawState.point.x + ' ' + drawState.point.y;
             drawState.curPath.setAttributeNS(null, 'd', drawState.curPathText);
 
             const color = currentTool == 'blue' ? 'blue' : 'red';
@@ -93,7 +93,7 @@ function draw(event: Event): void {
             undoButtons();
         }
         if (event.type == 'pointermove') {
-            drawState.curPathText += ' L ' + drawState.punkt.x + ' ' + drawState.punkt.y;
+            drawState.curPathText += ' L ' + drawState.point.x + ' ' + drawState.point.y;
             drawState.curPath.setAttributeNS(null, 'd', drawState.curPathText);
         }
     }

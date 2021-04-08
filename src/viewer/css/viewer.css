@@ -3,6 +3,9 @@
       --niebieski : #18A0FB;
     --select-color : #daebf7;
     --disabled-color : Silver;
+    --blue : #4646FF;
+    --light-blue : #B4C8FF;
+    --very-light-blue : #DCE6FF;
   }
 
 body, html {

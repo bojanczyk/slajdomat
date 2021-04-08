@@ -1,7 +1,7 @@
 {
   "name": "slajdomat",
   "productName": "Slajdomat",
-  "version": "0.86",
+  "version": "0.906",
   "description": "A slide making program, which plugs into Figma",
   "main": ".webpack/main",
   "scripts": {
@@ -118,11 +118,13 @@
     "fuse.js": "^6.4.6",
     "gsap": "^3.6.0",
     "html-webpack-plugin": "^5.2.0",
+    "jspdf": "^2.3.1",
     "material-design-icons": "^3.0.1",
     "mime": "^1",
     "nodemon": "^2.0.7",
     "npm-watch": "^0.7.0",
     "path": "^0.12.7",
+    "svg2pdf.js": "^2.1.0",
     "url-loader": "^4.1.1",
     "webpack": "^5.24.2"
   }

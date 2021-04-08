@@ -2,11 +2,10 @@ export { exportSlides }
 
 import {
     Database,
-    MessageToUI
 } from './plugin-types'
 
 import {
-    SlideEvent
+    SlideEvent, ZoomEvent
 } from '../viewer/types'
 
 import {
@@ -30,7 +29,7 @@ function deDuplicate(list : string[]) : string[] {
 }
 
 //complies a list of search keywords for the current slide
-function compileKeywords(event: SlideEvent, frame: FrameNode) {
+function compileKeywords(event: ZoomEvent, frame: FrameNode) {
 
     
     const done = [] as SceneNode[]; 
@@ -63,15 +62,11 @@ function exportSlides(): void {
         svg: Uint8Array
     }[] = [];
 
-    //an index of keywords for searching the slides
-    const keywords: { [slide: string]: string[] } = {};
-
     //stack of the recursion, to find cycles in slides
     const stack: FrameNode[] = [];
 
     //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
-    async function saveRec(slide: FrameNode): Promise<SlideEvent> {
-        let retval;
+    async function saveRec(slide: FrameNode, eventId : string): Promise<SlideEvent> {
         if (stack.includes(slide)) {
             let cycle = "The slides contain a cycle: \n";
             for (const n of stack)
@@ -80,8 +75,7 @@ function exportSlides(): void {
             return null;
         } else {
             stack.push(slide);
-            state.currentSlide = slide;
-            loadCurrentData();
+            loadCurrentData(slide);
 
             
 
@@ -114,14 +108,15 @@ function exportSlides(): void {
                 change.node.name = change.savedName;
             }
 
-            retval  = {
+            const retval : ZoomEvent  = {
                 type: 'child',
                 name: state.database.name,
                 id: state.database.id,
                 merged: false,
                 children: [],
-                keywords: []
-            } as SlideEvent;
+                keywords: [],
+                eventId : eventId
+            };
             saveCurrentData();
             slideList.push({
                 database: state.database,
@@ -130,7 +125,7 @@ function exportSlides(): void {
             for (const event of state.database.events) {
                 if (!event.disabled) {
                     if (event.type == "child") {
-                        const child = await saveRec(findSlide(event.id));
+                        const child = await saveRec(findSlide(event.id), event.eventId);
                         child.merged = event.merged;
                         retval.children.push(child);
                     } else {
@@ -140,9 +135,7 @@ function exportSlides(): void {
                 }
 
             }
-
-            state.currentSlide = stack.pop();
-            loadCurrentData();
+            loadCurrentData(stack.pop());
             compileKeywords(retval, state.currentSlide);
             
             return retval;
@@ -151,15 +144,15 @@ function exportSlides(): void {
 
 
     const savedSlide = state.currentSlide;
-    saveRec(state.currentSlide).then(x => {
+    saveRec(state.currentSlide,'root').then(x => {
+        console.log(x);
         sendToUI({
             type: 'savePresentation',
             name: figma.root.name,
             slideList: slideList,
             tree: x
         });
-        state.currentSlide = savedSlide;
-        loadCurrentData();
+        loadCurrentData(savedSlide);
     });
 
 }

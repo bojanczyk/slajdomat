@@ -41,20 +41,25 @@ import {
     Rect
 } from '../viewer/transform'
 import {
-    SlideEvent
+    SlideEvent,
+    OverlayEvent,
+    ZoomEvent
 } from '../viewer/types';
 import { freshName, sanitize } from '../common/helper'
 
+
+
+
 //*** global variables */
 
-let state = {
-//saved selection when temporarily selecting an object through mouseover 
-savedSelection: [] as readonly SceneNode[],
+const state = {
+    //saved selection when temporarily selecting an object through mouseover 
+    savedSelection: [] as readonly SceneNode[],
 
-//the data for the current slide, mainly the event list
-database : null  as Database,
-//the current slide, as a frame of figma
-currentSlide: null as FrameNode
+    //the data for the current slide, mainly the event list
+    database: null as Database,
+    //the current slide, as a frame of figma
+    currentSlide: null as FrameNode
 }
 
 
@@ -63,7 +68,7 @@ let pluginSettings: PluginSettings;
 
 
 
-function sendToUI(msg : MessageToUI) {
+function sendToUI(msg: MessageToUI): void {
     figma.ui.postMessage(msg)
 }
 
@@ -116,6 +121,7 @@ function initPlugin() {
         }
     )
 }
+
 
 
 //Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
@@ -190,7 +196,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
     newSlide.x = place.x;
     newSlide.y = place.y
     newSlide.resize(width, height);
-    const id = freshName(sanitize(newSlide.name), allSlides().map(slideId));
+    const id = freshName(sanitize(newSlide.name), avoidList(newSlide));
     const database: Database = {
         name: newSlide.name,
         id: id,
@@ -205,7 +211,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
 
 //send the  list which says what are the possible candidates for child slides. 
 function sendDropDownList() {
-    const msg : MessageToUI = {
+    const msg: MessageToUI = {
         type: 'dropDownContents',
         slides: [] as {
             name: string,
@@ -243,20 +249,35 @@ function sendEventList() {
     });
 }
 
+//returns a unique id for an event, inside the current slide
+function newEventId(): string {
 
+    //the id is a number (stored as a string). In order to achieve uniqueness, we store the maximal id used so far inside the attribute eventId.
+    let retval: number;
+    const maxId = state.currentSlide.getPluginData('eventId');
+    if (maxId == '')
+        retval = 1;
+    else
+        retval = parseInt(maxId) + 1;
+    state.currentSlide.setPluginData('eventId', retval.toString());
+    return retval.toString();
+}
 
 //Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
 function createChildEvent(id: string): RectangleNode {
 
     const slide: FrameNode = findSlide(id);
-    state.database.events.push({
+    const newEvent: ZoomEvent =
+    {
         type: "child",
         id: id,
         name: slide.name,
         merged: false,
         children: [],
-        keywords : []
-    });
+        keywords: [],
+        eventId: newEventId()
+    }
+    state.database.events.push(newEvent);
 
     const width = 100;
     const rect = figma.createRectangle();
@@ -280,8 +301,8 @@ function createChildEvent(id: string): RectangleNode {
 }
 
 //give the list of all texts used in descendants
-function allTexts(n: SceneNode, avoid : SceneNode [] = []): string[] {
-    
+function allTexts(n: SceneNode, avoid: SceneNode[] = []): string[] {
+
     if (avoid.includes(n))
         return [];
 
@@ -363,14 +384,16 @@ function createEvent(eventInfo: {
                 item.name = goodName(item);
             }
 
-            state.database.events.push({
+            const newEvent: OverlayEvent =
+            {
                 type: eventInfo.subtype,
                 id: overlayId(item),
                 name: item.name,
                 merged: false,
-                children: [],
-                keywords : []
-            })
+                keywords: [],
+                eventId: newEventId()
+            }
+            state.database.events.push(newEvent)
         }
 
     }
@@ -443,10 +466,16 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
 //when the mouse hovers over an event, then it should be highlighted by figma, with a pretend selection
 function hoverEvent(index: number): void {
     if (index == -1) {
+        try {
         if (state.savedSelection != null) {
             figma.currentPage.selection = state.savedSelection;
         }
-        state.savedSelection = null;
+        state.savedSelection = null;}
+        catch (e) {
+            console.log('this is a place that is troublesome')
+            console.log(e);
+            console.log(state.savedSelection);
+        }
     } else {
         if (state.savedSelection == null)
             state.savedSelection = figma.currentPage.selection;
@@ -477,18 +506,31 @@ function slideId(slide: FrameNode): string {
         return undefined;
 }
 
+//list of id's to avoid when creating a new id in a slide
+function avoidList(slide: FrameNode): string[] {
+
+    const avoid = [] as string[];
+
+    for (const child of slide.children)
+        avoid.push(child.getPluginData('id'));
+
+    for (const slide of allSlides())
+        avoid.push(slideId(slide));
+
+    return avoid;
+}
+
 //the id of an overlay is stored in the node 
 function overlayId(node: SceneNode) {
     let retval = node.getPluginData('id');
-    if (retval == '')
-    {
+    if (retval == '') {
         // we need to generate a new id
-        const slide = node.parent;
-        if (!isSlideNode(slide as FrameNode))
+        const slide = node.parent as FrameNode;
+        if (!isSlideNode(slide))
             throw 'asked for overlay id of a node that is not a child of a slide';
 
-        const avoid = slide.children.map( child => child.getPluginData('id'));
-        retval = freshName(sanitize(node.name), avoid)
+        
+        retval = freshName(sanitize(node.name), avoidList(slide))
     }
     return retval;
 }
@@ -504,8 +546,8 @@ function saveCurrentData(): void {
 
 
 // the opposite of the previous function
-function loadCurrentData(): void {
-
+function loadCurrentData(slide: FrameNode): void {
+    state.currentSlide = slide;
     state.database = getDatabase(state.currentSlide);
     cleanDatabase();
 }
@@ -561,7 +603,7 @@ function findSlide(id: string): FrameNode {
 function findEventObject(event: SlideEvent, slide: FrameNode): SceneNode {
     if (event.type == 'show' || event.type == 'hide')
         for (const child of slide.children)
-            if (event.id ==  overlayId(child))
+            if (event.id == overlayId(child))
                 return child as SceneNode;
 
     if (event.type == 'child') {
@@ -615,18 +657,18 @@ function parentSlide(slide: FrameNode): FrameNode {
 
 //set the current slide of the plugin
 function setCurrentSlide(slide: FrameNode): void {
-    state.currentSlide = slide;
+    // state.currentSlide = slide;
 
 
     if (slide != null) {
-        loadCurrentData();
-        const msg : MessageToUI = {
+        loadCurrentData(slide);
+        const msg: MessageToUI = {
             type: 'slideChange',
             docName: figma.root.name,
             slide: state.currentSlide.name,
             parent: undefined as string,
             slideCount: allSlides().length,
-        } 
+        }
         /*
         //this code runs too long and creates trouble
         const parent = parentSlide(slide);
@@ -668,11 +710,30 @@ function slideWithSelection(): FrameNode {
 //the selection has changed
 function selChange(): void {
 
+
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
-    if (state.savedSelection == null) {
+    if (state.savedSelection == null || state.savedSelection.length == 0) {
         const slide = slideWithSelection();
 
-        const msg : MessageToUI = {
+
+        //we change the current slide if it satisfies certain conditions: or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
+        if
+            //it has been removed; or
+            ((state.currentSlide != null && state.currentSlide.removed) ||
+            //the selection has moved to some other non-null slide; or 
+            (slide != state.currentSlide && slide != null) ||
+            //the name of the slide has changed
+            (state.currentSlide != null && state.currentSlide == slide && state.currentSlide.name != slide.name))
+            setCurrentSlide(slide);
+        else if (state.currentSlide != undefined && state.database.name != state.currentSlide.name) {
+            //if the name of the current slide was changed, then we also send this to the ui
+            setCurrentSlide(state.currentSlide);
+        }
+        else if (state.currentSlide != null)
+            sendEventList();
+
+
+        const msg: MessageToUI = {
             type: 'selChange',
             selected: false, // is there at least one object that can be used for show/hide
             latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
@@ -704,14 +765,6 @@ function selChange(): void {
 
         //send the information about the updated selection
         sendToUI(msg)
-
-
-        //we change the current slide if it has been removed, or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
-        if ((state.currentSlide != null && state.currentSlide.removed) || (slide != state.currentSlide && slide != null))
-            setCurrentSlide(slide);
-        else if (state.currentSlide != null)
-            sendEventList();
-
     }
 }
 

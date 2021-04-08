@@ -13,10 +13,9 @@ import './css/progress.css'
 import './css/sketch.css'
 
 import {
-    createEventTree,
-    gotoPath,
-    changeEvent
+    createEventTree
 } from "./event"
+
 
 import {
     initPanels,
@@ -27,9 +26,14 @@ import {
     soundStop,
     soundState,
     soundPlay,
-    soundPause,
     soundRecord,
-    soundAdvance
+    soundAdvance,
+    resetSound,
+    soundPaused,
+    endOfSound,
+    cacheFlush,
+    SoundState,
+    toggleLive
 } from "./sound"
 
 import {
@@ -38,12 +42,14 @@ import {
 } from './files'
 
 import {
-    Manifest,
-    SoundState
+    Manifest
 } from "./types";
 import {
     toggleSketchpad
 } from "./sketchpad";
+import { currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
+
+// import { exportPdf } from './print'
 
 
 let manifest: Manifest;
@@ -68,56 +74,68 @@ function userAgent(): string {
 
 
 
-//the path is an array of numbers, which indicates the path in the event tree to the current event 
-function getPathFromURL(): number[] {
-    const path = [];
-    try {
-        const pathString = (new URL(window.location.href)).searchParams.get('path').split('/');
-        while (pathString.length > 0) {
-            const index = pathString.pop();
-            if (index != '')
-                path.push(parseInt(index));
-        }
-        return path;
 
-    } catch (e) {
-        return [0]; // default path is the first event of the root
-    }
-}
-
-
-
+//what happens when the sound play button or the space bar are pressed
 function playButton(): void {
-    if (soundState == SoundState.Record)
-        soundStop();
-    else if (soundState == SoundState.Play)
-        soundPause();
-    else
-        soundPlay();
-}
-
-
-function nextButton(): void {
-    if (soundState == SoundState.Play) {
-        soundAdvance(1);
-    } else {
-        if (soundState == SoundState.Pause)
+    switch (soundState) {
+        case SoundState.Play:
             soundStop();
-        changeEvent(1);
+            break;
+        case SoundState.Recording:
+        case SoundState.Live:
+            soundStop();
+            break;
+        case SoundState.None:
+            if (!endOfSound())
+                soundPlay();
+            break;
     }
 }
 
-function prevButton(): void {
-    if (soundState == SoundState.Play) {
-        soundAdvance(-1);
-    } else {
-        if (soundState == SoundState.Pause || soundState == SoundState.Record) {
-            console.log('resetting this sound');
-            soundStop();
+//what happens when the next button or right arrow are pressed
+function nextButton(): void {
+    if (timeline.future.length > 0) {
+        switch (soundState) {
+            case SoundState.Play:
+                soundAdvance(1);
+                break;
+            case SoundState.Recording:
+                moveHead(1);
+                soundRecord('dead');
+                break;
+                case SoundState.Live:
+                moveHead(1);
+                soundRecord('live');
+                break;
+            case SoundState.None:
+                resetSound();
+                moveHead(1);
         }
-        else {
-            soundStop();
-            changeEvent(-1);
+    }
+}
+
+//what happens when the prev button or left arrow are pressed
+function prevButton(): void {
+    if (timeline.past.length > 0) {
+        switch (soundState) {
+            case SoundState.Play:
+                soundAdvance(-1);
+                break;
+
+            case SoundState.Recording:
+                soundStop();
+                break;
+            case SoundState.Live:
+                moveHead(-1);
+                soundRecord('live');
+                break;
+
+            case SoundState.None:
+                if (soundPaused())
+                    resetSound();
+                else
+                    moveHead(-1);
+
         }
     }
 }
@@ -129,34 +147,60 @@ function prevButton(): void {
 // the main event dispatcher
 function keyListener(event: KeyboardEvent) {
 
-    if (event.target != document.getElementById('search-input'))
-{
-        if (event.key == 'ArrowRight') {
-            nextButton();
+    if (event.target != document.getElementById('search-input')) {
 
-        }
-        if (event.key == 'ArrowLeft') {
-            prevButton();
-        }
+        switch (event.key) {
+            case 'ArrowRight':
+                nextButton();
+                break;
 
-        if (event.key == ' ') {
-            playButton();
-        }
+            case 'ArrowLeft':
+                prevButton();
+                break;
 
-        if (event.key == 'd') {
-            toggleSketchpad();
-        }
+            case ' ':
+                playButton();
+                break;
 
-        if (event.key == 'r') {
-            if (soundState == SoundState.Record)
-                soundStop();
-            else {
-                soundStop();
-                soundRecord();
-            }
+            case 'd':
+                toggleSketchpad();
+                break;
+
+            case 'r':
+                if (soundState == SoundState.Recording)
+                    soundStop();
+                else {
+                    soundStop();
+                    soundRecord('dead');
+                }
+                break;
+
+            case 'l':
+                toggleLive();
+
+            /*case 'p':
+                exportPdf(); */
         }
     }
 }
+
+//the path is an array of numbers, which indicates the path in the event tree to the current event 
+function getStepFromURL(): Step {
+    const searchParams = (new URL(window.location.href)).searchParams;
+
+    //this makes sure that the cache is ignored when downloading sounds, if a nocache string is present in the url
+    if (searchParams.get('nocache') != undefined)
+        cacheFlush();
+
+    //we try to return the step, but several things could go wrong: (a) the step parameter is undefined or not a number; (b) the number is out of bounds
+    try {
+        return currentStep(parseInt(searchParams.get('step')));
+    } catch (e) {
+        //otherwise return the first step
+        return currentStep();
+    }
+}
+
 
 
 //startup code
@@ -168,21 +212,15 @@ window.onload = function (): void {
     (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
     (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
 
-
-
-
-
-
-
     fetchJSON(presentationDir() + '/manifest.json').then(j => {
         if (j == null)
             throw "The manifest is missing for the presentation"
         manifest = j as Manifest;
         document.title = manifest.presentation;
-        const path = getPathFromURL();
         createEventTree();
         document.addEventListener("keydown", keyListener);
         initPanels();
-        gotoPath(path);
+        const step = getStepFromURL();
+        gotoStep(step).then(() => { (document.getElementById('svg') as HTMLDivElement).style.opacity = '1' });
     }) //.catch((e) => userAlert(e))
 }
