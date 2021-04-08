@@ -154,17 +154,16 @@ function timelineHTML(): void {
             timelineClicked(step, e);
         })
 
-        let duration: number;
-        try {
-            duration = sounds.get(step).duration;
-        }
-        catch (e) { duration = 10; }
-
-        big.style.flexGrow = duration.toString();
-        if (sounds.get(step) != undefined)
+        const sound = sounds.get(step);
+        if (sound != undefined) {
+            console.log(sound);
             big.classList.add('nosound');
-        else
+            big.style.flexGrow = sound.duration.toString();
+        }
+        else {
             big.classList.remove('nosound');
+            big.style.flexGrow = '10';
+        }
 
         progressCache.set(step, big);
         timelineSeen(step, timeline.past.includes(step));
@@ -295,7 +294,7 @@ function audioPlaying(audio: HTMLAudioElement): void {
         (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
     }
     catch (e) {
-        console.log('tired to play illegally')
+        console.log('tried to play illegally')
     }
 
 }
@@ -341,8 +340,11 @@ function soundIcon(): void {
 
                 break;
             }
-        case SoundState.Record:
+        case SoundState.Recording:
             playButton.innerHTML = "mic"
+            break;
+        case SoundState.Live:
+            playButton.innerHTML = "radio"
             break;
     }
 

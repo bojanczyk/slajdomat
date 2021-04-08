@@ -263,11 +263,11 @@ function resetTimeline() {
 }
 
 
-//goes to a given step, after loading enough svg files to make this possible
+//goes to a given step (i.e. before the step is executed), after loading enough svg files to make this possible
 async function gotoStep(targetStep: Step, mode: 'immediate' = undefined): Promise<void> {
     let slide: SlideEvent;
     if (targetStep instanceof OverlayStep) { slide = targetStep.overlays[0]; }
-    else if (targetStep instanceof ZoomStep) { slide = targetStep.target; }
+    else if (targetStep instanceof ZoomStep) { slide = targetStep.source; }
     else if (targetStep == timeline.lastStep) { slide = manifest.tree }
     else
         throw 'Wanted to go to a step that does not exist'
@@ -324,10 +324,8 @@ async function gotoStep(targetStep: Step, mode: 'immediate' = undefined): Promis
 //goes to the first step after the event becomes visible
 function gotoEvent(event: SlideEvent): void {
     const step = eventToStep(event);
-    if (event.type == 'show')
-        gotoStep(step).then(() => moveHead(1));
-    else
-        gotoStep(step);
+    //goto step goes to before the event, so we need to go one further
+    gotoStep(step).then(() => moveHead(1));
 }
 
 

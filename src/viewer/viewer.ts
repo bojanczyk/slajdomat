@@ -32,7 +32,8 @@ import {
     soundPaused,
     endOfSound,
     cacheFlush,
-    SoundState
+    SoundState,
+    toggleLive
 } from "./sound"
 
 import {
@@ -80,7 +81,8 @@ function playButton(): void {
         case SoundState.Play:
             soundStop();
             break;
-        case SoundState.Record:
+        case SoundState.Recording:
+        case SoundState.Live:
             soundStop();
             break;
         case SoundState.None:
@@ -97,9 +99,13 @@ function nextButton(): void {
             case SoundState.Play:
                 soundAdvance(1);
                 break;
-            case SoundState.Record:
+            case SoundState.Recording:
                 moveHead(1);
-                soundRecord();
+                soundRecord('dead');
+                break;
+                case SoundState.Live:
+                moveHead(1);
+                soundRecord('live');
                 break;
             case SoundState.None:
                 resetSound();
@@ -116,8 +122,12 @@ function prevButton(): void {
                 soundAdvance(-1);
                 break;
 
-            case SoundState.Record:
+            case SoundState.Recording:
                 soundStop();
+                break;
+            case SoundState.Live:
+                moveHead(-1);
+                soundRecord('live');
                 break;
 
             case SoundState.None:
@@ -157,16 +167,16 @@ function keyListener(event: KeyboardEvent) {
                 break;
 
             case 'r':
-                if (soundState == SoundState.Record)
+                if (soundState == SoundState.Recording)
                     soundStop();
                 else {
                     soundStop();
-                    soundRecord();
+                    soundRecord('dead');
                 }
                 break;
-            
-            case 'l':
 
+            case 'l':
+                toggleLive();
 
             /*case 'p':
                 exportPdf(); */
@@ -211,6 +221,6 @@ window.onload = function (): void {
         document.addEventListener("keydown", keyListener);
         initPanels();
         const step = getStepFromURL();
-        gotoStep(step);
+        gotoStep(step).then(() => { (document.getElementById('svg') as HTMLDivElement).style.opacity = '1' });
     }) //.catch((e) => userAlert(e))
 }

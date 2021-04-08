@@ -14,7 +14,8 @@ export {
     soundPaused,
     endOfSound,
     cacheFlush,
-    SoundState
+    SoundState,
+    toggleLive
 }
 
 import {
@@ -50,9 +51,10 @@ import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, 
 
 
 enum SoundState {
-    Record = "Record",
+    Recording = "Record",
+    Live = "Live",
     Play = "Play",
-    None = "Right"
+    None = "Right",
 }
 
 
@@ -96,7 +98,7 @@ function soundStop(): void {
         audioPlaying(globalAudio); //updates the timeline
     }
 
-    if (soundState == SoundState.Record) {
+    if (soundState == SoundState.Recording || soundState == SoundState.Live ) {
         soundState = SoundState.None;
         mediaRecorder.stop();
     }
@@ -110,9 +112,12 @@ function soundStop(): void {
 
 
 //start recording sound
-function soundRecord(): void {
+function soundRecord(live: 'live' | 'dead'): void {
     recordSound(currentStep()).then(() => {
-        soundState = SoundState.Record;
+        if (live)
+            soundState = SoundState.Live
+        else
+            soundState = SoundState.Recording;
         soundIcon();
     }).catch((error) => {
         soundState = SoundState.None;
@@ -210,7 +215,7 @@ async function recordSound(step: Step): Promise<void> {
 
 let isLive = false;
 //starts a new live recording 
-function toggleLive() {
+function toggleLive() : void {
     isLive = !isLive;
     if (isLive) {
         const msg: MessageToServerLive = {
@@ -218,6 +223,11 @@ function toggleLive() {
             presentation: manifest.presentation,
         }
         sendToServer(msg);
+        soundIcon();
+    }
+    else {
+        //stop the live recording
+        soundStop();
     }
 
 }
@@ -294,8 +304,10 @@ function initSoundTimeline(): void {
         try {
             const where = soundFile(step);
             const duration = manifest.soundDict[where.slide][where.eventId];
+            if (duration == undefined)
+                throw 'no duration'
             sounds.set(step, {
-                filename: fileName(where.slide, where.eventId + '.mp3' + cacheFlushString),
+                filename:  fileName(where.slide, where.eventId + '.mp3' + cacheFlushString),
                 audio: undefined,
                 duration: duration,
                 previousDuration: totalSoundDuration

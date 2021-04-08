@@ -54,6 +54,7 @@ import {
 
 
 
+
 // import { writeFileSync } from 'original-fs'
 
 /*import {
@@ -141,13 +142,13 @@ function gotoChild(arg: string): void {
 }
 
 //shows the folder in the finder
-function revealFinder(name : string, type : 'folder' | 'presentation') : void {
-    let dir : string;
-  if (type == 'presentation')
-    dir = presentationDir(name);
-  else 
-    dir = currentDir+'/'+name;  
-shell.showItemInFolder(dir);
+function revealFinder(name: string, type: 'folder' | 'presentation'): void {
+    let dir: string;
+    if (type == 'presentation')
+        dir = presentationDir(name);
+    else
+        dir = currentDir + '/' + name;
+    shell.showItemInFolder(dir);
 }
 
 //our choice parameters for stringify
@@ -204,10 +205,9 @@ function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     //copy the latest version of the html files to the slide directory
     const htmlSourceDir = app.getAppPath() + '/resources';
-    for (const file of ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg']) 
-    {
+    for (const file of ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg']) {
         fs.copyFileSync(htmlSourceDir + '/' + file, presDir + '/' + file)
-        }
+    }
 }
 
 
@@ -238,8 +238,8 @@ function upgradePresentation(presentation: string): void {
 
 
 //upgrades all presentations in current directory and its descendants
-function upgradeAllPresentations(dir = currentDir) : void {
-    
+function upgradeAllPresentations(dir = currentDir): void {
+
     //silently call read presentations and remember its folders and presentation list
     const folders = readPresentations(dir, true);
     const savedPresentations = presentations;
@@ -247,12 +247,11 @@ function upgradeAllPresentations(dir = currentDir) : void {
     //upgrade all presentations in the current directory
     for (const pres of Object.keys(presentations))
         upgradePresentation(pres);
-    
+
     //recursively call for children
-    for (const child of folders)
-        {
-            upgradeAllPresentations(dir+'/'+child)
-        }
+    for (const child of folders) {
+        upgradeAllPresentations(dir + '/' + child)
+    }
 
     //restore saved values
     currentDir = dir;
@@ -303,16 +302,15 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
 
     presentations = msg.presentations;
 
-    if (!silent)
-    {
+    if (!silent) {
         //send the list of presentations to the renderer
-    mainWindow.webContents.send('presentationList', msg);
+        mainWindow.webContents.send('presentationList', msg);
     }
 
     return msg.subfolders;
 
 
-} 
+}
 
 
 //we get a single sound, in the wav format
@@ -321,13 +319,19 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
     try {
         const manifest = readManifest(msg.presentation);
         const buffer = new Uint8Array(msg.file)
-        const fileName = slideDir(manifest, msg.slideId) + '/' + msg.eventId;
+        let fileName: string;
+        let live: LiveRecording;
+
+        if (msg.live) {
+            live = manifest.live[manifest.live.length - 1];
+            fileName = `${presentationDir(msg.presentation)}/${live.dir}/${live.steps.length}`
+        }
+        else
+            fileName = slideDir(manifest, msg.slideId) + '/' + msg.eventId;
+
         fs.writeFileSync(fileName + '.wav', Buffer.from(buffer));
 
-        //create a new entry in the sound dictionary 
-        if (!(msg.slideId in manifest.soundDict)) {
-            manifest.soundDict[msg.slideId] = {};
-        }
+
 
         if (!fs.existsSync(slajdomatSettings.ffmpeg) || !fs.existsSync(slajdomatSettings.ffprobe))
             throw ('To record sound, install ffmpeg and ffprobe.')
@@ -339,15 +343,31 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
         child.execSync(`${slajdomatSettings.ffmpeg} -y -i  ${fileName}.wav ${fileName}.mp3`);
 
-        //delete the .wav version, which is no longer needed
-        // fs.unlinkSync(fileName + '.wav');
+        fs.unlinkSync(fileName + '.wav');
 
         let duration: number = undefined;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
 
         duration = parseFloat(probeString.toString());
-        manifest.soundDict[msg.slideId][msg.eventId] = duration;
+
+        if (msg.live)
+        {
+            //if we are in live mode, then we push the sound onto the list of live steps
+            live.steps.push({step : {
+                slide : msg.slideId,
+                event : msg.eventId,
+            }, 
+            duration : duration})
+        } else
+         {
+            //otherwise, we file the sound in the sound dictionary. 
+            if (!(msg.slideId in manifest.soundDict)) {
+                manifest.soundDict[msg.slideId] = {};
+            }
+            manifest.soundDict[msg.slideId][msg.eventId] = duration;
+        }
+
         writeManifest(manifest);
         sendStatus(`Recorded ${duration.toFixed(2)}s for event ${msg.eventId} in slide ${manifest.slideDict[msg.slideId]}`);
 
@@ -385,6 +405,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
         if (oldManifest != undefined) {
             manifest.soundDict = oldManifest.soundDict;
             manifest.slideDict = oldManifest.slideDict;
+            manifest.live = oldManifest.live;
         }
 
 
@@ -419,20 +440,37 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
 }
 
-function createLive(msg : MessageToServerLive): ServerResponse {
-    const oldManifest: Manifest = readManifest(msg.presentation);
-    if (oldManifest.live == undefined)
-        oldManifest.live = [];
-    
-    oldManifest.live.push(
-    {
-        date : Date.now(),
-        steps : []
-    });
-    
-    return  {
-        status: 'ok'
-    };
+//start a live recording. The result is adding a new array of live steps to the manifest.
+function createLive(msg: MessageToServerLive): ServerResponse {
+    try {
+        const manifest: Manifest = readManifest(msg.presentation);
+        if (manifest.live == undefined)
+            manifest.live = [];
+
+        //create a directory for the liver recording
+        const dir = freshName(`live_recording${manifest.live.length}`, dirList());
+        fs.mkdirSync(presentationDir(msg.presentation) + '/' + dir);
+
+
+        manifest.live.push(
+            {
+                date: Date.now(),
+                dir: dir,
+                steps: []
+            });
+
+        writeManifest(manifest)
+        return {
+            status: 'ok'
+        };
+    }
+    catch (e) {
+        return {
+            status: 'error'
+        };
+    }
+
+
 }
 
 
@@ -473,7 +511,7 @@ function startServer(): void {
                         status: 'ok'
                     };
                     break
-                
+
                 case 'startLive':
                     response = createLive(msg);
                     break;

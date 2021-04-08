@@ -1,5 +1,5 @@
 import { Database } from "../plugin/plugin-types"
-import { Step } from "./timeline"
+
 
 
 export {
@@ -20,7 +20,7 @@ type SlideEvent = OverlayEvent | ZoomEvent
 
 interface GenericEvent {
     //for overlays, the id describes the object that is being shown, hidden etc., for child events this is the ide of the target slide
-    id: string, 
+    id: string,
     //a human readable name, taken from figma
     name: string,
     //is the event merged with the previous event. Merged events should either both be overlays, or both zooms
@@ -30,7 +30,7 @@ interface GenericEvent {
     //keywords for searching slides
     keywords: string[],
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
-    eventId : string
+    eventId: string
 }
 interface OverlayEvent extends GenericEvent {
     type: 'show' | 'hide'
@@ -44,7 +44,7 @@ interface ZoomEvent extends GenericEvent {
 
 
 //this is the type of the file with the slide information
-interface Manifest  {
+interface Manifest {
     version: number,
     presentation: string,
     slideDict: {
@@ -52,21 +52,22 @@ interface Manifest  {
     },
     soundDict: {
         [slide: string]: {
-            [eventId: string]: number 
+            [eventId: string]: number
         }
     },
     tree: ZoomEvent,
-    live? : LiveRecording[]
+    live?: LiveRecording[]
 }
 
 interface LiveRecording {
-    date : number,
-    steps : {step : StepDescription, soundFile : string}[]
+    date: number,
+    dir: string,
+    steps: { step: StepDescription, duration: number }[]
 }
 
 interface StepDescription {
-    slide : string,
-    event : string
+    slide: string,
+    event: string
 }
 
 
@@ -74,9 +75,9 @@ type MessageToServerSound = {
     type: 'wav',
     presentation: string,
     slideId: string,
-    eventId : string,
+    eventId: string,
     file: number[],
-    live : boolean
+    live: boolean
 }
 
 type MessageToServerSlide = {
@@ -90,8 +91,8 @@ type MessageToServerSlide = {
 }
 
 type MessageToServerLive = {
-    type : 'startLive',
-    presentation : string
+    type: 'startLive',
+    presentation: string
 }
 
 type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive
