@@ -12,7 +12,9 @@ export {
     MessageToServerSlide,
     MessageToServerLive,
     LiveRecording,
-    ServerResponse
+    ServerResponse,
+    EventDescription,
+    StepDescription
 }
 
 //the central type, which describes an event of the presentation
@@ -32,9 +34,15 @@ interface GenericEvent {
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
     eventId: string
 }
-interface OverlayEvent extends GenericEvent {
-    type: 'show' | 'hide'
+interface ShowHideEvent extends GenericEvent {
+    type: 'show' | 'hide' 
 }
+
+interface AnimateEvent extends GenericEvent {
+    type: 'animate', source : number, target :number
+}
+
+type OverlayEvent = ShowHideEvent | AnimateEvent
 
 interface ZoomEvent extends GenericEvent {
     type: 'child',
@@ -60,25 +68,21 @@ interface Manifest {
 }
 
 interface LiveRecording {
-    date: number,
+    date: string,
     dir: string,
     steps: { step: StepDescription, duration: number }[]
 }
 
-interface StepDescription {
-    slide: string,
-    event: string
-}
-
+type StepDescription =  { type : 'zoom', source : string, target : string } | {type : 'overlays', slide : string,  overlays : string[], direction : 1 | -1} | {type : 'last'}
+    
+type EventDescription = {type : 'event', slideId : string, eventId : string}
 
 type MessageToServerSound = {
     type: 'wav',
-    presentation: string,
-    slideId: string,
-    eventId: string,
     file: number[],
-    live: boolean
-}
+    presentation: string,
+    forWhat : EventDescription | { type : 'step', description : StepDescription}
+} 
 
 type MessageToServerSlide = {
     type: 'slides',
@@ -88,7 +92,7 @@ type MessageToServerSlide = {
         database: Database,
         svg: string,
     }[]
-}
+} 
 
 type MessageToServerLive = {
     type: 'startLive',

@@ -1,5 +1,6 @@
 export {
     manifest,
+    getManifest,
     updatePageNumber,
     userAgent,
     nextButton,
@@ -19,7 +20,8 @@ import {
 
 import {
     initPanels,
-    updatePageNumber
+    updatePageNumber,
+    userAlert
 } from "./html";
 
 import {
@@ -31,9 +33,8 @@ import {
     resetSound,
     soundPaused,
     endOfSound,
-    cacheFlush,
     SoundState,
-    toggleLive
+    soundLive
 } from "./sound"
 
 import {
@@ -70,11 +71,6 @@ function userAgent(): string {
     return null;
 }
 
-
-
-
-
-
 //what happens when the sound play button or the space bar are pressed
 function playButton(): void {
     switch (soundState) {
@@ -84,7 +80,6 @@ function playButton(): void {
         case SoundState.Recording:
         case SoundState.Live:
             soundStop();
-            break;
         case SoundState.None:
             if (!endOfSound())
                 soundPlay();
@@ -100,12 +95,12 @@ function nextButton(): void {
                 soundAdvance(1);
                 break;
             case SoundState.Recording:
+            case SoundState.Live:
                 moveHead(1);
-                soundRecord('dead');
-                break;
-                case SoundState.Live:
-                moveHead(1);
-                soundRecord('live');
+                if (soundState == SoundState.Live)
+                    soundRecord('live');
+                else
+                    soundRecord('event');
                 break;
             case SoundState.None:
                 resetSound();
@@ -140,7 +135,30 @@ function prevButton(): void {
     }
 }
 
+//start or stop a live recording
+function liveButton() {
+    if (timeline.type == 'default') {
+        //the recorded timelines are read-only
+        if (soundState == SoundState.Live)
+            soundStop()
+        else if (soundState == SoundState.None)
+            soundLive()
+    }
+}
 
+//start or stop the usual type of recording
+function recordButton() {
+    if (timeline.type == 'default') {
+        //the recorded timelines are read-only
+        if (soundState == SoundState.Recording) {
+            soundStop()
+        }
+        else {
+            soundStop()
+            soundRecord('event')
+        }
+    }
+}
 
 
 
@@ -167,16 +185,12 @@ function keyListener(event: KeyboardEvent) {
                 break;
 
             case 'r':
-                if (soundState == SoundState.Recording)
-                    soundStop();
-                else {
-                    soundStop();
-                    soundRecord('dead');
-                }
+                recordButton()
                 break;
 
             case 'l':
-                toggleLive();
+                liveButton()
+                break;
 
             /*case 'p':
                 exportPdf(); */
@@ -184,14 +198,11 @@ function keyListener(event: KeyboardEvent) {
     }
 }
 
+
+
 //the path is an array of numbers, which indicates the path in the event tree to the current event 
 function getStepFromURL(): Step {
     const searchParams = (new URL(window.location.href)).searchParams;
-
-    //this makes sure that the cache is ignored when downloading sounds, if a nocache string is present in the url
-    if (searchParams.get('nocache') != undefined)
-        cacheFlush();
-
     //we try to return the step, but several things could go wrong: (a) the step parameter is undefined or not a number; (b) the number is out of bounds
     try {
         return currentStep(parseInt(searchParams.get('step')));
@@ -202,6 +213,13 @@ function getStepFromURL(): Step {
 }
 
 
+function getManifest(): Promise<Manifest> {
+    return fetchJSON(presentationDir() + '/manifest.json').then(j => {
+        if (j == null)
+            throw "The manifest is missing for the presentation"
+        return j as Manifest;
+    })
+}
 
 //startup code
 //it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
@@ -212,15 +230,13 @@ window.onload = function (): void {
     (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
     (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
 
-    fetchJSON(presentationDir() + '/manifest.json').then(j => {
-        if (j == null)
-            throw "The manifest is missing for the presentation"
-        manifest = j as Manifest;
+    getManifest().then(m => {
+        manifest = m;
         document.title = manifest.presentation;
         createEventTree();
         document.addEventListener("keydown", keyListener);
         initPanels();
         const step = getStepFromURL();
         gotoStep(step).then(() => { (document.getElementById('svg') as HTMLDivElement).style.opacity = '1' });
-    }) //.catch((e) => userAlert(e))
+    }).catch((e) => userAlert(e))
 }

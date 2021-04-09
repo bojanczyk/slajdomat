@@ -22,18 +22,18 @@
 }
 #progress-line > div {
     height : 100%;
-    background-color: lightgray;
-    /* width : 50px; */
+    background-color: var(--very-light-blue);
     border-left : 1px solid white;
     display:  flex;
 }
 
-#progress-line .seen {
- border-left : 1px solid white;
-}
 
-#progress-line .nosound {
+/* #progress-line .seen {
     background-color: var(--very-light-blue);
+   } */
+
+body.has-sound #progress-line .nosound {
+    background-color: lightgray;
 }
 
 
@@ -41,6 +41,11 @@
     height: 100%;
     background-color: var(--light-blue);
 }
+
+body.has-sound #progress-line .nosound .progress-filler {
+    background-color: grey;
+}
+
 
 #progress-controls {
     /* width : 110px; */

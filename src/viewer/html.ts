@@ -16,6 +16,7 @@ export {
 }
 
 import {
+    pageNumbers,
     parentEvent
 } from './event'
 
@@ -34,7 +35,8 @@ import {
     sounds,
     totalSoundDuration,
     endOfSound,
-    SoundState
+    SoundState,
+    stepAudio
 } from './sound'
 
 import {
@@ -48,7 +50,7 @@ import {
 
 import { SlideEvent, ZoomEvent } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
-import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, numberOfPages, OverlayStep, ZoomStep, allSteps } from './timeline'
+import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, OverlayStep, ZoomStep, allSteps } from './timeline'
 
 
 
@@ -155,13 +157,13 @@ function timelineHTML(): void {
         })
 
         const sound = sounds.get(step);
+
         if (sound != undefined) {
-            console.log(sound);
-            big.classList.add('nosound');
+            big.classList.remove('nosound');
             big.style.flexGrow = sound.duration.toString();
         }
         else {
-            big.classList.remove('nosound');
+            big.classList.add('nosound');
             big.style.flexGrow = '10';
         }
 
@@ -287,11 +289,14 @@ function formatTime(time: number): string {
 function audioPlaying(audio: HTMLAudioElement): void {
 
     try {
-        const currentTime = audio.currentTime;
-        const duration = audio.duration;
-        const curTime = currentTime + sounds.get(currentStep()).previousDuration;
-        document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
-        (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
+        const curAudio = stepAudio(currentStep());
+        if (audio == curAudio) {
+            const currentTime = audio.currentTime;
+            const duration = audio.duration;
+            const curTime = currentTime + sounds.get(currentStep()).previousDuration;
+            document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
+            (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
+        }
     }
     catch (e) {
         console.log('tried to play illegally')
@@ -436,19 +441,26 @@ function userAlert(text: string): void {
 //update the page number in the corner, and put the step number in the url
 function updatePageNumber(): void {
 
-    const index = timeline.past.length;
-    history.pushState({}, null, '?step=' + index);
-
-
-
-    let currentPage = numberOfPages;
-    if (currentStep() != undefined) {
-        //not at the last page
-        currentPage = currentStep().pageNumber
+    function updateURL() {
+        const searchParams = (new URL(window.location.href)).searchParams;
+        let paramString = '?';
+        for (const param of searchParams.keys())
+            if (param != 'step')
+                paramString +=`${param}=${searchParams.get(param)}&`
+        
+        if (searchParams.keys())
+        history.pushState({}, null, paramString + 'step=' + timeline.past.length.toString());
+        
     }
+
+    updateURL();
+
+    let currentPage = pageNumbers.get(currentStep().event());
     document.getElementById("page-count-enumerator").innerHTML =
         currentPage.toString();
-    document.getElementById("page-count-denominator").innerHTML = " / " + numberOfPages;
+    document.getElementById("page-count-denominator").innerHTML = " / " + 
+    pageNumbers.get(timeline.lastStep.event())
+    
 
     // the "previous" arrow should be invisible at the first event of the first slide
     // analogously for the "next" arrow

@@ -161,7 +161,7 @@ function myStringify(x: PresentationList | Manifest | SlajdomatSettings): string
 function presentationDir(presentationName: string) {
     if (!(presentationName in presentations)) {
         //choose a fresh name based on the presentation name
-        const dirName = freshName(sanitize(presentationName), dirList());
+        const dirName = freshName(sanitize(presentationName), dirList(currentDir));
         presentations[presentationName] = { file: dirName, updated: true };
         sendStatus('adding ' + dirName)
         fs.mkdirSync(currentDir + '/' + dirName);
@@ -263,10 +263,10 @@ function upgradeAllPresentations(dir = currentDir): void {
 
 
 //returns all names of directories in the currentDirectory
-function dirList(): string[] {
+function dirList(dir: string): string[] {
     const retval = [];
-    for (const file of fs.readdirSync(currentDir))
-        if (fs.lstatSync(currentDir + '/' + file).isDirectory())
+    for (const file of fs.readdirSync(dir))
+        if (fs.lstatSync(dir + '/' + file).isDirectory())
             retval.push(file);
 
     return retval;
@@ -284,7 +284,7 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
         atRoot: currentDir == slajdomatSettings.directory
     };
 
-    for (const file of dirList()) {
+    for (const file of dirList(currentDir)) {
         const fullName = currentDir + '/' + file;
         try {
             //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
@@ -315,19 +315,26 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
 
 //we get a single sound, in the wav format
 function onGetWav(msg: MessageToServerSound): ServerResponse {
+    let soundDescription : string;
+
 
     try {
+        
         const manifest = readManifest(msg.presentation);
         const buffer = new Uint8Array(msg.file)
         let fileName: string;
         let live: LiveRecording;
 
-        if (msg.live) {
+        if (msg.forWhat.type != 'event' ) {
             live = manifest.live[manifest.live.length - 1];
-            fileName = `${presentationDir(msg.presentation)}/${live.dir}/${live.steps.length}`
+            fileName = `${presentationDir(msg.presentation)}/${live.dir}/${live.steps.length}`;
+            soundDescription =` current step in the live recording`;
         }
         else
-            fileName = slideDir(manifest, msg.slideId) + '/' + msg.eventId;
+        {
+            fileName = slideDir(manifest, msg.forWhat.slideId) + '/' + msg.forWhat.eventId;
+            soundDescription = `for event ${msg.forWhat.eventId} in slide ${manifest.slideDict[msg.forWhat.slideId]}`;
+        }
 
         fs.writeFileSync(fileName + '.wav', Buffer.from(buffer));
 
@@ -350,33 +357,30 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
 
         duration = parseFloat(probeString.toString());
-
-        if (msg.live)
-        {
+ 
+        if (msg.forWhat.type != 'event') {
             //if we are in live mode, then we push the sound onto the list of live steps
-            live.steps.push({step : {
-                slide : msg.slideId,
-                event : msg.eventId,
-            }, 
-            duration : duration})
-        } else
-         {
+            live.steps.push({
+                step: msg.forWhat.description,
+                duration: duration
+            })
+        } else {
             //otherwise, we file the sound in the sound dictionary. 
-            if (!(msg.slideId in manifest.soundDict)) {
-                manifest.soundDict[msg.slideId] = {};
+            if (!(msg.forWhat.slideId in manifest.soundDict)) {
+                manifest.soundDict[msg.forWhat.slideId] = {};
             }
-            manifest.soundDict[msg.slideId][msg.eventId] = duration;
+            manifest.soundDict[msg.forWhat.slideId][msg.forWhat.eventId] = duration;
         }
 
         writeManifest(manifest);
-        sendStatus(`Recorded ${duration.toFixed(2)}s for event ${msg.eventId} in slide ${manifest.slideDict[msg.slideId]}`);
-
+        sendStatus(`Recorded ${duration.toFixed(2)}s for ${soundDescription}`);
+        
         retval.duration = duration;
         return retval;
 
 
     } catch (e) {
-        sendStatus(`Failed to record sound for event ${msg.eventId} in slide ${msg.slideId}`);
+        sendStatus(`Failed to record sound for ${soundDescription}`);
         sendStatus('Error: ' + e);
         return {
             status: e
@@ -408,23 +412,13 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
             manifest.live = oldManifest.live;
         }
 
-
         for (const slide of msg.slideList) {
             const dir = slideDir(manifest, slide.database.id, slide.database.name)
             writeFile(dir + '/image.svg', slide.svg);
             sendStatus('Received slides for ' + slide.database.name);
         }
-
-
-
         writeManifest(manifest);
         copyHTMLFiles(manifest.presentation);
-
-
-
-
-
-
         //reload the presentations in case a new one was added
         readPresentations();
 
@@ -443,21 +437,25 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 //start a live recording. The result is adding a new array of live steps to the manifest.
 function createLive(msg: MessageToServerLive): ServerResponse {
     try {
+        sendStatus('going live')
         const manifest: Manifest = readManifest(msg.presentation);
         if (manifest.live == undefined)
             manifest.live = [];
 
+
         //create a directory for the liver recording
-        const dir = freshName(`live_recording${manifest.live.length}`, dirList());
+        const dir = freshName(`live_recording${manifest.live.length}`, dirList(presentationDir(msg.presentation)));
         fs.mkdirSync(presentationDir(msg.presentation) + '/' + dir);
 
 
         manifest.live.push(
             {
-                date: Date.now(),
+                date: (new Date()).toString(),
                 dir: dir,
                 steps: []
             });
+
+        sendStatus('has been pushed')
 
         writeManifest(manifest)
         return {
@@ -465,6 +463,7 @@ function createLive(msg: MessageToServerLive): ServerResponse {
         };
     }
     catch (e) {
+        sendStatus(e)
         return {
             status: 'error'
         };

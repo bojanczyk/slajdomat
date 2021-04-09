@@ -216,7 +216,7 @@ function attachSVG(node: SlideEvent) {
     
     //after loading the root of the event tree, we zoom to the right place immediately, without animation
     if (parentEvent(node)== undefined) 
-        {zoomSlide(node,'immediate');
+        {zoomSlide(node,'silent');
         updatePageNumber()}
 
 }
