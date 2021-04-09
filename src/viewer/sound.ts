@@ -50,6 +50,7 @@ import {
     userAlert
 } from "./html"
 import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
+import { time } from 'node:console'
 
 
 
@@ -116,9 +117,97 @@ function soundStop(): void {
     soundIcon();
 }
 
+let audioChunks: Blob[] = undefined;
+let mediaRecorder: MediaRecorder;
 
 
+function endRecording(direction: -1 | 0 | 1) {
+    if (mediaRecorder == null || mediaRecorder.state != 'recording') return;
 
+    let live: boolean;
+    switch (soundState) {
+        case SoundState.Recording:
+            live = false;
+            break;
+        case SoundState.Live:
+            live = true;
+            break;
+        default:
+            throw 'should not be in this state';
+    }
+
+
+    const retval: MessageToServerSound = {
+        presentation: undefined,
+        type: 'wav',
+        forWhat: undefined,
+        file: undefined
+    }
+
+    if (!live) {
+        retval.forWhat = eventDescription(currentStep());
+    }
+    else {
+        retval.forWhat = { type: 'step', description: undefined };
+        switch (direction) {
+            case 1:
+                retval.forWhat.description = currentStep().description();
+                break;
+            case -1:
+                {
+                    const step = timeline.past[timeline.past.length - 1];
+                    retval.forWhat.description = step.reverse().description();
+                    break;
+                }
+            case 0:
+                retval.forWhat.description = { type: 'last' };
+        }
+    }
+
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks)
+        const audioURL = window.URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioURL)
+        const fr = new FileReader()
+        fr.onload = function (e) {
+            async function send() {
+                try {
+                    const serverResponse = await sendToServer(retval);
+                    const json = await serverResponse.json();
+                    const status = json.status;
+                    if (status != 'Sound recorded successfully')
+                        throw status;
+                    else
+                        if (soundState == SoundState.None) {
+                            {
+                                //if sound recording has finished, then we reload the timeline
+                                //we reload the manifest to get the new version of the sound dictionary
+                                const man = await getManifest()
+                                manifest.soundDict = man.soundDict;
+                                //add some salt to the audio urls to flush the cache
+                                cacheFlush();
+                                initSoundTimeline(undefined);
+                                timelineHTML();
+                                loadSound(currentStep());
+
+                            }
+                        }
+                } catch (e) {
+                    console.log(e);
+                    userAlert("Failed to record sound.")
+                }
+            }
+
+            const target = e.target as FileReader
+            const x = target.result as ArrayBuffer
+            const y = new Uint8Array(x)
+            retval.file = Array.from(y);
+            send();
+        }
+        fr.readAsArrayBuffer(audioBlob)
+    }
+    mediaRecorder.stop();
+}
 
 //start recording sound
 function soundRecord(live: 'live' | 'event'): void {
@@ -128,73 +217,10 @@ function soundRecord(live: 'live' | 'event'): void {
             audio: true
         })
         mediaRecorder = new MediaRecorder(stream)
+        audioChunks = [];
         mediaRecorder.start()
-        const audioChunks: Blob[] = []
         mediaRecorder.addEventListener("dataavailable", event => {
             audioChunks.push(event.data)
-        })
-
-        mediaRecorder.addEventListener("stop", () => {
-            const audioBlob = new Blob(audioChunks)
-            const audioURL = window.URL.createObjectURL(audioBlob)
-            const audio = new Audio(audioURL)
-            audio.addEventListener('ended', afterSound)
-
-            const fr = new FileReader()
-            fr.onload = function (e) {
-                const target = e.target as FileReader
-                const x = target.result as ArrayBuffer
-                const y = new Uint8Array(x)
-                const retval: MessageToServerSound = {
-                    presentation: undefined,
-                    type: 'wav',
-                    forWhat: undefined,
-                    file: Array.from(y),
-                }
-
-                if (live == 'event')
-                    retval.forWhat = eventDescription(step);
-                else {
-                    retval.forWhat = { type: 'step', description: undefined };
-                    switch (lastDirection) {
-                        case 1:
-                            retval.forWhat.description = step.description();
-                            break;
-                        case -1:
-                            retval.forWhat.description = step.reverse().description();
-                            break;
-                        case 0:
-                            retval.forWhat.description = { type: 'last' };
-                    }
-                }
-
-                sendToServer(retval)
-                    .then(r => r.json())
-                    .then(r_1 => {
-                        if (r_1.status != 'Sound recorded successfully')
-                            throw r_1.status;
-                        if (soundState == SoundState.None) {
-                            {
-                                //if sound recording has finished, then we reload the timeline
-
-                                //we reload the manifest to get the new verion of the sound dictionary
-                                getManifest().then(m => {
-                                    manifest.soundDict = m.soundDict;
-                                    //add some salt to the audio urls to flush the cache
-                                    cacheFlush();
-                                    initSoundTimeline(undefined);
-                                    timelineHTML();
-                                    loadSound(currentStep());
-                                })
-                            }
-                        }
-                    }).catch((e) => {
-                        console.log(e);
-                        userAlert("Failed to record sound.")
-                    })
-
-            }
-            fr.readAsArrayBuffer(audioBlob)
         })
     }
 
@@ -231,16 +257,6 @@ function afterSound(): void {
 }
 
 
-let lastDirection: -1 | 0 | 1;
-function endRecording(direction: -1 | 0 | 1) {
-    lastDirection = direction;
-    if (mediaRecorder != null) {
-        if (mediaRecorder.state == "recording")
-            mediaRecorder.stop();
-    }
-}
-
-let mediaRecorder: MediaRecorder;
 
 
 

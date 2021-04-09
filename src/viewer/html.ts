@@ -189,16 +189,17 @@ function timelineClicked(step: Step, e: MouseEvent): void {
 
 function timelineSeen(step: Step, seen: boolean): void {
     const div = progressCache.get(step);
-    if (seen) {
-        const firstChild = div.firstChild as HTMLElement;
-        firstChild.style.width = "100%";
-        div.classList.add('seen');
-    }
-    else {
-        const firstChild = div.firstChild as HTMLElement;
-        firstChild.style.width = "0%";
-        div.classList.remove('seen');
-    }
+    if (div != undefined)
+        if (seen) {
+            const firstChild = div.firstChild as HTMLElement;
+            firstChild.style.width = "100%";
+            div.classList.add('seen');
+        }
+        else {
+            const firstChild = div.firstChild as HTMLElement;
+            firstChild.style.width = "0%";
+            div.classList.remove('seen');
+        }
 }
 
 //update the html (both left panel and progress bar) after a step has been processed in either direction
@@ -446,11 +447,11 @@ function updatePageNumber(): void {
         let paramString = '?';
         for (const param of searchParams.keys())
             if (param != 'step')
-                paramString +=`${param}=${searchParams.get(param)}&`
-        
+                paramString += `${param}=${searchParams.get(param)}&`
+
         if (searchParams.keys())
-        history.pushState({}, null, paramString + 'step=' + timeline.past.length.toString());
-        
+            history.pushState({}, null, paramString + 'step=' + timeline.past.length.toString());
+
     }
 
     updateURL();
@@ -458,9 +459,9 @@ function updatePageNumber(): void {
     let currentPage = pageNumbers.get(currentStep().event());
     document.getElementById("page-count-enumerator").innerHTML =
         currentPage.toString();
-    document.getElementById("page-count-denominator").innerHTML = " / " + 
-    pageNumbers.get(timeline.lastStep.event())
-    
+    document.getElementById("page-count-denominator").innerHTML = " / " +
+        pageNumbers.get(timeline.lastStep.event())
+
 
     // the "previous" arrow should be invisible at the first event of the first slide
     // analogously for the "next" arrow

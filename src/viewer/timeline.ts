@@ -252,8 +252,7 @@ function zoomsIn(step: Step): boolean {
 function moveHead(direction: -1 | 1): void {
     let source, target: Step[];
 
-    //if there is a recording going on, it should be stopped
-    endRecording(direction);
+    
 
     //depending on the direction, we will shift an event from future to past or in the other direction
     if (direction == 1) {
@@ -269,6 +268,9 @@ function moveHead(direction: -1 | 1): void {
         return;
     }
 
+    //if there is a recording going on, it should be stopped
+    endRecording(direction);
+    
     //move the step from the source to target
     let step = source.pop();
     target.push(step);
