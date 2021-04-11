@@ -221,9 +221,13 @@ function getManifest(): Promise<Manifest> {
     })
 }
 
+
+
+
 //startup code
 //it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
 window.onload = function (): void {
+
 
     //the opacity is set to 0 for elements of the page, so that it is not display while the styles are loading. Once the document has loaded, we can set the opacity to normal.
     (document.getElementById('loader-text') as HTMLDivElement).remove();

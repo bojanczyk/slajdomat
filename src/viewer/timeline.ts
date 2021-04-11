@@ -1,4 +1,4 @@
-export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, allSteps }
+export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, allSteps, loadNearbySounds }
 
 import { findZoomEvent, isOverlay, parentEvent, runOverlay, zoomSlide, } from "./event";
 import { LiveRecording, OverlayEvent, SlideEvent, StepDescription, ZoomEvent } from "./types";

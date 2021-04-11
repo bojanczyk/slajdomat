@@ -49,7 +49,7 @@ import {
     timelineHTML,
     userAlert
 } from "./html"
-import { allSteps, currentStep, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
+import { allSteps, currentStep, gotoStep, loadNearbySounds, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
 import { time } from 'node:console'
 
 
@@ -185,16 +185,19 @@ function endRecording(direction: -1 | 0 | 1) {
                                 const man = await getManifest()
                                 manifest.soundDict = man.soundDict;
                                 //add some salt to the audio urls to flush the cache
+                                // console.log('tutaj')
                                 cacheFlush();
                                 initSoundTimeline(undefined);
+                                loadNearbySounds();
                                 timelineHTML();
-                                loadSound(currentStep());
+
+
 
                             }
                         }
                 } catch (e) {
                     console.log(e);
-                    userAlert("Failed to record sound.")
+                    userAlert("Failed to record sound. " + e)
                 }
             }
 
@@ -264,13 +267,23 @@ function afterSound(): void {
 //starts a new live recording 
 function soundLive(): void {
 
+    console.log('starting live recording');
+    console.log(new Error().stack)
     const msg: MessageToServerLive = {
         type: 'startLive',
         presentation: manifest.presentation,
     }
-    sendToServer(msg);
-    soundRecord('live');
-    soundIcon();
+
+    //we return to the first step, and then only start the live recording
+    gotoStep(allSteps()[0]).then(
+        () => {
+            sendToServer(msg);
+            soundRecord('live');
+            soundIcon();
+        }
+    )
+
+
 
 }
 

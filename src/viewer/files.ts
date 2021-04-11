@@ -2,7 +2,8 @@ export {
     presentationDir,
     fileName,
     sendToServer,
-    fetchJSON
+    fetchJSON,
+    probeServer
 }
 
 
@@ -11,7 +12,7 @@ import {
     userAlert
 } from './html'
 
-import { MessageToServer} from './types';
+import { MessageToServer } from './types';
 
 
 import {
@@ -21,9 +22,9 @@ import {
 
 
 //the directory where the slides are
-function presentationDir() : string {
+function presentationDir(): string {
     return '.'
-// return  'slides/' + (new URL(window.location.href)).searchParams.get('slides'); 
+    // return  'slides/' + (new URL(window.location.href)).searchParams.get('slides'); 
 }
 
 
@@ -43,7 +44,7 @@ function fileName(slide: string, file: string): string {
 }
 
 //send an object to the server
-async function sendToServer(msg: MessageToServer): Promise < Response > {
+async function sendToServer(msg: MessageToServer): Promise<Response> {
     if (msg.type == 'slides' || msg.type == 'wav')
         msg.presentation = manifest.presentation;
     const json = JSON.stringify(msg);
@@ -59,7 +60,7 @@ async function sendToServer(msg: MessageToServer): Promise < Response > {
 
 
 //get a json file and parse it
-async function fetchJSON(filename: string): Promise < unknown > {
+async function fetchJSON(filename: string): Promise<unknown> {
     try {
         const res = await fetch(filename);
         if (!(res.ok))
@@ -71,4 +72,19 @@ async function fetchJSON(filename: string): Promise < unknown > {
         userAlert("Could not load slide file " + filename);
         return null;
     }
+}
+
+
+
+async function probeServer() {
+    try {
+        await fetch(getServer(), {
+            method: 'POST',
+            body: JSON.stringify({
+                type: 'probe'
+            })
+        });
+        return true;
+    }
+    catch (e) { return false; }
 }

@@ -94,7 +94,6 @@ function queueError() {
 //function that is called once the svg for a slide finishes loading. The function extracts the svg from the loaded object, attaches the svg to the event and its overlays, and sets the initial visibility of overlays accordingly. Finally, the svg of the slide is attached to the main svg, using a separate function.
 function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
-
     try {
         let svg;
 

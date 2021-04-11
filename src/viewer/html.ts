@@ -141,6 +141,7 @@ function timelineHTML(): void {
 
     progressCache.clear();
 
+    
 
 
     const timelineDIV = document.getElementById('progress-line');
@@ -330,10 +331,12 @@ function soundIcon(): void {
 
     switch (soundState) {
         case SoundState.Play:
+            playButton.style.color = 'black'
             playButton.innerHTML = "pause"
             break;
         case SoundState.None:
             {
+                playButton.style.color = 'black'
                 const sound = sounds.get(currentStep());
                 if (sound == undefined)
                     playButton.innerHTML = "play_disabled";
@@ -347,10 +350,13 @@ function soundIcon(): void {
                 break;
             }
         case SoundState.Recording:
+            playButton.style.color = 'black'
             playButton.innerHTML = "mic"
             break;
         case SoundState.Live:
-            playButton.innerHTML = "radio"
+            playButton.style.color = 'red'
+            playButton.innerHTML = "mic_none"
+            
             break;
     }
 
