@@ -38,6 +38,7 @@ import * as fs from 'fs'
 import * as child from 'child_process'
 import * as path from 'path'
 
+
 import {
     app, shell
 } from 'electron'
@@ -339,10 +340,10 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         let ffmpeg = slajdomatSettings.ffmpeg;
-        if (ffmpeg = '') ffmpeg = 'ffmpeg';
+        if (ffmpeg == '') ffmpeg = 'ffmpeg';
         let ffprobe = slajdomatSettings.ffprobe;
-        if (ffprobe = '') ffprobe = 'ffprobe';
-        
+        if (ffprobe == '') ffprobe = 'ffprobe';
+
 
         const retval: ServerResponse = {
             status: 'Sound recorded successfully'
@@ -350,9 +351,9 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         try {
-        child.execSync(`${slajdomatSettings.ffmpeg} -y -i  ${fileName}.wav ${fileName}.mp3`);
+            child.execSync(`${slajdomatSettings.ffmpeg} -y -i  ${fileName}.wav ${fileName}.mp3`);
         }
-        catch (e) {throw 'Failed to run ffmpeg'}
+        catch (e) { throw 'Failed to run ffmpeg' }
 
 
 
@@ -361,12 +362,12 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
         let duration: number = undefined;
         try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
-        duration = parseFloat(probeString.toString());
-        } catch (e) {throw 'Failed to run ffprobe'}
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
+            duration = parseFloat(probeString.toString());
+        } catch (e) { throw 'Failed to run ffprobe' }
 
-        
+
 
         if (msg.forWhat.type != 'event') {
             //if we are in live mode, then we push the sound onto the list of live steps

@@ -39,7 +39,8 @@ import {
 
 import {
     fetchJSON,
-    presentationDir
+    presentationDir,
+    probeServer
 } from './files'
 
 import {
@@ -80,6 +81,7 @@ function playButton(): void {
         case SoundState.Recording:
         case SoundState.Live:
             soundStop();
+            break;
         case SoundState.None:
             if (!endOfSound())
                 soundPlay();
@@ -137,7 +139,7 @@ function prevButton(): void {
 
 //start or stop a live recording
 function liveButton() {
-    if (timeline.type == 'default') {
+    if (timeline.type == 'default' && serverConnected()) {
         //the recorded timelines are read-only
         if (soundState == SoundState.Live)
             soundStop()
@@ -148,7 +150,7 @@ function liveButton() {
 
 //start or stop the usual type of recording
 function recordButton() {
-    if (timeline.type == 'default') {
+    if (timeline.type == 'default' && serverConnected()) {
         //the recorded timelines are read-only
         if (soundState == SoundState.Recording) {
             soundStop()
@@ -222,7 +224,24 @@ function getManifest(): Promise<Manifest> {
 }
 
 
+let serverConnectedVar = false;
 
+function serverConnected() : boolean {
+    return serverConnectedVar;
+}
+
+//adapt the view depending on whether or not we are a tablet, or connected to the server
+function checkFeatures() {
+
+    //if a tablet is used, then we enable the tablet style, which makes the play buttons bigger
+    if (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0))
+        document.body.classList.add('tablet');
+
+    //if we are connected to the server, then 
+    probeServer().then(v => {serverConnectedVar = v});
+}
 
 //startup code
 //it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
@@ -233,6 +252,8 @@ window.onload = function (): void {
     (document.getElementById('loader-text') as HTMLDivElement).remove();
     (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
     (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
+
+    checkFeatures();
 
     getManifest().then(m => {
         manifest = m;

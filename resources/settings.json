@@ -1,6 +1,6 @@
 {
   "port": 3001,
   "directory": "/Users/bojan/slajdomat",
-  "ffmpeg": "/usr/local/bin/ffmpeg",
-  "ffprobe": "/usr/local/bin/ffprobe"
+  "ffmpeg": "/opt/homebrew/bin/ffmpeg",
+  "ffprobe": "/opt/homebrew/bin/ffprobe"
 }

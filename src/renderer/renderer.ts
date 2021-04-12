@@ -38,7 +38,7 @@ import {
 
 
 
-import { 
+import {
     PresentationListMessage
 } from '../main/server'
 
@@ -62,25 +62,31 @@ ipcRenderer.on('stop-spin', (event, arg) => {
     }
 
 
-    
+
 })
 
-//we receive the list of presentations in the current folder
-ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
 
-   
-    function nameDiv(type : 'folder' | 'presentation', name : string) {
+
+
+
+
+
+//we receive the list of presentations in the current folder
+ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
+
+
+    function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');
         retval.classList.add('presentation-name');
-        retval.innerHTML = `<i class="material-icons"> ${type == 'folder' ?  'folder_open' : 'zoom_out_map'} </i> ${name}`;
-        
+        retval.innerHTML = `<i class="material-icons"> ${type == 'folder' ? 'folder_open' : 'zoom_out_map'} </i> ${name}`;
+
         return retval;
     }
 
-    function updateButton(name : string) {
+    function updateButton(name: string) {
         const retval = document.createElement('i');
         retval.classList.add('material-icons');
-        retval.innerHTML='trending_up';
+        retval.innerHTML = 'trending_up';
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
             ipcRenderer.send('upgrade', name)
@@ -88,13 +94,13 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
         return retval;
     }
 
-    function revealButton(name : string, type : 'folder' | 'presentation') {
+    function revealButton(name: string, type: 'folder' | 'presentation') {
         const retval = document.createElement('i');
         retval.classList.add('material-icons');
-        retval.innerHTML='folder_open'
+        retval.innerHTML = 'folder_open'
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
-            ipcRenderer.send('reveal-finder', {type : type, name : name})
+            ipcRenderer.send('reveal-finder', { type: type, name: name })
         })
         return retval;
     }
@@ -122,18 +128,17 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
         for (const i of Object.keys(msg.presentations)) {
 
             const li = document.createElement("div");
-            li.classList.add('presentation-line');   
-            const name = nameDiv('presentation',i);
+            li.classList.add('presentation-line');
+            const name = nameDiv('presentation', i);
             li.appendChild(name)
             name.addEventListener('click', () => {
                 ipcRenderer.send('open-viewer', msg.dir + '/' + msg.presentations[i].file + '/index.html')
             })
-            li.appendChild(revealButton(i,'presentation'));
-            if (!msg.presentations[i].updated)
-                {
-                    li.appendChild(updateButton(i));
-                    canUpgrade = true;
-                }
+            li.appendChild(revealButton(i, 'presentation'));
+            if (!msg.presentations[i].updated) {
+                li.appendChild(updateButton(i));
+                canUpgrade = true;
+            }
             ul.appendChild(li);
         }
 
@@ -152,11 +157,9 @@ ipcRenderer.on('presentationList', (event, msg :  PresentationListMessage) => {
     }
     canUpgrade = true;
     const upgradeButton = document.getElementById('upgrade-presentations') as HTMLElement;
-    if (canUpgrade)
-        {upgradeButton.style.display=''}
-    else 
-        {upgradeButton.style.display='none'}
-    
+    if (canUpgrade) { upgradeButton.style.display = '' }
+    else { upgradeButton.style.display = 'none' }
+
 });
 
 
@@ -175,7 +178,7 @@ document.getElementById('toolbar').addEventListener('click', (event) => {
         buttonHTML.innerHTML = 'autorenew';
         buttonHTML.classList.add('myspinner');
     }
-    
+
 
 })
 

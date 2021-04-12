@@ -4,6 +4,7 @@ export{ createMenu}
 import {app,Menu} from 'electron'
 import {openPreferences,openFolder} from './index'
 
+
 function createMenu() : void
 {
 
@@ -34,8 +35,6 @@ const template : any = [
     label: 'File',
     submenu: [
       { label : 'Choose presentations folder', click : () => {openFolder();}, accelerator : 'CommandOrControl+O'},
-      isMac ? { role: 'close' } : { role: 'quit' },
-      
     ]
   },
   // { role: 'editMenu' }

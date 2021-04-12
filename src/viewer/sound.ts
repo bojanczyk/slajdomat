@@ -23,7 +23,6 @@ export {
 import {
     MessageToServerSound,
     MessageToServerLive,
-    EventDescription,
     LiveRecording
 } from './types'
 
@@ -39,8 +38,7 @@ import {
 } from './files'
 
 import {
-    eventDescription,
-    parentEvent,
+    eventDescription
 } from "./event"
 
 import {
@@ -49,8 +47,7 @@ import {
     timelineHTML,
     userAlert
 } from "./html"
-import { allSteps, currentStep, gotoStep, loadNearbySounds, moveHead, OverlayStep, Step, timeline, zoomsIn, ZoomStep } from './timeline'
-import { time } from 'node:console'
+import { allSteps, currentStep, gotoStep, loadNearbySounds, moveHead, Step, timeline} from './timeline'
 
 
 
@@ -121,7 +118,7 @@ let audioChunks: Blob[] = undefined;
 let mediaRecorder: MediaRecorder;
 
 
-function endRecording(direction: -1 | 0 | 1) {
+function endRecording(direction: -1 | 0 | 1) : void {
     if (mediaRecorder == null || mediaRecorder.state != 'recording') return;
 
     let live: boolean;
@@ -166,8 +163,8 @@ function endRecording(direction: -1 | 0 | 1) {
 
     mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunks)
-        const audioURL = window.URL.createObjectURL(audioBlob)
-        const audio = new Audio(audioURL)
+        // const audioURL = window.URL.createObjectURL(audioBlob)
+        // const audio = new Audio(audioURL)
         const fr = new FileReader()
         fr.onload = function (e) {
             async function send() {
@@ -185,7 +182,6 @@ function endRecording(direction: -1 | 0 | 1) {
                                 const man = await getManifest()
                                 manifest.soundDict = man.soundDict;
                                 //add some salt to the audio urls to flush the cache
-                                // console.log('tutaj')
                                 cacheFlush();
                                 initSoundTimeline(undefined);
                                 loadNearbySounds();
@@ -215,7 +211,7 @@ function endRecording(direction: -1 | 0 | 1) {
 //start recording sound
 function soundRecord(live: 'live' | 'event'): void {
 
-    async function promiseSound(step: Step): Promise<void> {
+    async function promiseSound(): Promise<void> {
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true
         })
@@ -227,7 +223,7 @@ function soundRecord(live: 'live' | 'event'): void {
         })
     }
 
-    promiseSound(currentStep()).then(() => {
+    promiseSound().then(() => {
         if (live == 'live')
             soundState = SoundState.Live
         else

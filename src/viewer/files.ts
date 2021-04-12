@@ -59,6 +59,8 @@ async function sendToServer(msg: MessageToServer): Promise<Response> {
 }
 
 
+
+
 //get a json file and parse it
 async function fetchJSON(filename: string): Promise<unknown> {
     try {
@@ -76,7 +78,7 @@ async function fetchJSON(filename: string): Promise<unknown> {
 
 
 
-async function probeServer() {
+async function probeServer() : Promise<boolean> {
     try {
         await fetch(getServer(), {
             method: 'POST',

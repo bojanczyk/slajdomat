@@ -16,11 +16,15 @@ import { addToQueue } from "./loadSVG";
 class Step {
     // subtype: StepSubtype,
     constructor() {
-    };
-    event(): SlideEvent { return manifest.tree };
-    description(): StepDescription { return { type: 'last' } };
-    reverse(): Step { return new Step() };
-    run(mode: 'silent' | 'animated') { };
+        //
+    }
+    event(): SlideEvent { return manifest.tree }
+    description(): StepDescription { return { type: 'last' } }
+    reverse(): Step { return new Step() }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    run(mode: 'silent' | 'animated') : void {  
+        //
+    }
 }
 
 function reverseDir(dir: -1 | 1): -1 | 1 {
@@ -35,18 +39,18 @@ class OverlayStep extends Step {
         this.direction = direction;
         this.overlays = overlays;
     }
-    event() { return this.overlays[0]; }
+    event() : OverlayEvent{ return this.overlays[0]; }
     description(): StepDescription {
         return { type: 'overlays', slide: parentEvent(this.overlays[0]).id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
     }
     reverse(): Step {
         return new OverlayStep(this.overlays, reverseDir(this.direction));
-    };
+    }
     run(mode: 'silent' | 'animated'): void {
         //perform an overlay event
         for (const overlay of this.overlays) {
             runOverlay(overlay, this.direction, mode);
-        };
+        }
     }
 }
 
@@ -70,7 +74,7 @@ class ZoomStep extends Step {
     }
     run(mode: 'silent' | 'animated'): void {
         addToQueue(this.target.children);
-        zoomSlide(this.target);
+        zoomSlide(this.target, mode);
 
         //we open or close the suitable subtree in the left panel, 
         if (parentEvent(this.target) != undefined)
@@ -370,7 +374,7 @@ function gotoEvent(event: SlideEvent): void {
 
 
 
-function loadNearbySounds() {
+function loadNearbySounds() : void {
     loadSound(currentStep());
     //load sound for previous step, which could be useful when moving to the left on the timelines
     if (timeline.past.length > 0)

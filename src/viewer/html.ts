@@ -346,12 +346,17 @@ function soundIcon(): void {
                     else
                         playButton.innerHTML = 'cached';
                 }
-
+                
+                for (const step of allSteps())
+                {
+                    progressCache.get(step).classList.remove('recording');
+                }
                 break;
             }
         case SoundState.Recording:
             playButton.style.color = 'black'
             playButton.innerHTML = "mic"
+            progressCache.get(currentStep()).classList.add('recording');
             break;
         case SoundState.Live:
             playButton.style.color = 'red'
@@ -462,7 +467,7 @@ function updatePageNumber(): void {
 
     updateURL();
 
-    let currentPage = pageNumbers.get(currentStep().event());
+    const currentPage = pageNumbers.get(currentStep().event());
     document.getElementById("page-count-enumerator").innerHTML =
         currentPage.toString();
     document.getElementById("page-count-denominator").innerHTML = " / " +

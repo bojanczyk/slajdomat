@@ -5,12 +5,15 @@
     bottom : 0;
     height : 20px;
     display : flex;
-    align-items: center;
+    align-items: flex-end;
     font-size : 12px;
     cursor: default;
     padding : 0;
 }
 
+.tablet #progress-panel .material-icons {
+    font-size: 40px;
+}
 
 #progress-line {
     height: 100%;
@@ -34,6 +37,10 @@
 
 body.has-sound #progress-line .nosound {
     background-color: lightgray;
+}
+
+#progress-line .recording {
+    background-color:  red;
 }
 
 
