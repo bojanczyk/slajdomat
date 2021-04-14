@@ -62,6 +62,7 @@ function zoomSlide(node: SlideEvent, mode: 'silent' | 'animated' = 'animated'): 
         return " " + rect.x + " " + rect.y + " " + rect.width + " " + rect.height;
     }
     const svgDom = document.getElementById("svg") as SVGSVGElement & HTMLElement;
+
     const viewBox = applyTransform(transforms.get(node), localRect.get(node));
 
     if (mode == 'silent') {

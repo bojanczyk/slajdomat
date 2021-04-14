@@ -333,14 +333,16 @@ async function gotoStep(targetStep: Step, mode: 'silent' | 'animated' = 'animate
     //the events before the step need to be executed and marked as seen
     while (currentStep() != targetStep) {
         const step = timeline.future.pop();
-        step.run('silent');
+        if (step instanceof OverlayStep)
+            step.run('silent');
         markSeen(step, 1);
         timeline.past.push(step);
     }
     //the opposite needs to be done for the remaining events
-    for (const step_3 of timeline.future) {
-        markSeen(step_3, -1);
-        step_3.reverse().run('silent');
+    for (const futureStep of timeline.future) {
+        markSeen(futureStep, -1);
+        if (futureStep instanceof OverlayStep)
+            futureStep.reverse().run('silent');
     }
     if (timeline.lastStep != undefined)
         timelineSeen(timeline.lastStep, false);
