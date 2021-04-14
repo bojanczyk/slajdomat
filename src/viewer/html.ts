@@ -16,7 +16,6 @@ export {
 }
 
 import {
-    pageNumbers,
     parentEvent
 } from './event'
 
@@ -467,11 +466,9 @@ function updatePageNumber(): void {
 
     updateURL();
 
-    const currentPage = pageNumbers.get(currentStep().event());
-    document.getElementById("page-count-enumerator").innerHTML =
-        currentPage.toString();
+    document.getElementById("page-count-enumerator").innerHTML = currentStep().pageNumber.toString();
     document.getElementById("page-count-denominator").innerHTML = " / " +
-        pageNumbers.get(timeline.lastStep.event())
+        timeline.lastStep.pageNumber.toString();
 
 
     // the "previous" arrow should be invisible at the first event of the first slide
