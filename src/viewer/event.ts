@@ -5,7 +5,6 @@ export {
     isOverlay,
     runOverlay,
     eventDescription,
-    pageNumbers,
     findZoomEvent
 }
 
@@ -40,7 +39,6 @@ import { initSoundTimeline } from './sound'
 // (window as any).svgMap = svgMap;
 
 
-const pageNumbers: Map<SlideEvent, number> = new Map();
 
 const parentMap: Map<SlideEvent, ZoomEvent> = new Map();
 function parentEvent(event: SlideEvent): ZoomEvent {
@@ -108,7 +106,6 @@ function createEventTree(): void {
 
     function makeParents(node: SlideEvent, parent: ZoomEvent) {
         parentMap.set(node, parent);
-        pageNumbers.set(node, totalNumberOfPages);
         if (node.type == 'child') {
             totalNumberOfPages ++;
             for (const child of node.children)
@@ -119,7 +116,6 @@ function createEventTree(): void {
     makeParents(manifest.tree, undefined);
 
     //the page number for the root is special, it is the total number of pages
-    pageNumbers.set(manifest.tree, totalNumberOfPages);
     createTreeHTML();
 
     const recorded = getRecordedSteps();

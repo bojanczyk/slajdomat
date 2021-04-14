@@ -22,9 +22,10 @@ class Step {
     description(): StepDescription { return { type: 'last' } }
     reverse(): Step { return new Step() }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    run(mode: 'silent' | 'animated') : void {  
+    run(mode: 'silent' | 'animated'): void {
         //
     }
+    pageNumber: number
 }
 
 function reverseDir(dir: -1 | 1): -1 | 1 {
@@ -39,7 +40,7 @@ class OverlayStep extends Step {
         this.direction = direction;
         this.overlays = overlays;
     }
-    event() : OverlayEvent{ return this.overlays[0]; }
+    event(): OverlayEvent { return this.overlays[0]; }
     description(): StepDescription {
         return { type: 'overlays', slide: parentEvent(this.overlays[0]).id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
     }
@@ -119,6 +120,8 @@ function currentStep(offset = 0): Step {
 function createTimeline(recorded: LiveRecording): void {
 
 
+
+
     //creates the timeline based on the recorded sequence of steps
     function createTimelineFromRecording() {
         timeline.type = 'recorded';
@@ -196,14 +199,25 @@ function createTimeline(recorded: LiveRecording): void {
     }
 
 
-    if (recorded == undefined)
+    if (recorded == undefined) {
         createTimelineFromEvents(manifest.tree);
+    }
     else
         createTimelineFromRecording()
 
     //it was more convenient to create the past of the timeline, because we could append by doing push(). However, the timeline should begin with all steps in the future.
     resetTimeline();
 
+    //we compute the page numbers. The page number is the number of distinct preceding zoom in events
+    const seen: Set<ZoomEvent> = new Set();
+    let pageCount = 1;
+    for (const step of allSteps()) {
+        step.pageNumber = pageCount;
+        if (step instanceof ZoomStep && !seen.has(step.target) && zoomsIn(step)) {
+            pageCount++;
+            seen.add(step.target);
+        }
+    }
 }
 
 //is this a future slide
@@ -252,11 +266,12 @@ function zoomsIn(step: Step): boolean {
 
 
 
+
 //move to the next or previous event in the timeline
 function moveHead(direction: -1 | 1): void {
     let source, target: Step[];
 
-    
+
 
     //depending on the direction, we will shift an event from future to past or in the other direction
     if (direction == 1) {
@@ -274,7 +289,7 @@ function moveHead(direction: -1 | 1): void {
 
     //if there is a recording going on, it should be stopped
     endRecording(direction);
-    
+
     //move the step from the source to target
     let step = source.pop();
     target.push(step);
@@ -367,7 +382,7 @@ function gotoEvent(event: SlideEvent): void {
     if (step != undefined)
         //goto step goes to before the event, so we need to go one further
         gotoStep(step).then(() => moveHead(1));
-    else 
+    else
         console.log('this event has no associated step', event)
 }
 
@@ -376,7 +391,7 @@ function gotoEvent(event: SlideEvent): void {
 
 
 
-function loadNearbySounds() : void {
+function loadNearbySounds(): void {
     loadSound(currentStep());
     //load sound for previous step, which could be useful when moving to the left on the timelines
     if (timeline.past.length > 0)
