@@ -7,6 +7,7 @@ import { markSeen, openPanelTree, openPanelTreeRec, soundIcon, timelineSeen } fr
 import { manifest, updatePageNumber } from "./viewer";
 import { endRecording, loadSound } from "./sound";
 import { addToQueue } from "./loadSVG";
+ 
 
 
 
@@ -218,6 +219,7 @@ function createTimeline(recorded: LiveRecording): void {
             seen.add(step.target);
         }
     }
+    timeline.lastStep.pageNumber = pageCount;
 }
 
 //is this a future slide

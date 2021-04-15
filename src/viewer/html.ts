@@ -467,6 +467,7 @@ function updatePageNumber(): void {
     updateURL();
 
     document.getElementById("page-count-enumerator").innerHTML = currentStep().pageNumber.toString();
+
     document.getElementById("page-count-denominator").innerHTML = " / " +
         timeline.lastStep.pageNumber.toString();
 
