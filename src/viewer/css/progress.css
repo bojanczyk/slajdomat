@@ -43,6 +43,9 @@ body.has-sound #progress-line .nosound {
     background-color:  red;
 }
 
+body.has-sound #progress-line .nosound.recording {
+    background-color:  red;
+}
 
 .progress-filler {
     height: 100%;
