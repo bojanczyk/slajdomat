@@ -1,9 +1,9 @@
 
 export { addToQueue, svgMap, localRect, transforms }
-import { isOverlay, parentEvent, zoomSlide } from './event';
+import { isOverlay, zoomSlide } from './event';
 import { fileName } from './files';
 import { markDisabled, removeLoading, userAlert } from './html';
-import { futureSlide } from './timeline';
+import { allSteps, futureSlide, OverlayStep } from './timeline';
 import { applyTransform, getBoundRect, getTransform, idTransform, Transform, transformToString } from './transform';
 import {
     SlideEvent, ZoomEvent
@@ -38,11 +38,11 @@ function addToQueue(slides: SlideEvent[]): Promise<void> {
         loadStruct.onError.push(reject);
         for (const slide of slides) {
             if (slide.type == 'child') {
-                let ancestor : SlideEvent = slide;
+                let ancestor: SlideEvent = slide;
                 while (ancestor != undefined && svgMap.get(ancestor) == undefined) {
                     if (!loadStruct.waiting.has(ancestor) && !loadStruct.loading.has(ancestor))
                         loadStruct.waiting.add(slide);
-                    ancestor = parentEvent(ancestor);
+                    ancestor = ancestor.parent;
                 }
             }
         }
@@ -55,7 +55,7 @@ function processQueue() {
     const newWaiting = new Set() as Set<ZoomEvent>
     for (const slide of loadStruct.waiting) {
         //we start loading those slides which are either the root, or have a loaded parent
-        if (parentEvent(slide) == undefined || svgMap.get(parentEvent(slide)) != undefined) {
+        if (slide.parent == undefined || svgMap.get(slide.parent) != undefined) {
             //ready to load svg
             const ob = document.createElement("object");
             const file = fileName(slide.id, 'image.svg');
@@ -131,29 +131,23 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
                     svgChild.style.opacity = '0';
 
 
-        
+
         //set initial visibility of overlays, which is done differently depending on whether the slide is in the past or in the future
-        const future = futureSlide(slide);
-
-        for (const svgChild of svgChildren) {
-            if (future) {
-                //if the slide is in the future, then an overlay should be made invisible if its first event is show
-                for (const eventChild of slide.children)
-                if (svgChild.id == eventChild.id && eventChild.type == 'show') {
-                    svgChild.style.opacity = '0';
-                    break;
-                } 
+        if (!futureSlide(slide)) {
+            for (const step of allSteps()) {
+                if (step instanceof OverlayStep &&
+                    step.event().parent == slide)
+                    step.run('silent');
             }
-            else {
-                //if the slide is in the past, then an overlay should be made invisible if its last event is hide
-                for (const eventChild of slide.children.slice().reverse())
-                if (svgChild.id == eventChild.id && eventChild.type == 'hide') {
-                    svgChild.style.opacity = '0';
-                    break;
-                }
-            }
-
         }
+        else {
+            for (const step of allSteps().reverse()) {
+                if (step instanceof OverlayStep &&
+                    step.event().parent == slide)
+                    step.reverse().run('silent');
+            }
+        }
+
 
         //remove the loading style (red) from the tree view
         removeLoading(slide);
@@ -181,11 +175,11 @@ function attachSVG(node: SlideEvent) {
     const svg = svgMap.get(node);
     localRect.set(node, getBoundRect(svg));
     //compute the transformation with respect to the local coordinates of the parent
-    if (parentEvent(node) == undefined) {
+    if (node.parent == undefined) {
         transforms.set(node, idTransform());
     } else {
         let placeholder: Rect;
-        for (const s of svgMap.get(parentEvent(node)).children)
+        for (const s of svgMap.get(node.parent).children)
             if (s.id == node.id) {
                 //s is the child link. This could be a group, or a rectangle. We find the dimensions by searching for a rectangle, which could be s or one of its children (the latter happens when s is a group that contains other stuff).
                 let rect: SVGRectElement = null;
@@ -204,7 +198,7 @@ function attachSVG(node: SlideEvent) {
                 };
             }
 
-        const target = applyTransform(transforms.get(parentEvent(node)), placeholder);
+        const target = applyTransform(transforms.get(node.parent), placeholder);
         const transform = getTransform(localRect.get(node), target);
         transforms.set(node, transform);
     }
@@ -212,11 +206,12 @@ function attachSVG(node: SlideEvent) {
     document.getElementById("svg").appendChild(svg);
     if (svgdefs.get(node) != undefined)
         document.getElementById("svg").appendChild(svgdefs.get(node));
-    
+
     //after loading the root of the event tree, we zoom to the right place immediately, without animation
-    if (parentEvent(node)== undefined) 
-        {zoomSlide(node,'silent');
-        updatePageNumber()}
+    if (node.parent == undefined) {
+        zoomSlide(node, 'silent');
+        updatePageNumber()
+    }
 
 }
 

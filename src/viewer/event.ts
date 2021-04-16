@@ -1,6 +1,5 @@
 export {
     createEventTree,
-    parentEvent,
     zoomSlide,
     isOverlay,
     runOverlay,
@@ -10,13 +9,10 @@ export {
 
 import {
     EventDescription,
-    LiveRecording,
     SlideEvent, ZoomEvent
 } from './types'
 
-import {
-    createTreeHTML, timelineHTML
-} from './html'
+
 
 import {
     manifest
@@ -30,20 +26,15 @@ import {
 import {
     TimelineMax, gsap
 } from "gsap";
-import { createTimeline, OverlayStep, Step, zoomsIn, ZoomStep } from './timeline'
+import {OverlayStep, Step, zoomsIn, ZoomStep } from './timeline'
 import { localRect, transforms, svgMap } from './loadSVG'
-import { initSoundTimeline } from './sound'
+
 
 
 //this is how we can access variables in the browser console
 // (window as any).svgMap = svgMap;
 
 
-
-const parentMap: Map<SlideEvent, ZoomEvent> = new Map();
-function parentEvent(event: SlideEvent): ZoomEvent {
-    return parentMap.get(event);
-}
 
 
 
@@ -100,14 +91,12 @@ function runOverlay(overlay: SlideEvent, direction: number, silent: string): voi
 }
 
 
-//creates the tree of slides and events, without adding the svg objects yet, and initalises page numbers
+//creates the tree of slides and events, without adding the svg objects yet, and initalizes page numbers
 function createEventTree(): void {
-    let totalNumberOfPages = 0;
 
     function makeParents(node: SlideEvent, parent: ZoomEvent) {
-        parentMap.set(node, parent);
+        node.parent = parent;
         if (node.type == 'child') {
-            totalNumberOfPages ++;
             for (const child of node.children)
                 makeParents(child, node);
         }
@@ -115,28 +104,14 @@ function createEventTree(): void {
 
     makeParents(manifest.tree, undefined);
 
-    //the page number for the root is special, it is the total number of pages
-    createTreeHTML();
+    
 
-    const recorded = getRecordedSteps();
-    createTimeline(recorded);
-    initSoundTimeline(recorded);
-
-    //creates the timeline html at the bottom of the screen
-    timelineHTML();
+    
 }
 
 
 
-function getRecordedSteps() : LiveRecording {
-    const searchParams = (new URL(window.location.href)).searchParams;    
-    try {
-        const i = parseInt(searchParams.get('live'));
-        return manifest.live[i];
-    } catch (e) {
-        return undefined;
-    }
-}
+
 
 
 
@@ -145,7 +120,7 @@ function eventDescription(step: Step): EventDescription {
         type : 'event',
         slideId: undefined as string, eventId: undefined as string };
     if (step instanceof OverlayStep) {
-        retval.slideId = parentEvent(step.overlays[0]).id;
+        retval.slideId = step.overlays[0].parent.id;
         retval.eventId = step.overlays[0].eventId;
     }
     else if (step instanceof ZoomStep) {

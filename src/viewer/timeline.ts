@@ -1,6 +1,6 @@
 export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, allSteps, loadNearbySounds }
 
-import { findZoomEvent, isOverlay, parentEvent, runOverlay, zoomSlide, } from "./event";
+import { findZoomEvent, isOverlay,  runOverlay, zoomSlide, } from "./event";
 import { LiveRecording, OverlayEvent, SlideEvent, StepDescription, ZoomEvent } from "./types";
 
 import { markSeen, openPanelTree, openPanelTreeRec, soundIcon, timelineSeen } from "./html";
@@ -43,7 +43,7 @@ class OverlayStep extends Step {
     }
     event(): OverlayEvent { return this.overlays[0]; }
     description(): StepDescription {
-        return { type: 'overlays', slide: parentEvent(this.overlays[0]).id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
+        return { type: 'overlays', slide: this.overlays[0].parent.id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
     }
     reverse(): Step {
         return new OverlayStep(this.overlays, reverseDir(this.direction));
@@ -79,9 +79,9 @@ class ZoomStep extends Step {
         zoomSlide(this.target, mode);
 
         //we open or close the suitable subtree in the left panel, 
-        if (parentEvent(this.target) != undefined)
+        if (this.target.parent != undefined)
             openPanelTree(this.target, true);
-        if (this.source != parentEvent(this.target))
+        if (this.source != this.target.parent)
             openPanelTree(this.source, false);
     }
 }
@@ -258,7 +258,7 @@ function eventToStep(event: SlideEvent): Step {
 //says if the step is an overlay that is zooming in
 function zoomsIn(step: Step): boolean {
     if (step instanceof ZoomStep) {
-        return step.source == parentEvent(step.target);
+        return step.source == step.target.parent;
     }
     else
         return false;
@@ -335,13 +335,13 @@ async function gotoStep(targetStep: Step, mode: 'silent' | 'animated' = 'animate
     if (slide.type == 'child')
         ancestor = slide;
     else
-        ancestor = parentEvent(slide);
+        ancestor = slide.parent;
     while (ancestor != undefined) {
         slidesToLoad.push(ancestor);
         for (const cousin of ancestor.children)
             if (cousin.type == 'child')
                 slidesToLoad.push(cousin);
-        ancestor = parentEvent(ancestor);
+        ancestor = ancestor.parent;
     }
 
     await addToQueue(slidesToLoad);
@@ -366,7 +366,7 @@ async function gotoStep(targetStep: Step, mode: 'silent' | 'animated' = 'animate
 
     let zoom = slide;
     if (slide.type != 'child')
-        zoom = parentEvent(slide);
+        zoom = slide.parent;
 
     if (mode == 'silent')
         zoomSlide(zoom, 'silent')

@@ -2,6 +2,7 @@ import { Database } from "../plugin/plugin-types"
 
 
 
+
 export {
     SlideEvent,
     OverlayEvent,
@@ -32,7 +33,10 @@ interface GenericEvent {
     //keywords for searching slides
     keywords: string[],
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
-    eventId: string
+    eventId: string,
+    //the parent of the event. This is only written on the viewer side, because it gets lost in the conversion to json
+    parent? : ZoomEvent
+
 }
 interface ShowHideEvent extends GenericEvent {
     type: 'show' | 'hide' 

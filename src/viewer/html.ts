@@ -1,5 +1,4 @@
 export {
-    createTreeHTML,
     markSeen,
     audioPlaying,
     updateTimelineDisplay,
@@ -10,14 +9,11 @@ export {
     updatePageNumber,
     userAlert,
     markDisabled,
-    timelineHTML,
     soundIcon,
     timelineSeen
 }
 
-import {
-    parentEvent
-} from './event'
+
 
 
 import {
@@ -89,12 +85,12 @@ function createTreeHTML(): void {
             }
         }
         divOpen.set(event, false);
-        if (parentEvent(event) == undefined) {
+        if (event.parent == undefined) {
             subtreeDivCache.set(event, document.getElementById('slide-stack') as HTMLDivElement);
         } else if (event.merged && event.type != 'child') {
             //merged events get no items in the tree view
         } else {
-            const parentDiv = subtreeDivCache.get(parentEvent(event));
+            const parentDiv = subtreeDivCache.get(event.parent);
             const div = document.createElement("div");
             divCache.set(event, div);
             div.classList.add("tree-view-item");
@@ -140,7 +136,7 @@ function timelineHTML(): void {
 
     progressCache.clear();
 
-    
+
 
 
     const timelineDIV = document.getElementById('progress-line');
@@ -254,12 +250,12 @@ function openPanelTree(event: SlideEvent, open: boolean): void {
 
 //unfolds the tree in the left panel for this event and its parents
 function openPanelTreeRec(event: SlideEvent): void {
-    if (parentEvent(event) == undefined)
+    if (event.parent == undefined)
         return;
     if (event.type == 'child') {
         openPanelTree(event, true);
     }
-    openPanelTreeRec(parentEvent(event));
+    openPanelTreeRec(event.parent);
 }
 
 
@@ -345,9 +341,8 @@ function soundIcon(): void {
                     else
                         playButton.innerHTML = 'cached';
                 }
-                
-                for (const step of allSteps())
-                {
+
+                for (const step of allSteps()) {
                     progressCache.get(step).classList.remove('recording');
                 }
                 break;
@@ -360,7 +355,7 @@ function soundIcon(): void {
         case SoundState.Live:
             playButton.style.color = 'red'
             playButton.innerHTML = "mic_none"
-            
+
             break;
     }
 
@@ -407,6 +402,11 @@ function initPanels(): void {
     document.getElementById('play-button').addEventListener('click', playButton);
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
+
+
+    createTreeHTML();
+    //creates the timeline html at the bottom of the screen
+    timelineHTML();
 
     initSearch();
 
