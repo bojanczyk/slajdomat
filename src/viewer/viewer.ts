@@ -34,7 +34,8 @@ import {
     soundPaused,
     endOfSound,
     SoundState,
-    soundLive
+    soundLive,
+    initSoundTimeline
 } from "./sound"
 
 import {
@@ -44,18 +45,18 @@ import {
 } from './files'
 
 import {
+    LiveRecording,
     Manifest
 } from "./types";
 import {
     toggleSketchpad
 } from "./sketchpad";
-import { currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
+import { createTimeline, currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
 
 // import { exportPdf } from './print'
 
 
 let manifest: Manifest;
-
 
 //check the user agent for chrome
 //at the moment, this is not used
@@ -226,7 +227,7 @@ function getManifest(): Promise<Manifest> {
 
 let serverConnectedVar = false;
 
-function serverConnected() : boolean {
+function serverConnected(): boolean {
     return serverConnectedVar;
 }
 
@@ -240,7 +241,18 @@ function checkFeatures() {
         document.body.classList.add('tablet');
 
     //if we are connected to the server, then 
-    probeServer().then(v => {serverConnectedVar = v});
+    probeServer().then(v => { serverConnectedVar = v });
+}
+
+
+function getRecordedSteps(): LiveRecording {
+    const searchParams = (new URL(window.location.href)).searchParams;
+    try {
+        const i = parseInt(searchParams.get('live'));
+        return manifest.live[i];
+    } catch (e) {
+        return undefined;
+    }
 }
 
 //startup code
@@ -258,9 +270,23 @@ window.onload = function (): void {
     getManifest().then(m => {
         manifest = m;
         document.title = manifest.presentation;
+
+        //sets up the event tree, currently this just means defining the parent properties
         createEventTree();
-        document.addEventListener("keydown", keyListener);
+
+        //if the url had a live timeline, then get it
+        const recorded = getRecordedSteps();
+        //initialize the steps in the timeline
+        createTimeline(recorded);
+        //add the sound data, especially durations
+        initSoundTimeline(recorded);
+
+        //set up the left and bottom html panels
         initPanels();
+        //event listener for keys
+        document.addEventListener("keydown", keyListener);
+
+        //start the presentation, using the step from the url, or the first step by default 
         const step = getStepFromURL();
         gotoStep(step).then(() => { (document.getElementById('svg') as HTMLDivElement).style.opacity = '1' });
     }).catch((e) => userAlert(e))
