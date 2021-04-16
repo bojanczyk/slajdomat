@@ -57,8 +57,8 @@ function probeServer(): void {
       type: 'probe'
     })
   }).
-  then(() => {
-    statusDiv.innerHTML =  "Status: connected."
+    then(() => {
+      statusDiv.innerHTML = "Status: connected."
     })
     .catch(() => {
       statusDiv.innerHTML = "Status: not connected."
@@ -70,7 +70,7 @@ function probeServer(): void {
 function getSettings(settings: PluginSettings): void {
   //create the matematyk panel, which allows to make latex and math symbols
 
-  
+
   pluginSettings = settings;
   probeServer();
 
@@ -162,15 +162,15 @@ function savePresentation(presentation: {
   slideList: {
     database: Database;
     svg: Uint8Array;
-  } [],
+  }[],
   tree: SlideEvent
 }): void {
   //for some reason, TextDecoder does not work on the plugin side
 
-  const newSlideList:  {
+  const newSlideList: {
     database: Database,
     svg: string
-  } [] = [];
+  }[] = [];
 
   for (const slide of presentation.slideList) {
     newSlideList.push({
@@ -186,9 +186,9 @@ function savePresentation(presentation: {
       presentation: presentation.name,
       slideList: newSlideList,
       tree: presentation.tree
-    }) 
+    })
   }).
-  then(() => {
+    then(() => {
       exportWaiting(false);
       notify("Successfully exported slides to the Slajdomat app.")
     })
@@ -532,7 +532,7 @@ function showEventsClicked(id: string): void {
 function dropDownContents(slides: {
   name: string,
   id: string
-} []): void {
+}[]): void {
 
   const zoomDropdown = document.getElementById('dropdown-zoom');
 
@@ -638,7 +638,7 @@ onmessage =
         showColumn(WindowMode.NoSlide);
         break;
 
-        //receive the settings 
+      //receive the settings 
       case 'settings':
         getSettings(msg.settings);
         break;
@@ -647,22 +647,22 @@ onmessage =
         fetchLatex(msg.url);
         break;
 
-        //get the list of events for the current slide
+      //get the list of events for the current slide
       case 'eventList':
         eventList(msg.events);
         break;
 
-        //sends the svg files to the server. Apparently this cannot be done on the plugin side, since it requires internet connectivity.
+      //sends the svg files to the server. Apparently this cannot be done on the plugin side, since it requires internet connectivity.
       case 'savePresentation':
         savePresentation(msg);
         break;
 
-        //the selection has been updated. This is used to disable or not items in the toolbar that make sense only if there is a selection
+      //the selection has been updated. This is used to disable or not items in the toolbar that make sense only if there is a selection
       case 'selChange':
         selChange(msg);
         break;
 
-        //get the dropdown contents
+      //get the dropdown contents
       case 'dropDownContents':
         dropDownContents(msg.slides);
         break;
@@ -686,9 +686,10 @@ document.addEventListener('click', (event: MouseEvent) => {
     case 'export-slides':
       //the toolbar button to export slides
       exportWaiting(true);
-      postMessage({
+      //this is a new hack: I sleep for 10ms before calling save file. This is meant to solve the problem that, sometimes, the spinner only starts to run late in the loading process.
+      setTimeout(() => postMessage({
         type: 'saveFile'
-      });
+      }), 10);
       break;
 
     case 'parent-button':
@@ -746,7 +747,7 @@ document.addEventListener('click', (event: MouseEvent) => {
 
 
     default:
-      //do nothing
+    //do nothing
 
   }
 });
@@ -770,7 +771,7 @@ document.addEventListener("drop", dragDrop);
 document.getElementById('settings-column').addEventListener('change',
   function () {
 
-    
+
     pluginSettings.mathFontSize = parseInt((document.getElementById('math-font-size-select') as HTMLSelectElement).value) / 100;
 
     if ((document.getElementById('matematyk-checkbox') as HTMLInputElement).checked) {
@@ -779,11 +780,11 @@ document.getElementById('settings-column').addEventListener('change',
       document.getElementById('matematyk').style.display = 'none'
     }
     pluginSettings.active = (document.getElementById('matematyk-checkbox') as HTMLInputElement).checked;
-    
 
-    pluginSettings.serverURL =(document.getElementById('server-url') as HTMLInputElement).value;
 
-    pluginSettings.latexitURL =(document.getElementById('latexit-url') as HTMLInputElement).value;
+    pluginSettings.serverURL = (document.getElementById('server-url') as HTMLInputElement).value;
+
+    pluginSettings.latexitURL = (document.getElementById('latexit-url') as HTMLInputElement).value;
 
     sendSettings();
 
