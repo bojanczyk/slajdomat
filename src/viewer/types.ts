@@ -74,10 +74,10 @@ interface Manifest {
 interface LiveRecording {
     date: string,
     dir: string,
-    steps: { step: StepDescription, duration: number }[]
+    steps: { step: StepDescription, duration: number}[]
 }
 
-type StepDescription =  { type : 'zoom', source : string, target : string } | {type : 'overlays', slide : string,  overlays : string[], direction : 1 | -1} | {type : 'last'}
+type StepDescription =  { type : 'zoom', page : number,  source : string, target : string } | {type : 'overlays', page : number,  slide : string,  overlays : string[], direction : 1 | -1} | {type : 'last', page : number}
     
 type EventDescription = {type : 'event', slideId : string, eventId : string}
 
