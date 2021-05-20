@@ -1,4 +1,5 @@
 #!/bin/bash
 
-echo Copying the resources to the app
-cp -r resources out/Slajdomat-darwin-x64/Slajdomat.app/Contents/Resources/app/
+echo Copying the resources to $1
+mkdir -p $1 
+cp -r resources $1 
