@@ -9,10 +9,10 @@ The workflow is that you use the plugin to impose a tree structure on a drawing 
 
 
 
---- HOW TO INSTALL
+--- HOW TO BUILD
 
-After installing Node.js run:
+Requires Node.js. Execute
 
-npm run installdev
+npm run prepare
 npm run make
 

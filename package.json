@@ -5,7 +5,7 @@
   "description": "A slide making program, which plugs into Figma",
   "main": ".webpack/main",
   "scripts": {
-    "installdev": "npm --production install && npm install run-script-os",
+    "prepare": "npm install run-script-os",
     "make": "electron-forge package && webpack && run-script-os",
     "make:darwin": "bash src/plugin/make-plugin-ui.sh && bash src/main/post-electron.sh out/Slajdomat-darwin-x64/Slajdomat.app/Contents/Resources/app/",
     "make:linux": "bash src/plugin/make-plugin-ui.sh && bash src/main/post-electron.sh out/Slajdomat-linux-x64/resources/app/",
