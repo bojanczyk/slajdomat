@@ -14,5 +14,6 @@ The workflow is that you use the plugin to impose a tree structure on a drawing 
 Requires Node.js. Execute
 
 npm run prepare
+
 npm run make
 
