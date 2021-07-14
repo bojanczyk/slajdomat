@@ -35,6 +35,16 @@ const template : any = [
     label: 'File',
     submenu: [
       { label : 'Choose presentations folder', click : () => {openFolder();}, accelerator : 'CommandOrControl+O'},
+
+      // add Preferences to File menu for non-Mac OS 
+      ...(isMac ? [] : [
+      { label : 'Preferences', click : () => {openPreferences()} , accelerator : 'CommandOrControl+.'},
+      { type: 'separator' },
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'quit' }
+      ])  
+      
     ]
   },
   // { role: 'editMenu' }

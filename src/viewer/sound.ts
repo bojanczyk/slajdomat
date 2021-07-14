@@ -157,7 +157,7 @@ function endRecording(direction: -1 | 0 | 1) : void {
                     break;
                 }
             case 0:
-                retval.forWhat.description = { type: 'last' };
+                retval.forWhat.description = { type: 'last' , page : currentStep().pageNumber};
         }
     }
 

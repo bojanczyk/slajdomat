@@ -1,13 +1,13 @@
 export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, allSteps, loadNearbySounds }
 
-import { findZoomEvent, isOverlay,  runOverlay, zoomSlide, } from "./event";
+import { findZoomEvent, isOverlay, runOverlay, zoomSlide, } from "./event";
 import { LiveRecording, OverlayEvent, SlideEvent, StepDescription, ZoomEvent } from "./types";
 
 import { markSeen, openPanelTree, openPanelTreeRec, soundIcon, timelineSeen } from "./html";
 import { manifest, updatePageNumber } from "./viewer";
 import { endRecording, loadSound } from "./sound";
 import { addToQueue } from "./loadSVG";
- 
+
 
 
 
@@ -20,7 +20,7 @@ class Step {
         //
     }
     event(): SlideEvent { return manifest.tree }
-    description(): StepDescription { return { type: 'last' } }
+    description(): StepDescription { return { type: 'last', page: this.pageNumber } }
     reverse(): Step { return new Step() }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(mode: 'silent' | 'animated'): void {
@@ -43,7 +43,7 @@ class OverlayStep extends Step {
     }
     event(): OverlayEvent { return this.overlays[0]; }
     description(): StepDescription {
-        return { type: 'overlays', slide: this.overlays[0].parent.id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
+        return { type: 'overlays', page: this.pageNumber, slide: this.overlays[0].parent.id, direction: this.direction, overlays: this.overlays.map((o => o.eventId)) }
     }
     reverse(): Step {
         return new OverlayStep(this.overlays, reverseDir(this.direction));
@@ -72,7 +72,7 @@ class ZoomStep extends Step {
         return this.source;
     }
     description(): StepDescription {
-        return { type: 'zoom', source: this.source.id, target: this.target.id }
+        return { type: 'zoom', page: this.pageNumber, source: this.source.id, target: this.target.id }
     }
     run(mode: 'silent' | 'animated'): void {
         addToQueue(this.target.children);
@@ -147,6 +147,7 @@ function createTimeline(recorded: LiveRecording): void {
                 case 'last':
                     step = new Step();
             }
+            step.pageNumber = description.step.page;
             timeline.past.push(step);
         }
         timeline.lastStep = timeline.past.pop();
@@ -209,17 +210,19 @@ function createTimeline(recorded: LiveRecording): void {
     //it was more convenient to create the past of the timeline, because we could append by doing push(). However, the timeline should begin with all steps in the future.
     resetTimeline();
 
-    //we compute the page numbers. The page number is the number of distinct preceding zoom in events
-    const seen: Set<ZoomEvent> = new Set();
-    let pageCount = 1;
-    for (const step of allSteps()) {
-        step.pageNumber = pageCount;
-        if (step instanceof ZoomStep && !seen.has(step.target) && zoomsIn(step)) {
-            pageCount++;
-            seen.add(step.target);
+    if (recorded == undefined) {
+        //if we had a live recording, then the page numbers have been loaded from the file. Otherwise, we need to  compute the page numbers. The page number is the number of distinct preceding zoom in events
+        const seen: Set<ZoomEvent> = new Set();
+        let pageCount = 1;
+        for (const step of allSteps()) {
+            step.pageNumber = pageCount;
+            if (step instanceof ZoomStep && !seen.has(step.target) && zoomsIn(step)) {
+                pageCount++;
+                seen.add(step.target);
+            }
         }
+        timeline.lastStep.pageNumber = pageCount;
     }
-    timeline.lastStep.pageNumber = pageCount;
 }
 
 //is this a future slide

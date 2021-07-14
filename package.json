@@ -1,13 +1,22 @@
 {
   "name": "slajdomat",
   "productName": "Slajdomat",
-  "version": "0.92",
+  "version": "0.921",
   "description": "A slide making program, which plugs into Figma",
   "main": ".webpack/main",
   "scripts": {
+    "prepare": "npm install run-script-os",
+    "make": "electron-forge package && webpack && run-script-os",
+    "make:darwin": "bash src/plugin/make-plugin-ui.sh && bash src/main/post-electron.sh out/Slajdomat-darwin-x64/Slajdomat.app/Contents/Resources/app/",
+    "make:linux": "bash src/plugin/make-plugin-ui.sh && bash src/main/post-electron.sh out/Slajdomat-linux-x64/resources/app/",
+    "make:win32": "src\\plugin\\make-plugin-ui.sh && src\\main\\post-electron.sh out/Slajdomat-win32-x64/resources/app/",
+    "make:default": "echo Which platform??",
     "start": "electron-forge start",
-    "package": "electron-forge package;  bash src/main/post-electron.sh",
-    "make": "electron-forge package; webpack; bash src/plugin/make-plugin-ui.sh; bash src/main/post-electron.sh",
+    "package": "electron-forge package && run-script-os",
+    "package:darwin": "bash src/main/post-electron.sh out/Slajdomat-darwin-x64/Slajdomat.app/Contents/Resources/app/",
+    "package:linux": "bash src/main/post-electron.sh out/Slajdomat-linux-x64/resources/app/",
+    "package:win32": "src\\main\\post-electron.sh out/Slajdomat-win32-x64/resources/app/",
+    "package:default": "echo Which platform??",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts .",
     "webpack": "webpack",
@@ -121,6 +130,7 @@
     "nodemon": "^2.0.7",
     "npm-watch": "^0.7.0",
     "path": "^0.12.7",
+    "run-script-os": "^1.1.6",
     "url-loader": "^4.1.1",
     "webpack": "^5.24.2"
   }
