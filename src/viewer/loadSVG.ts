@@ -105,7 +105,17 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
             if (child.nodeName == 'defs') {
                 const defs = child as SVGDefsElement;
                 svgdefs.set(slide, defs);
-                cleanDefs(defs) // this function is a hack, it removes clip masks from the definitions
+                cleanDefs(defs, slide) // this function is a hack, it removes clip masks from the definitions
+            }
+            //if an image is used, then its id needs to be changed (the reason for this is explained in the comments for cleanDefs, see below)
+            for (const r of svg.getElementsByTagName('rect'))
+            {   
+                let fill = r.getAttribute('fill');
+                if (fill.startsWith('url(#pattern')) //this code will break if some slide has an id starting with pattern
+                {
+                    //if the rectangle has a fill with an image, then the url of that image needs to be prepended with the slide name
+                    r.setAttribute('fill', fill.slice(0, 5) + slide.id + fill.slice(5));
+                }
             }
         }
 
@@ -216,10 +226,28 @@ function attachSVG(node: SlideEvent) {
 }
 
 
-//this function is an ugly hack. In the current situation, clip masks are mis-applied. This could be because their coordinates are not localized, but for the moment I just delete all clip masks
-function cleanDefs(svg: SVGElement): void {
-    for (const c of svg.childNodes) {
-        if (c.nodeName == 'clipPath')
-            c.remove();
+//each slide has its definitions, but they use the same id's, e.g. 'image0' is used in every slide that has an image. As a result all images would point to the last occurrence of image0 in the document. Probably there is a namespace way to fix this, but since I do not understand namespaces, I simply prepend the slide id to every id in the definitions. 
+function cleanDefs(svg: SVGElement, slide : ZoomEvent): void {
+    for (const c  of svg.childNodes) {
+        let child = c as SVGElement;
+        child.id = slide.id + child.id;
+
+        //the following two lines might not make sense any more, I forgot why they were needed
+        if (child.nodeName == 'clipPath')
+            child.remove(); 
+
+        //As far as I know, the id's in the defs are references in two places: inside the defs in a 'use' tag, which is fixed below, and inside rects in the slide itself, which is treated earlier. 
+        if (child.nodeName == 'pattern')
+        {
+
+            for (const use of child.getElementsByTagName('use'))
+                {
+                    const oldLink = use.getAttribute('xlink:href');
+                    const newLink = '#' + slide.id + oldLink.slice(1);
+                    use.setAttribute('xlink:href', newLink);
+                }
+        }
+        
+            
     }
 }

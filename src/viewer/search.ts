@@ -7,7 +7,6 @@ export {
 
 
 import Fuse from 'fuse.js'
-import { parentEvent } from './event'
 import { gotoEvent } from './timeline'
 import { SlideEvent } from './types'
 import { manifest } from './viewer'
@@ -58,7 +57,7 @@ function searchType(): void {
         if (event.type == 'child')
             name = event.name;
         else
-            name = parentEvent(event).name;
+            name = event.parent.name;
 
         const oneResult = document.createElement('div');
         oneResult.classList.add('one-result');

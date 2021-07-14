@@ -10,7 +10,8 @@ export {
     userAlert,
     markDisabled,
     soundIcon,
-    timelineSeen
+    timelineSeen,
+    timelineHTML
 }
 
 
