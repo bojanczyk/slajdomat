@@ -348,7 +348,7 @@ function createEvent(eventInfo: {
     }
 
     if (eventInfo.subtype == 'show' || eventInfo.subtype == 'hide') {
-        const selected = figma.currentPage.selection;
+        
 
         let sorted: SceneNode[] = [];
 
@@ -356,7 +356,7 @@ function createEvent(eventInfo: {
         const xarray = [] as number[];
         const yarray = [] as number[];
 
-        for (const item of selected) {
+        for (const item of figma.currentPage.selection) {
             if (isShowHideNode(item)) {
                 xarray.push(item.x);
                 yarray.push(item.y);
@@ -529,8 +529,10 @@ function overlayId(node: SceneNode) {
         if (!isSlideNode(slide))
             throw 'asked for overlay id of a node that is not a child of a slide';
 
-        
-        retval = freshName(sanitize(node.name), avoidList(slide))
+         
+        retval = freshName(sanitize(node.name), avoidList(slide));
+        //save the name in the node
+        node.setPluginData('id',retval);
     }
     return retval;
 }
