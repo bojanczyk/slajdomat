@@ -236,8 +236,7 @@ function checkFeatures() {
 
     //if a tablet is used, then we enable the tablet style, which makes the play buttons bigger
     if (('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0) ||
-        (navigator.msMaxTouchPoints > 0))
+        (navigator.maxTouchPoints > 0))
         document.body.classList.add('tablet');
 
     //if we are connected to the server, then 
