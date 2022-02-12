@@ -172,10 +172,12 @@ function keyListener(event: KeyboardEvent) {
 
         switch (event.key) {
             case 'ArrowRight':
+            case 'ArrowDown':
                 nextButton();
                 break;
 
             case 'ArrowLeft':
+            case 'ArrowUp':
                 prevButton();
                 break;
 
