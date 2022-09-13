@@ -194,22 +194,18 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
         // we also need to fix a bug related to SVG <a href=...> nodes:
         // the export function of Figma unfortunately detaches those nodes 
-        // from their clicable content (usually a <g> node with same id as the href...)
+        // from their clicable content (usually a <g> node that is the left sibling of the <a> node...)
         // To avoid messing with the document structure, we simply reposition the content of the <a> node
         // following the bounding box of the corresponding <g> node
         for (const a of svg.querySelectorAll('a')) {
-            let href = a.getAttribute('href'); 
             let child = a.firstElementChild as SVGGraphicsElement;
             let prev_sibling = a.previousElementSibling as SVGGraphicsElement;
-            if ((href != null) && (prev_sibling != null) && (child != null) && (child.nodeName == 'rect')) {
-                let prev_sibling_id = prev_sibling.getAttribute('id');
-                if (prev_sibling_id == href) {
-                    let bbox = prev_sibling.getBBox() as SVGRect;
-                    const x = bbox.x || 0 as Number;
-                    const y = bbox.y || 0 as Number;
-                    child.setAttribute('x', x.toString());
-                    child.setAttribute('y', y.toString());
-                }
+            if ((prev_sibling != null) && (child != null)) {
+                let bbox = prev_sibling.getBBox() as SVGRect;
+                const x = bbox.x || 0 as Number;
+                const y = bbox.y || 0 as Number;
+                child.setAttribute('x', x.toString());
+                child.setAttribute('y', y.toString());
             }
         }
 
