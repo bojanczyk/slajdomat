@@ -34,14 +34,19 @@ import {
 import express from 'express'
 import cors from 'cors'
 import * as http from 'http'
-import * as fs from 'fs'
 import * as child from 'child_process'
-import * as path from 'path'
+
+// import * as fs from 'fs'
+// import * as path from 'path'
+const fs = require('fs');
+const path = require('path');
+
 
 
 import {
-    app, shell
+   app, shell
 } from 'electron'
+
 
 import {
     MessageToServer,
@@ -120,7 +125,7 @@ function assignSettings(arg: SlajdomatSettings): void {
 
 //writes the file in the local directory
 function writeFile(fileName: string, fileContents: string | Buffer) {
-    fs.writeFile(fileName, fileContents, function (err) {
+    fs.writeFile(fileName, fileContents, function (err: any) {
         if (err) throw err;
         // sendStatus(fileName + ' written.');
     });
@@ -301,10 +306,11 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
     }
 
 
-    presentations = msg.presentations;
+    presentations = msg.presentations; // can be removed?
 
     if (!silent) {
         //send the list of presentations to the renderer
+        //console.log("Sending presentations:", msg);
         mainWindow.webContents.send('presentationList', msg);
     }
 

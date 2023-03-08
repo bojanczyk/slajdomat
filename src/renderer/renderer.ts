@@ -31,10 +31,12 @@ import './index.css';
 //I would like to use fontsource fonts, but do not know yet how to make this work with stupid webpack
 // import '@fontsource/roboto'
 
-import {
-    ipcRenderer
-} from 'electron'
-
+// // Below is a replacement of the old import of electron
+// // (note that from renderer we must use window.require instead of just require)
+// import {
+//     ipcRenderer
+// } from 'electron'
+const { ipcRenderer } = window.require( 'electron' );
 
 
 
@@ -61,8 +63,6 @@ ipcRenderer.on('stop-spin', (event, arg) => {
         buttonHTML.classList.remove('myspinner');
     }
 
-
-
 })
 
 
@@ -74,6 +74,7 @@ ipcRenderer.on('stop-spin', (event, arg) => {
 //we receive the list of presentations in the current folder
 ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
 
+    // console.log("Received presentations: ", msg);
 
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');

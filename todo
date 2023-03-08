@@ -1,6 +1,5 @@
 - move event
 - comments on slides
-- pdf export
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
 
 check when a new live is created spuriously

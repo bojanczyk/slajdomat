@@ -4,7 +4,7 @@ const webpack = require('webpack')
 
 
 module.exports = (env, argv) => ({
-  mode: 'development', // alternative is  'development',
+  mode: 'production', // alternative is  'development',
   // watch: true,
   devtool: 'inline-source-map', //alternative is false 
 
@@ -15,7 +15,6 @@ module.exports = (env, argv) => ({
   },
 
   target: 'node',
-
 
   module: {
     rules: [

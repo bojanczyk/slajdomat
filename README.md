@@ -11,14 +11,9 @@ The workflow is that you use the plugin to impose a tree structure on a drawing 
 
 --- HOW TO BUILD
 
-Requires Node.js. 
+Requires Node.js (for MacOS: better to use official pkg installer rather than brew)
 
-To compile and build execute:
+To compile and build, do:
 
-	npm run prepare
+	npm install
 	npm run make
-
-If one gets an error "The main entry point to your app was not found", concerning the missing folder ".webpack/main", perhaps it is helpful to first run:
-
-	npm run start
-

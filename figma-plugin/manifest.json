@@ -1,5 +1,6 @@
 {
   "name": "slajdomat",
+  "editorType": ["figma"],
   "id": "878972113786153260",
   "api": "1.0.0",
   "main": "code.js",

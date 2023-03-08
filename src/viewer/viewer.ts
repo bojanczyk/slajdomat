@@ -53,7 +53,7 @@ import {
 } from "./sketchpad";
 import { createTimeline, currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
 
-// import { exportPdf } from './print'
+import { exportPdf } from './print'
 
 
 let manifest: Manifest;
@@ -195,8 +195,9 @@ function keyListener(event: KeyboardEvent) {
                 liveButton()
                 break;
 
-            /*case 'p':
-                exportPdf(); */
+            case 'p':
+                // console.log("Export pdf");
+                exportPdf();
         }
     }
 }

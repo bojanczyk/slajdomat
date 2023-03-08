@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, dialog} from 'electron';
 import { createMenu } from './menubar'
-import * as fs from 'fs';
 import * as child from 'child_process'
+
+// import * as fs from 'fs'
+const fs = require('fs');
 
 
 import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, upgradePresentation, upgradeAllPresentations,revealFinder } from './server'
@@ -33,7 +35,10 @@ const createWindow = (): void => {
     height: 600,
     width: 400,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      // for modern versions of electron the following is also needed to enable interprocess communication
+      // (otherwise one should use contextBridge)
+      contextIsolation: false, 
     }
   });
 
@@ -78,7 +83,10 @@ ipcMain.on('open-viewer', (event, arg) => {
     x: offset[0] + 20,
     y: offset[1] + 20,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      // for modern versions of electron the following is also needed to enable interprocess communication
+      // (otherwise one should use contextBridge)
+      contextIsolation: false, 
     },
     show: false
   })
@@ -86,6 +94,9 @@ ipcMain.on('open-viewer', (event, arg) => {
   viewerWin.loadFile(arg)
   viewerWin.once('ready-to-show', () => {
     viewerWin.show()
+
+    // Open the DevTools.
+    //viewerWin.webContents.openDevTools();
   })
 })
 
@@ -168,7 +179,7 @@ function openFolder(): Promise<void> {
   return dialog.showOpenDialog({ properties: ['openDirectory'] }).then(
     result => {
       if (!result.canceled) {
-        console.log('not cancelled')
+        //console.log('not cancelled')
         slajdomatSettings.directory = result.filePaths[0];
         readPresentations(slajdomatSettings.directory);
         saveSettings();
@@ -181,7 +192,7 @@ function openFolder(): Promise<void> {
 let preferencesWindow: BrowserWindow;
 //open the preferences, which for the moment only uses the port number
 function openPreferences(): void {
-  console.log('preferences')
+  // console.log('preferences')
   preferencesWindow = new BrowserWindow({
     height: 250,
     width: 300,
@@ -190,7 +201,10 @@ function openPreferences(): void {
     frame: false,
     show: false,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      // for modern versions of electron the following is also needed to enable interprocess communication
+      // (otherwise one should use contextBridge)
+      contextIsolation: false, 
     }
   });
 
@@ -219,8 +233,6 @@ function startApp(): void {
     fs.lstatSync(slajdomatSettings.directory).isDirectory()) {
     readPresentations(slajdomatSettings.directory);
   }
-
-
 
   startServer();
 }

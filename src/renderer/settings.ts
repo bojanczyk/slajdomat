@@ -1,8 +1,11 @@
 import './index.css'
 
-import {
-    ipcRenderer
-} from 'electron'
+// // Below is a replacement of the old import of electron
+// // (note that from renderer we must use window.require instead of just require)
+// import {
+//     ipcRenderer
+// } from 'electron'
+const { ipcRenderer } = window.require('electron');
 
 import {SlajdomatSettings} from '../main/server'
 
@@ -17,8 +20,8 @@ ipcRenderer.on('settings', (event, msg) => {
 
 document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    console.log('clicked')
-  if (target.id == 'cancel')
+    // console.log('clicked')
+    if (target.id == 'cancel')
     {
         ipcRenderer.send('settings-closed', undefined);
     }
