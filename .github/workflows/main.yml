@@ -32,7 +32,7 @@ jobs:
         name: electron-app
         path: ./out
 
-build:
+  build:
     runs-on: ubuntu-latest
     
     steps:
