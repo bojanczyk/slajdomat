@@ -24,7 +24,7 @@ jobs:
 
     - name: Build Electron App
       run: |
-        npm run build
+        npm run make
       working-directory: ./
 
     - name: Archive artifacts
