@@ -1,6 +1,5 @@
-name: Build Electron App
+name: Build the app
 
-#I am trying to see if this tool can create built files
 
 on: workflow_dispatch
 
@@ -32,3 +31,88 @@ jobs:
       with:
         name: electron-app
         path: ./out
+
+build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: |
+        npm install
+      working-directory: ./
+
+    - name: Build Electron App
+      run: |
+        npm run make
+      working-directory: ./
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: electron-app
+        path: ./out
+
+build:
+  build-mac:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: |
+        npm install
+      working-directory: ./
+
+    - name: Build Electron App
+      run: |
+        npm run make
+      working-directory: ./
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: electron-app
+        path: ./out
+  
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: |
+        npm install
+      working-directory: ./
+
+    - name: Build Electron App
+      run: |
+        npm run make
+      working-directory: ./
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: electron-app
+        path: ./out        
