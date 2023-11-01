@@ -2,10 +2,7 @@ name: Build Electron App
 
 #I am trying to see if this tool can create built files
 
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
   build:
