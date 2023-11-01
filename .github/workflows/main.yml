@@ -4,8 +4,8 @@ name: Build the app
 on: workflow_dispatch
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-macos:
+    runs-on: macos-latest
     
     steps:
     - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
         name: electron-app
         path: ./out
 
-  build:
+  build-ubuntu:
     runs-on: ubuntu-latest
     
     steps:
