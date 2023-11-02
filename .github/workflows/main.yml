@@ -9,40 +9,12 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
-        node-version: 14
-
-    - name: Install dependencies
-      run: |
-        npm install
-      working-directory: ./
-
-    - name: Build Electron App
-      run: |
-        npm run make
-      working-directory: ./
-
-    - name: Archive artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: electron-app
-        path: ./out
-
-  build-ubuntu:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 14
+        node-version: 18
 
     - name: Install dependencies
       run: |
