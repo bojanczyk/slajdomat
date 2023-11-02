@@ -4,8 +4,8 @@ name: Build the app
 on: workflow_dispatch
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -27,7 +27,7 @@ jobs:
       working-directory: ./
 
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: electron-app
         path: ./out
