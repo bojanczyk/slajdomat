@@ -1,11 +1,11 @@
-name: Build the app for mac
+name: Build the app for linux
 
 
 on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: linux-latest
     
     steps:
     - name: Checkout code
