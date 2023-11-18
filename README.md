@@ -10,6 +10,7 @@ The workflow is that you use the plugin to impose a tree structure on a drawing 
 ### Use without compiling it
 
 You can find a precompiled version of the app and the plugin in the releases section.
+https://github.com/bojanczyk/slajdomat/releases/
 
 ### How to compile
 
