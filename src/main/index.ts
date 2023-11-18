@@ -228,11 +228,22 @@ ipcMain.on('settings-closed', (event, arg) => {
 })
 
 function startApp(): void {
-  loadSettings();
+
+  if (loadSettings()){
   if (fs.existsSync(slajdomatSettings.directory) &&
     fs.lstatSync(slajdomatSettings.directory).isDirectory()) {
     readPresentations(slajdomatSettings.directory);
   }
-
   startServer();
+  }
+  else {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Alert',
+    message: 'Could not access the settings file. It should be inside the app, buried in a directory ending with resources/settings.json. If you are a developer, this probably means that there was an issue when running the script post-electron.sh.',
+    buttons: ['Too bad, I will quit now.'],
+  });}
+
+
+  
 }
