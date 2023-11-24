@@ -1,11 +1,15 @@
 - keep the instructions available in the viewer app, even when the presentation folder has already been selected
 - disable various buttons in the viewer app when they are not needed, for example when the presentation folder has not been selected
 
+-error when same name for slide and overlay
+- bad counting on slides 
+
 - move event
 - comments on slides
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
 
 check when a new live is created spuriously
+
 
 
 

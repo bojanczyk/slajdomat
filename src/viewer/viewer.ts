@@ -171,11 +171,13 @@ function keyListener(event: KeyboardEvent) {
     if (event.target != document.getElementById('search-input')) {
 
         switch (event.key) {
-            case 'ArrowRight':
+            case 'ArrowRight': 
+            case 'PageDown': //this is for some clickers
                 nextButton();
                 break;
 
             case 'ArrowLeft':
+            case 'PageUp': //this is for some clickers
                 prevButton();
                 break;
 

@@ -679,6 +679,7 @@ onmessage =
 document.getElementById('entire-plugin').addEventListener('mouseenter', pluginMouseenter);
 document.getElementById('entire-plugin').addEventListener('mouseleave', pluginMouseleave);
 
+//here we check which buttons were clicked in the plugin
 document.addEventListener('click', (event: MouseEvent) => {
   const target = event.target as HTMLElement;
 
@@ -727,8 +728,8 @@ document.addEventListener('click', (event: MouseEvent) => {
       //button to make first slide, bigger size
       postMessage({
         type: 'makeFirst',
-        width: 1280,
-        height: 960
+        width: 1920,
+        height: 1080
       })
       break;
 
@@ -745,6 +746,8 @@ document.addEventListener('click', (event: MouseEvent) => {
       });
       break;
 
+    case 'find-app-in-github':
+      window.open('https://github.com/bojanczyk/slajdomat/releases/', '_blank');
 
     default:
     //do nothing
