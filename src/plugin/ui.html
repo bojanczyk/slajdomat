@@ -76,12 +76,11 @@
 
 	<div class="column hidden" id="slide-column">
 		<div class="toolbar">
+			<i class="material-icons toolbar-icon" title="This is the root slide, i.e. the first one in the presentation" id="is-root-slide"> stars
+			</i>
 			<div title="Name of the current slide." id="slide-name">
 			</div>
-			<i id="parent-button" class="material-icons">arrow_upward</i>
-			<div title="The number of slides, i.e. top-level frames." id="slide-count"></div>
-			<i class="material-icons toolbar-button" title="Export the slides to the slajdomat app." id="export-slides"> file_upload
-			</i>
+			<div class='toolbar-icon' title="The number of slides, i.e. top-level frames." id="slide-count"></div>
 			<i class="material-icons toolbar-button" id="settings-button">settings</i>
 		</div>
 
@@ -89,15 +88,14 @@
 
 		<!-- The toolbar which contains buttons for creating events -->
 		<div id="event-toolbar" class="toolbar">
-			<i class="material-icons toolbar-button" id="direct-show-button">visibility</i>
+
 			<!-- the dropdown menu for showing/hiding -->
-			<div class="event-toolbar-element" id="event-toolbar-show">
-				<div title="Menu for overlay events, which show or hide objects on this slide, without changing the slide."
-					class="event-toolbar-title">
-					<!-- <i class="material-icons">visibility</i> -->
-					Overlays
-					<i class="material-icons">keyboard_arrow_down</i>
-					<div class='toolbar-triangle'> -->
+			<div class="event-toolbar-menu" id="event-toolbar-show">
+				<div title="Menu for overlay events, which show or hide objects on this slide, without changing the slide. Clicking the title icon of the menu will select the most recently used command from the menu."
+					class="event-toolbar-title updatedable-menu-title">
+					<i class="material-icons menu-title-icon">visibility</i>
+					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
+					<div class='toolbar-triangle'> 
 					</div>
 				</div>
 				<div class="toolbar-dropdown" id="dropdown-show">
@@ -114,11 +112,34 @@
 				</div>
 			</div>
 
+			<!-- the dropdown menu for exporting to the app -->
+			<div class="event-toolbar-menu" id="event-toolbar-export-menu">
+				<div title="Menu for exporting the slides. Clicking the title icon of the menu will select the most recently used command from the menu."
+					class="event-toolbar-title updatedable-menu-title">
+					<i class="material-icons menu-title-icon">file_upload</i>
+					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
+					<div class='toolbar-triangle'> 
+					</div>
+				</div>
+				<div class="toolbar-dropdown">
+					<div title="The root slide is the first one in the presentation" class="row"
+						id='dropdown-export'>
+						<i class="material-icons">file_upload</i>
+						Export slides to the app
+					</div>
+					<div title="The slides will exported without chaning the root slide" class="row"
+						id='dropdown-set-root'>
+						<i class="material-icons">stars</i>
+						Make this slide the root
+					</div>
+				</div>
+			</div>
+
 			<!-- the dropdown menu for zoom events -->
-			<div class="event-toolbar-element" id="event-toolbar-zoom">
-				<div title="Menu for creating zoom events, which go to another slide." class="event-toolbar-title">
+			<div class="event-toolbar-menu" id="event-toolbar-zoom">
+				<div title="Menu for creating zoom events, which go to another slide. " class="event-toolbar-title">
 					Zoom
-					<i class="material-icons">keyboard_arrow_down</i>
+					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
 					<div class='toolbar-triangle'>
 					</div>
 				</div>
@@ -137,6 +158,9 @@
 				</div>
 			</div>
 
+			<!-- the spinner -->
+			<i class="material-icons toolbar-icon" id="spinner"> restart_alt
+			</i>
 		</div>
 
 		<!-- the list of events in the current slide -->

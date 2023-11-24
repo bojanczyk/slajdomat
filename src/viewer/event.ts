@@ -91,7 +91,7 @@ function runOverlay(overlay: SlideEvent, direction: number, silent: string): voi
 }
 
 
-//creates the tree of slides and events, without adding the svg objects yet, and initalizes page numbers
+//creates the tree of slides and events, without adding the svg objects yet
 function createEventTree(): void {
 
     function makeParents(node: SlideEvent, parent: ZoomEvent) {

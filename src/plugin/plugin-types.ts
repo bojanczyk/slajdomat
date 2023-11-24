@@ -68,6 +68,8 @@ type MessageToCode = {
 } | {
   type: 'saveFile'
 } | {
+  type: 'changeRoot'
+} | {
   type: 'mouseEnterPlugin'
 } | {
   type: 'requestDropDown'
@@ -127,7 +129,7 @@ type MessageToUI = {
   type: 'slideChange',
   docName: string,
   slide: string,
-  parent: string,
+  isRoot: boolean,
   slideCount: number
 } | {
   type: 'noSlide'

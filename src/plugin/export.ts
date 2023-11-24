@@ -15,7 +15,8 @@ import {
     findSlide,
     sendToUI,
     state,
-    allTexts
+    allTexts,
+    getRoot
 } from './code'
 
 
@@ -30,10 +31,10 @@ function deDuplicate(list : string[]) : string[] {
 
 //complies a list of search keywords for the current slide
 function compileKeywords(event: ZoomEvent, frame: FrameNode) {
-
+    
     
     const done = [] as SceneNode[]; 
-
+    
     for (const child of event.children) {
         //we only create keywords for show children, which are first
         if (child.type == 'show') {
@@ -55,16 +56,17 @@ function compileKeywords(event: ZoomEvent, frame: FrameNode) {
 
 //send the svg file to the ui, which then sends it to the server
 function exportSlides(): void {
-
+    
+    
     //the list of slides and their svg files
     const slideList: {
         database: Database,
         svg: Uint8Array
     }[] = [];
-
+    
     //stack of the recursion, to find cycles in slides
     const stack: FrameNode[] = [];
-
+    
     //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
     async function saveRec(slide: FrameNode, eventId : string): Promise<SlideEvent> {
         if (stack.includes(slide)) {
@@ -76,9 +78,9 @@ function exportSlides(): void {
         } else {
             stack.push(slide);
             loadCurrentData(slide);
-
             
-
+            
+            
             //We temporarily change the names of the children to their id's, so that the svg will have them as id's. (This is because Figma's svg export uses the object's name as the id for the svg. )
             //the function returns a list of pairs (node, old name) that can be used to revert these changes
             const changes: {
@@ -96,18 +98,18 @@ function exportSlides(): void {
                     node.name = event.id;
                 }
             }
-
+            
             const svg = await slide.exportAsync({
                 format: 'SVG',
                 svgOutlineText: true,
                 svgIdAttribute: true
             });
-
+            
             //we now undo the name changes. This needs to be done in reverse order to recover the original names
             for (const change of changes) {
                 change.node.name = change.savedName;
             }
-
+            
             const retval : ZoomEvent  = {
                 type: 'child',
                 name: state.database.name,
@@ -133,7 +135,7 @@ function exportSlides(): void {
                         retval.children.push(event);
                     }
                 }
-
+                
             }
             loadCurrentData(stack.pop());
             compileKeywords(retval, state.currentSlide);
@@ -141,18 +143,22 @@ function exportSlides(): void {
             return retval;
         }
     }
-
-
+    
+    
+    
     const savedSlide = state.currentSlide;
-    saveRec(state.currentSlide,'root').then(x => {
-        console.log(x);
-        sendToUI({
-            type: 'savePresentation',
-            name: figma.root.name,
-            slideList: slideList,
-            tree: x
+    const rootSlide = getRoot();
+    console.log(rootSlide);
+    if (rootSlide != null) {
+        saveRec(getRoot(),'root').then(x => {
+            sendToUI({
+                type: 'savePresentation',
+                name: figma.root.name,
+                slideList: slideList,
+                tree: x
+            });
+            loadCurrentData(savedSlide);
         });
-        loadCurrentData(savedSlide);
-    });
-
+    }    
+    
 }

@@ -11,7 +11,8 @@ export {
     loadCurrentData,
     findSlide,
     allTexts,
-    sendToUI
+    sendToUI,
+    getRoot
 }
 
 import {
@@ -59,7 +60,7 @@ const state = {
     //the data for the current slide, mainly the event list
     database: null as Database,
     //the current slide, as a frame of figma
-    currentSlide: null as FrameNode
+    currentSlide: null as FrameNode,
 }
 
 
@@ -664,11 +665,12 @@ function setCurrentSlide(slide: FrameNode): void {
 
     if (slide != null) {
         loadCurrentData(slide);
+        const isRoot = getRoot() == state.currentSlide;
         const msg: MessageToUI = {
             type: 'slideChange',
             docName: figma.root.name,
             slide: state.currentSlide.name,
-            parent: undefined as string,
+            isRoot : isRoot,
             slideCount: allSlides().length,
         }
         /*
@@ -706,6 +708,21 @@ function slideWithSelection(): FrameNode {
         return node as FrameNode;
     } else
         return null;
+}
+
+//finds the root from previous sessions
+function getRoot() : FrameNode {
+    const rootSlide = findSlide(figma.root.getPluginData('rootSlide'));
+    if (rootSlide == null) {
+        setRoot();
+    }
+    return rootSlide;
+    
+}
+
+//change the root to the current slide
+function setRoot() : void {
+    figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
 }
 
 
@@ -814,9 +831,12 @@ function onMessage(msg: MessageToCode) {
             break;
 
         case 'saveFile':
-
             //export the files to svg files
             exportSlides();
+            break;
+
+        case 'changeRoot':
+            setRoot();
             break;
 
         case 'mouseEnterPlugin':

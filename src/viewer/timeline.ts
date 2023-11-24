@@ -211,12 +211,14 @@ function createTimeline(recorded: LiveRecording): void {
     resetTimeline();
 
     if (recorded == undefined) {
-        //if we had a live recording, then the page numbers have been loaded from the file. Otherwise, we need to  compute the page numbers. The page number is the number of distinct preceding zoom in events
+        //if we had a live recording, then the page numbers have been loaded from the file. Otherwise, we need to  compute the page numbers. The page number is 1 + the number of distinct targets of preceding zoom events, not counting zooms back to the root
+
+        console.log('kuku');
         const seen: Set<ZoomEvent> = new Set();
         let pageCount = 1;
         for (const step of allSteps()) {
             step.pageNumber = pageCount;
-            if (step instanceof ZoomStep && !seen.has(step.target) && zoomsIn(step)) {
+            if (step instanceof ZoomStep && !seen.has(step.target) && (step.target.parent != null)) {
                 pageCount++;
                 seen.add(step.target);
             }
