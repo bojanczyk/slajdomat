@@ -1,6 +1,36 @@
 # Miscellaneous Developer notes
 
-This file contains notes to the developer that may be useful in maintaning the app.
+This file contains notes to the developer that may be useful in maintaning the app. This is separate from developer documentation, which should be created at some point.
+
+## Todo
+Things to implement in the future
+
+### Viewer app
+- keep the instructions available in the viewer app, even when the presentation folder has already been selected
+- disable various buttons in the viewer app when they are not needed, for example when the presentation folder has not been selected
+- maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
+
+### Plugin 
+- error when same name for slide and overlay
+- check when a new live is created spuriously (not sure what that means anymore)
+- allow changing names for events
+- bug when copying events, the same id is used
+
+
+### Extra features of the system
+- move event
+- comments on slides
+
+
+
+
+
+
+
+
+
+## Notes on hacks used 
+Notes about various hacks used in the setup. This may be common knowledge, but it can be easier to have them in one place for less professional developers such as Mikolaj.
 
 ### Code signing on mac
 
