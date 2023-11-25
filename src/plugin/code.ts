@@ -16,7 +16,7 @@ export {
 }
 
 import {
-    PluginSettings,
+    LatexPluginSettings,
     Database,
     LatexState,
     MessageToCode,
@@ -65,7 +65,7 @@ const state = {
 
 
 //the plugin settings
-let pluginSettings: PluginSettings;
+let pluginSettings: LatexPluginSettings;
 
 
 
@@ -75,7 +75,7 @@ function sendToUI(msg: MessageToUI): void {
 
 //********* settings *********/
 //get the settings from the ui
-function getSettings(settings: PluginSettings): void {
+function getLatexSettings(settings: LatexPluginSettings): void {
     pluginSettings = settings;
     figma.clientStorage.setAsync('slajdomat', JSON.stringify(settings));
     sendSettings();
@@ -302,6 +302,7 @@ function createChildEvent(id: string): RectangleNode {
 }
 
 //give the list of all texts used in descendants
+//this function is used in goodName below, and also to export keywords
 function allTexts(n: SceneNode, avoid: SceneNode[] = []): string[] {
 
     if (avoid.includes(n))
@@ -321,6 +322,27 @@ function allTexts(n: SceneNode, avoid: SceneNode[] = []): string[] {
     return [];
 }
 
+
+
+//Creates a descriptive string name for a node. It will be called if the node is a group node with a name like "Group 2". The current implementation returns the contents the longest text node in the descendants. 
+function goodName(node: SceneNode): string {
+    const texts = allTexts(node);
+
+    //if there is no text, do not change the name
+    if (texts.length == 0)
+        return node.name;
+
+    //otherwise, return the longest text    
+    let retval = texts[0];
+    for (const text of texts) {
+        if (text.length > retval.length)
+            retval = text;
+    }
+    return retval
+}
+
+
+
 // create new event 
 //msg.subtype says what kind it is, values are 'child', 'show', 'hide', etc.
 //msg.id is used for the 'child' event
@@ -331,54 +353,43 @@ function createEvent(eventInfo: {
     name: string
 }): void {
 
-    //returns the contents the longest text node in the descendants. Used to select a name for a group node
-    function goodName(node: SceneNode): string {
-        const texts = allTexts(node);
 
-        //if there is no text, do not change the name
-        if (texts.length == 0)
-            return node.name;
-
-        //otherwise, return the longest text    
-        let retval = texts[0];
-        for (const text of texts) {
-            if (text.length > retval.length)
-                retval = text;
-        }
-        return retval
-    }
 
     if (eventInfo.subtype == 'show' || eventInfo.subtype == 'hide') {
+
+        //returns a list of the selected items, but sorted in an order that is more convenient for the user
+        function sortSelection() : SceneNode[] {
+            let sorted: SceneNode[] = [];
+
+            //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
+            const xarray = [] as number[];
+            const yarray = [] as number[];
+    
+            for (const item of figma.currentPage.selection) {
+                if (isShowHideNode(item)) {
+                    xarray.push(item.x);
+                    yarray.push(item.y);
+                    sorted.push(item);
+                }
+            }
+            //dx is the maximal difference between x coordinates, likewise for dy
+            const dx = Math.max(...xarray) - Math.min(...xarray);
+            const dy = Math.max(...yarray) - Math.min(...yarray);
+    
+            //the events are sorted by x or y depending on which of dx, dy is bigger
+            const sortIndex = (a: SceneNode) => {
+                if (dx > dy)
+                    return a.x
+                else
+                    return a.y
+            };
+            //the order of events is so that it progresses in the down-right direction
+    
+            return sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
+        }
         
 
-        let sorted: SceneNode[] = [];
-
-        //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
-        const xarray = [] as number[];
-        const yarray = [] as number[];
-
-        for (const item of figma.currentPage.selection) {
-            if (isShowHideNode(item)) {
-                xarray.push(item.x);
-                yarray.push(item.y);
-                sorted.push(item);
-            }
-        }
-        //dx is the maximal difference between x coordinates, likewise for dy
-        const dx = Math.max(...xarray) - Math.min(...xarray);
-        const dy = Math.max(...yarray) - Math.min(...yarray);
-
-        //the events are sorted by x or y depending on which of dx, dy is bigger
-        const sortIndex = (a: SceneNode) => {
-            if (dx > dy)
-                return a.x
-            else
-                return a.y
-        };
-        //the order of events is so that it progresses in the down-right direction
-
-        sorted = sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
-        for (const item of sorted) {
+        for (const item of sortSelection()) {
 
             if (item.type === 'GROUP' && item.name.startsWith('Group')) {
                 //improve the name
@@ -468,10 +479,11 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
 function hoverEvent(index: number): void {
     if (index == -1) {
         try {
-        if (state.savedSelection != null) {
-            figma.currentPage.selection = state.savedSelection;
+            if (state.savedSelection != null) {
+                figma.currentPage.selection = state.savedSelection;
+            }
+            state.savedSelection = null;
         }
-        state.savedSelection = null;}
         catch (e) {
             console.log('this is a place that is troublesome')
             console.log(e);
@@ -521,19 +533,47 @@ function avoidList(slide: FrameNode): string[] {
     return avoid;
 }
 
-//the id of an overlay is stored in the node 
-function overlayId(node: SceneNode) {
-    let retval = node.getPluginData('id');
-    if (retval == '') {
-        // we need to generate a new id
-        const slide = node.parent as FrameNode;
-        if (!isSlideNode(slide))
-            throw 'asked for overlay id of a node that is not a child of a slide';
 
-         
+//returns an id for an overlay, creating a new one if necessary, and fixing the old one if necessary
+function overlayId(node: SceneNode): string {
+
+    let retval = node.getPluginData('id');
+
+    const slide = node.parent as FrameNode;
+    if (!isSlideNode(slide))
+        throw 'asked for overlay id of a node that is not a child of a slide';
+
+    if (retval != '') {
+        //check if the proposed id is already present in the current slide. This can happen if a node is copied by the user, then the plugin data is also copied, which includes the id, thus leading to duplicate id's 
+
+        //tells us if node x is older than node y
+        function olderNode(x : SceneNode,  y : SceneNode) : boolean {
+            //figma id's store a number, such as 12:35, where 12 identifies the frame, and 35 identifies the child. In this case, the value of 12 is fixed, so we compare the value of 35, which grows as the objects get newer. 
+
+            if (x.id.length == y.id.length) 
+                return (x.id < y.id);
+            else 
+                return (x.id.length < y.id.length)
+        }
+
+
+        for (const other of slide.children)
+        {
+            if ((olderNode(other,node)) && (other.getPluginData('id') == retval)) {
+                console.log('found duplicate id' ,retval);
+                retval = '';
+            }
+        }
+            
+    }
+    
+
+    if (retval == '') {
+        //generate a new id, because the id is empty. It could be empty because of the above deduplication code.
+
         retval = freshName(sanitize(node.name), avoidList(slide));
         //save the name in the node
-        node.setPluginData('id',retval);
+        node.setPluginData('id', retval);
     }
     return retval;
 }
@@ -660,8 +700,6 @@ function parentSlide(slide: FrameNode): FrameNode {
 
 //set the current slide of the plugin
 function setCurrentSlide(slide: FrameNode): void {
-    // state.currentSlide = slide;
-
 
     if (slide != null) {
         loadCurrentData(slide);
@@ -670,17 +708,9 @@ function setCurrentSlide(slide: FrameNode): void {
             type: 'slideChange',
             docName: figma.root.name,
             slide: state.currentSlide.name,
-            isRoot : isRoot,
+            isRoot: isRoot,
             slideCount: allSlides().length,
         }
-        /*
-        //this code runs too long and creates trouble
-        const parent = parentSlide(slide);
-        if (parent == null)
-            msg.parent = null
-        else
-            msg.parent = parent.name;
-        */
 
         sendToUI(msg);
         sendEventList();
@@ -711,24 +741,22 @@ function slideWithSelection(): FrameNode {
 }
 
 //finds the root from previous sessions
-function getRoot() : FrameNode {
+function getRoot(): FrameNode {
     const rootSlide = findSlide(figma.root.getPluginData('rootSlide'));
     if (rootSlide == null) {
         setRoot();
     }
     return rootSlide;
-    
+
 }
 
 //change the root to the current slide
-function setRoot() : void {
+function setRoot(): void {
     figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
 }
 
-
 //the selection has changed
 function selChange(): void {
-
 
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
     if (state.savedSelection == null || state.savedSelection.length == 0) {
@@ -806,7 +834,7 @@ function onMessage(msg: MessageToCode) {
 
         case 'settings':
             //get settings from the interface
-            getSettings(msg.pluginSettings);
+            getLatexSettings(msg.pluginSettings);
             break;
 
         case 'removeEvent':

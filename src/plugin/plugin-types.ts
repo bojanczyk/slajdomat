@@ -5,7 +5,7 @@ import {
 import {} from '@figma/plugin-typings'
 
 export {
-  PluginSettings,
+  LatexPluginSettings,
   WindowMode,
   Database,
   LatexState,
@@ -24,8 +24,8 @@ type Database = {
 }
 
 
-//these are the settings that are stored in the global plugin data
-type PluginSettings = {
+//these are the settings for the latex parte of the plugin, i.e. "matematyk", that are stored in the global plugin data
+type LatexPluginSettings = {
   mathFontSize: number,
   mathFont: FontName,
   active: boolean,
@@ -41,9 +41,7 @@ enum WindowMode {
   NoSlide
 }
 
-
-
-
+//the possible mode of the latex plugin
 enum LatexState {
   None,
   Latex,
@@ -56,7 +54,7 @@ type LatexitData = {
   code: string
 }
 
-
+//these are the possible messages that can be sent from the ui of the plugin to the backend of the plugin
 type MessageToCode = {
   type: 'createEvent',
   subtype: string,
@@ -64,7 +62,7 @@ type MessageToCode = {
   name: string
 } | {
   type: 'settings',
-  pluginSettings: PluginSettings
+  pluginSettings: LatexPluginSettings
 } | {
   type: 'saveFile'
 } | {
@@ -110,7 +108,7 @@ type MessageToCode = {
   text: string
 }
 
-//message sent from the code to the ui
+//messages sent in the opposite direction, from the backend to the ui
 type MessageToUI = {
   type: 'savePresentation'
   name: string,
@@ -135,7 +133,7 @@ type MessageToUI = {
   type: 'noSlide'
 } | {
   type: 'settings',
-  settings: PluginSettings
+  settings: LatexPluginSettings
 } | {
   type: 'fetchlatex',
   url: string

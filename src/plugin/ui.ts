@@ -6,7 +6,7 @@ import {
   Database,
   LatexState,
   MessageToCode,
-  PluginSettings,
+  LatexPluginSettings,
   MessageToUI,
   WindowMode
 } from './plugin-types'
@@ -40,7 +40,7 @@ const dropDownPrefix = "dropdown-prefix:";
 // let docName :string;
 
 //plugin settings
-let pluginSettings: PluginSettings;
+let pluginSettings: LatexPluginSettings;
 
 
 
@@ -69,7 +69,7 @@ function probeServer(): void {
 
 
 
-function getSettings(settings: PluginSettings): void {
+function getLatexSettings(settings: LatexPluginSettings): void {
   //create the matematyk panel, which allows to make latex and math symbols
   
   
@@ -689,7 +689,7 @@ function (event: MessageEvent) {
     
     //receive the settings 
     case 'settings':
-    getSettings(msg.settings);
+    getLatexSettings(msg.settings);
     break;
     
     case 'fetchlatex':
