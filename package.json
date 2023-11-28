@@ -11,7 +11,7 @@
     "package:darwin:linux": "bash src/main/post-electron.sh",
     "package:win32": "src\\main\\post-electron.sh",
     "package:default": "echo Which platform??",
-    "make": "electron-forge package && webpack && run-script-os",
+    "make": "electron-forge package && webpack --mode=development --node-env=development && run-script-os",
     "make:darwin:linux": "bash src/plugin/make-plugin-ui.sh && bash src/main/post-electron.sh",
     "make:win32": "src\\plugin\\make-plugin-ui.sh && src\\main\\post-electron.sh",
     "make:default": "echo Which platform??",

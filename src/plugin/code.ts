@@ -1,23 +1,12 @@
 import { } from '@figma/plugin-typings'
 
 export {
-    pluginSettings,
-    sendSettings,
-    getDatabase,
-    allSlides,
-    findEventObject,
-    state,
-    saveCurrentData,
-    loadCurrentData,
-    findSlide,
-    allTexts,
-    sendToUI,
-    getRoot
+    allSlides, allTexts, findEventObject, findSlide, getDatabase, getRoot, loadCurrentData, pluginSettings, saveCurrentData, sendSettings, sendToUI, state
 }
 
 import {
-    LatexPluginSettings,
     Database,
+    LatexPluginSettings,
     LatexState,
     MessageToCode,
     MessageToUI
@@ -32,21 +21,21 @@ import {
 } from './export'
 
 import {
-    matematykData,
     latexitOne,
     latexitTwo,
+    matematykData,
     matematykWord
 } from './matematyk'
 
+import { freshName, sanitize } from '../common/helper'
 import {
     Rect
 } from '../viewer/transform'
 import {
-    SlideEvent,
     OverlayEvent,
+    SlideEvent,
     ZoomEvent
-} from '../viewer/types';
-import { freshName, sanitize } from '../common/helper'
+} from '../viewer/types'
 
 
 
@@ -358,13 +347,13 @@ function createEvent(eventInfo: {
     if (eventInfo.subtype == 'show' || eventInfo.subtype == 'hide') {
 
         //returns a list of the selected items, but sorted in an order that is more convenient for the user
-        function sortSelection() : SceneNode[] {
+        function sortSelection(): SceneNode[] {
             let sorted: SceneNode[] = [];
 
             //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
             const xarray = [] as number[];
             const yarray = [] as number[];
-    
+
             for (const item of figma.currentPage.selection) {
                 if (isShowHideNode(item)) {
                     xarray.push(item.x);
@@ -375,7 +364,7 @@ function createEvent(eventInfo: {
             //dx is the maximal difference between x coordinates, likewise for dy
             const dx = Math.max(...xarray) - Math.min(...xarray);
             const dy = Math.max(...yarray) - Math.min(...yarray);
-    
+
             //the events are sorted by x or y depending on which of dx, dy is bigger
             const sortIndex = (a: SceneNode) => {
                 if (dx > dy)
@@ -384,10 +373,10 @@ function createEvent(eventInfo: {
                     return a.y
             };
             //the order of events is so that it progresses in the down-right direction
-    
+
             return sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
         }
-        
+
 
         for (const item of sortSelection()) {
 
@@ -475,30 +464,61 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
 
 }
 
-//when the mouse hovers over an event, then it should be highlighted by figma, with a pretend selection
-function hoverEvent(index: number): void {
-    if (index == -1) {
-        try {
-            if (state.savedSelection != null) {
-                figma.currentPage.selection = state.savedSelection;
-            }
-            state.savedSelection = null;
-        }
-        catch (e) {
-            console.log('this is a place that is troublesome')
-            console.log(e);
-            console.log(state.savedSelection);
-        }
-    } else {
-        if (state.savedSelection == null)
-            state.savedSelection = figma.currentPage.selection;
 
+
+
+//these frames are displayed when the mouse hovers over an event. In principle, there should be at most one, but for some reason the delete events are not matched with the create events, and therefore I keep a list of all frames, and delete all of them.
+const hoverFrames : RectangleNode[] = []
+
+//deletes all hover frames
+function deleteHoverFrames() {
+    while (hoverFrames.length > 0)
+        hoverFrames.pop().remove();
+}
+
+//when the mouse hovers over an event, then it should be highlighted a little frame
+function hoverEvent(index: number): void {
+
+    if (index == -1) {
+    //if the index is -1, then the mouse has left, and the frames should be deleted
+        deleteHoverFrames();
+        }
+    else {
+        
+        //otherwise, the index says which event is hovered over. It will be surrounded by a frame
         const event = state.database.events[index];
         const link = findEventObject(event, state.currentSlide);
-        if (link != null)
-            figma.currentPage.selection = [link];
+        if (link != null){
+
+            const hoverFrame = figma.createRectangle();
+
+            hoverFrame.resize(link.width, link.height);
+            hoverFrame.x = link.x
+            hoverFrame.y = link.y
+            hoverFrame.fills = [{
+                type: 'SOLID',
+                color: {
+                    r: 0,
+                    g: 0,
+                    b: 1
+                }
+            }];
+            hoverFrame.name = 'temporary hover frame';
+            hoverFrame.opacity = 0.5;
+            state.currentSlide.appendChild(hoverFrame);
+            hoverFrames.push(hoverFrame);
+        }
+
+            
     }
 }
+
+
+//code that is run when the plugin is closed
+function closePlugin() : void {
+    deleteHoverFrames();
+}
+
 
 //if the event on a plugin is clicked, then the corresponding object in figma should be selected
 function clickEvent(index: number): void {
@@ -547,26 +567,24 @@ function overlayId(node: SceneNode): string {
         //check if the proposed id is already present in the current slide. This can happen if a node is copied by the user, then the plugin data is also copied, which includes the id, thus leading to duplicate id's 
 
         //tells us if node x is older than node y
-        function olderNode(x : SceneNode,  y : SceneNode) : boolean {
+        function olderNode(x: SceneNode, y: SceneNode): boolean {
             //figma id's store a number, such as 12:35, where 12 identifies the frame, and 35 identifies the child. In this case, the value of 12 is fixed, so we compare the value of 35, which grows as the objects get newer. 
 
-            if (x.id.length == y.id.length) 
+            if (x.id.length == y.id.length)
                 return (x.id < y.id);
-            else 
+            else
                 return (x.id.length < y.id.length)
         }
 
 
-        for (const other of slide.children)
-        {
-            if ((olderNode(other,node)) && (other.getPluginData('id') == retval)) {
-                console.log('found duplicate id' ,retval);
+        for (const other of slide.children) {
+            if ((olderNode(other, node)) && (other.getPluginData('id') == retval)) {
                 retval = '';
             }
         }
-            
+
     }
-    
+
 
     if (retval == '') {
         //generate a new id, because the id is empty. It could be empty because of the above deduplication code.
@@ -755,7 +773,27 @@ function setRoot(): void {
     figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
 }
 
-//the selection has changed
+
+
+//event handler for when the document has changed. We use this to re-proportion the red rectangles for the child link
+function docChange( changes : DocumentChangeEvent) : void {
+    for (const x of changes.documentChanges) {
+        if ((x.type == 'PROPERTY_CHANGE'))
+            {
+                const change = x.node as SceneNode;
+                if ((!change.removed) && (change.getPluginData('childLink') != ''))
+                    {
+                        const rect = change as RectangleNode;
+                        rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width); 
+                    }
+
+
+            }
+    }
+
+}
+
+//event handler for when the selection has changed
 function selChange(): void {
 
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
@@ -779,6 +817,10 @@ function selChange(): void {
         else if (state.currentSlide != null)
             sendEventList();
 
+        const sel = figma.currentPage.selection;
+
+      
+
 
         const msg: MessageToUI = {
             type: 'selChange',
@@ -794,7 +836,7 @@ function selChange(): void {
         }
 
         // this part of the code is for the math features of latexit and inserting characters
-        const sel = figma.currentPage.selection;
+
         if (sel.length == 1) {
             if (sel[0].type == "TEXT") //the selected object can be latexed
                 msg.latexState = LatexState.Latex;
@@ -926,8 +968,9 @@ function onMessage(msg: MessageToCode) {
 
 }
 
-
+figma.on('documentchange', docChange);
 figma.on("selectionchange", selChange);
+figma.on('close',closePlugin);
 figma.showUI(__html__, {
     width: 230,
     height: 500

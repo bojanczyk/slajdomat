@@ -13,8 +13,7 @@ Things to implement in the future
 ### Plugin 
 - error when same name for slide and overlay
 - check when a new live is created spuriously (not sure what that means anymore)
-- allow changing names for events
-- bug when copying events, the same id is used
+- do not mess around with selections when mouseovering the plugin
 
 
 ### Extra features of the system
