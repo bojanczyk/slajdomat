@@ -43,9 +43,6 @@ import {
 //*** global variables */
 
 const state = {
-    //saved selection when temporarily selecting an object through mouseover 
-    savedSelection: [] as readonly SceneNode[],
-
     //the data for the current slide, mainly the event list
     database: null as Database,
     //the current slide, as a frame of figma
@@ -525,8 +522,7 @@ function clickEvent(index: number): void {
     const event = state.database.events[index];
     if (event.type == 'child') {
         gotoSlide(findSlide(event.id));
-    } else
-        state.savedSelection = figma.currentPage.selection;
+    } 
 }
 
 // I use my own id's, instead of those of figma, so that copy and paste between presentations works
@@ -797,7 +793,7 @@ function docChange( changes : DocumentChangeEvent) : void {
 function selChange(): void {
 
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
-    if (state.savedSelection == null || state.savedSelection.length == 0) {
+
         const slide = slideWithSelection();
 
 
@@ -854,7 +850,6 @@ function selChange(): void {
 
         //send the information about the updated selection
         sendToUI(msg)
-    }
 }
 
 
@@ -892,6 +887,7 @@ function onMessage(msg: MessageToCode) {
         case 'moveEvent':
             //swap the order of two events
             reorderEvents(msg.index, msg.target);
+            deleteHoverFrames();
             break;
 
         case 'makeFirst':
@@ -926,8 +922,6 @@ function onMessage(msg: MessageToCode) {
             break;
 
         case 'mouseLeave':
-            //unselect the action from the previous event
-            figma.currentPage.selection = state.savedSelection;
             break;
 
         case 'clickEvent':
