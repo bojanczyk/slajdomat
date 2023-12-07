@@ -1,6 +1,6 @@
 {
   "port": 3001,
-  "directory": "/Users/Gabriele/Research/2-Talks/Slajdomat slides",
+  "directory": "/Users/bojan/Documents/slides",
   "ffmpeg": "/usr/local/bin/ffmpeg",
   "ffprobe": "/usr/local/bin/ffprobe"
 }

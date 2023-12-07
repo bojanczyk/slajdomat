@@ -285,10 +285,10 @@ background-color : var(--select-color);
 
 
 .myspinner {
-		-webkit-animation: rotation 2s infinite linear;
+		-animation: rotation 2s infinite linear;
 }
 
-@-webkit-keyframes rotation {
+@keyframes rotation {
 		from {
 				-webkit-transform: rotate(0deg);
 		}

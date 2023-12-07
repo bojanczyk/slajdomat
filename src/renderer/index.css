@@ -1,108 +1,214 @@
 /* for the index page */
 html {
+    height: 100%;
+    width: 100%;
     overflow: hidden;
-    height : 100%
 }
 
 
 body {
-    font-family : 'Roboto';
-    display : flex; 
+    font-family: 'Roboto';
+    margin: 0px;
+    height: 100%;
+    display: flex;
     flex-direction: column;
-    margin : 0px;
-    height : 100%;
+    font-size: 12px;
+    font-weight: 100;
 }
+
+
+
+
+/* *****************************************
+tabs and switching between in the main window */
+
+.tab-item {
+    width: 100%
+}
+
+.main-window-tab {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+
+/* the toolbar which contains the tab heads */
+#tab-heads {
+    background-color: lightgray;
+    padding-top: 10px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-self: flex-start;
+}
+
+/* a single tab head */
+.tab-head {
+    background-color: whitesmoke;
+    margin-left : 10px;
+    margin-right: 10px;
+    padding-left : 10px;
+    padding-right : 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    cursor: pointer;
+}
+
+
+.tab-head.selected {
+    background-color: white;
+    font-weight: 400;
+}
+
+.tab-head:not(.selected) {
+    background-color: whitesmoke;
+}
+
+/* the spinner in the top right corner */
+#spinner {
+    position: absolute;
+    right : 5px;
+    top : 5px;
+}
+
+#spinner:not(.myspinner) {
+    display: none;
+}
+
+.myspinner {
+    animation: spin 2s infinite linear;
+}
+
+/* Keyframes for spinning animation */
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg); /* Rotate a full circle */
+    }
+  }
+
+
+/* what is below the tab, i.e. this is most of the contents of the viewer window */
+#tab-contents {
+    flex-grow: 1;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.main-window-tab:not(.selected) {
+    display: none;
+}
+
+
+/* ********************************* */
 
 .material-icons {
     font-size: 20px;
 }
-.panel {
-    overflow : scroll;
-}
+
+
+
 #index-title {
     font-size: large;
 }
-#all-presentations {
-    font-size: 12px;
-    margin-top: 5px;
-    font-weight: 300;
-}
+
 
 
 .presentation-line {
     display: flex;
-    flex-direction:  row;
+    flex-direction: row;
     user-select: none;
 }
 
 .presentation-line i {
     margin-top: 2px;
-    margin-right : 10px;
-    margin-left : 10px;
+    margin-right: 10px;
+    margin-left: 10px;
     font-size: 15px
 }
 
 .presentation-name {
     cursor: pointer;
-    padding : 5px;
+    padding: 5px;
     flex-grow: 1;
     display: flex;
     align-items: center;
 }
 
 .presentation-name:hover {
-    background-color:#daebf7;
+    background-color: #daebf7;
 }
 
 
-.hidden {
-    display: none;
+
+
+
+
+
+.tab-toolbar {
+    padding : 10px;
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    width: 100%
 }
 
-#status-panel {
-    background-color: lightgrey;
+.tab-main-content {
+    padding-left : 5px;
+    flex-grow: 1;
+    align-self: flex-start;
+    overflow: scroll;
+}
+
+
+#directory-listing {
     font-size: 12px;
-    font-weight: 100;
-    height : 50px;
+    font-weight: 300;
+    width : 100%;
 }
 
-#folder-link {
-    font-size : 12px;
-    font-weight :  100;
-    padding-left : 10px;
+
+#link-to-current-folder {
+    font-size: 12px;
+    padding-left: 10px;
     cursor: pointer;
 }
 
-#presentation-panel {
+#instructions-tab {
     flex-grow: 1;
+    font-weight: 300;
+    padding : 10px;
 }
 
-#no-pre {
-    flex-grow : 1;
-    font-weight: 300;
-    padding: 12px;
+#messages-tab {
+    padding : 10px;
 }
 
 #empty-folder-text {
-    padding-top : 10px;
-    font-weight : 200;
+    padding-top: 10px;
+    font-weight: 200;
 }
 
 .settings-item {
-    margin : 10px; 
-    font-weight : 200;
+    margin: 10px;
+    font-weight: 200;
 }
 
 #dialog-buttons {
     position: absolute;
     bottom: 0;
-    right : 0;
-    margin : 5px;
-    padding : 5px;
+    right: 0;
+    margin: 5px;
+    padding: 5px;
 }
 
 #dialog-buttons button {
-    margin : 5px;
+    margin: 5px;
 }
 
 #settings-body {
@@ -116,10 +222,8 @@ body {
 }
 
 #settings-body input {
-    margin-top : 5px;
-    padding : 5px;
-    font-family: 'Roboto';
-    font-weight: 100;
+    margin-top: 5px;
+    padding: 5px;
 }
 
 .settings-item {
@@ -128,32 +232,28 @@ body {
     margin-bottom: 4px;
 }
 
-#toolbar {
-    background-color:lightgray;
-    padding-left : 5px;
-    display: flex;
-    align-items: center;
+
+
+.toolbar-button:not(.disabled) {
+    cursor: pointer;
+}
+
+.toolbar-button.disabled {
+    color: grey;
+    cursor: default;
 }
 
 .toolbar-button {
-    padding : 5px;
-    cursor: pointer;
+    padding: 5px;
     margin-left: 5px;
 }
 
-.toolbar-button:hover {
-    background-color:#daebf7;
+.toolbar-button:hover:not(.disabled) {
+    background-color: #daebf7;
 }
 
-.myspinner {
-    -webkit-animation: rotation 2s infinite linear;
-}
 
-@-webkit-keyframes rotation {
-    from {
-            -webkit-transform: rotate(0deg);
-    }
-    to {
-            -webkit-transform: rotate(359deg);
-    }
+
+.hidden {
+    display: none;
 }

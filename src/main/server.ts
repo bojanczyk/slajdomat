@@ -8,15 +8,17 @@ export {
     assignSettings,
     gotoParent,
     gotoChild,
-    PresentationListMessage,
-    upgradePresentation,
-    upgradeAllPresentations,
     revealFinder,
-    slideDir
+    slideDir,
+    writeManifest,
+    readManifest,
+    copyHTMLFiles,
+    PresentationList
 }
 import {
     sendStatus,
-    mainWindow
+    mainWindow,
+    sendMessageToRenderer
 } from './index'
 
 import {
@@ -36,15 +38,15 @@ import cors from 'cors'
 import * as http from 'http'
 import * as child from 'child_process'
 
-// import * as fs from 'fs'
-// import * as path from 'path'
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs'
+import * as path from 'path'
+// const fs = require('fs');
+// const path = require('path');
 
 
 
 import {
-   app, shell
+    app, shell
 } from 'electron'
 
 
@@ -58,27 +60,18 @@ import {
     LiveRecording
 } from '../viewer/types'
 
+import { 
+    MessageToRenderer, 
+} from '../renderer/messages'
 
 
 
-// import { writeFileSync } from 'original-fs'
 
-/*import {
-    load
-} from 'mime'*/
 
 
 type PresentationList = {
     [key: string]: { file: string, updated: boolean }
 };
-
-//message with list of presentations that is sent to the renderer
-type PresentationListMessage = {
-    dir: string,
-    presentations: PresentationList,
-    subfolders: string[],
-    atRoot: boolean
-}
 
 let currentDir: string;
 
@@ -105,12 +98,11 @@ function resourceDir(): string {
 function loadSettings(): Boolean {
 
     try {
-    const data = fs.readFileSync(resourceDir() + '/settings.json').toString();
-    slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
-    return true;
+        const data = fs.readFileSync(resourceDir() + '/settings.json').toString();
+        slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
+        return true;
     }
-    catch (err) 
-    {
+    catch (err) {
         return false;
     }
 
@@ -242,37 +234,6 @@ function readManifest(presentation: string): Manifest {
     }
 }
 
-//upgrades a presentation to the most recent version. This includes upgrading the manifest file.
-function upgradePresentation(presentation: string): void {
-    const manifest = readManifest(presentation);
-    upgradeManifest(manifest);
-    writeManifest(manifest);
-    copyHTMLFiles(manifest.presentation);
-}
-
-
-
-//upgrades all presentations in current directory and its descendants
-function upgradeAllPresentations(dir = currentDir): void {
-
-    //silently call read presentations and remember its folders and presentation list
-    const folders = readPresentations(dir, true);
-    const savedPresentations = presentations;
-
-    //upgrade all presentations in the current directory
-    for (const pres of Object.keys(presentations))
-        upgradePresentation(pres);
-
-    //recursively call for children
-    for (const child of folders) {
-        upgradeAllPresentations(dir + '/' + child)
-    }
-
-    //restore saved values
-    currentDir = dir;
-    presentations = savedPresentations;
-
-}
 
 
 
@@ -292,7 +253,8 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
 
     currentDir = dir;
 
-    const msg: PresentationListMessage = {
+    const msg: MessageToRenderer = {
+        type: 'presentation-list',
         dir: currentDir,
         presentations: {} as PresentationList,
         subfolders: [] as string[],
@@ -318,9 +280,7 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
     presentations = msg.presentations; // can be removed?
 
     if (!silent) {
-        //send the list of presentations to the renderer
-        //console.log("Sending presentations:", msg);
-        mainWindow.webContents.send('presentationList', msg);
+        sendMessageToRenderer(msg);
     }
 
     return msg.subfolders;

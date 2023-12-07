@@ -15,39 +15,78 @@
 </head>
 
 <body>
-	<div id='toolbar'>
-		<i class="material-icons toolbar-button" title="Run the shell script that is stored in the file .gitscript in the presentations directory. You can use this script to upload your slides to your webpage, e.g. using git" id="git-script"> file_upload
+
+	<div id='tab-heads'>
+		<div id="instructions-head" class="tab-head selected">Instructions</div>
+		<div id="presentations-head" class="tab-head" >Presentations</div>
+		<div id="messages-head" class="tab-head">Messages</div>
+		<i class="material-icons toolbar-icon" id="spinner"> restart_alt
 		</i>
-		<i class="material-icons toolbar-button"
-			title="Upgrade all presentations in this folder, but not its subfolders, to new versions. This is used when the presentations were created using a previous version of slajdomat. "
-			id="upgrade-presentations"> trending_up
-		</i>
-		<i class="material-icons toolbar-button" title="Go to parent folder" id="parent-folder"> chevron_left
-		</i>
-		<div id="folder-link">
+
+	</div>
+	<div id='tab-contents'>
+		<!-- one of the possible tables in the main window is the instructions tab -->
+		<div id='instructions-tab' class='main-window-tab selected'>
+			<p><b>Step 1. Choose a folder. </b> Use this button
+			</p>
+			<p><button class='button button--primary' id="select-folder-button">select a folder for your
+					presentations</button> </p>
+			<p> to choose the folder where you keep all of your Slajdomat presentations. It can have subfolders. If you
+				copy
+				a presentation to your website, it will be viewable online as a web page. You can change the folder
+				later in
+				the &lsquo;File&rsquo;&nbsp; menu. </p>
+
+			<p><b>Step 2. Set up Figma. </b> To use Slajdomat, you need to install Figma, and the Slajdomat plugin in
+				it,
+				which can be added in the &lsquo;Plugins&rsquo;&nbsp; menu of Figma. </p>
+
+			<p><b>Step 3. Make the presentation in Figma. </b> Create a new &lsquo;Design file&rsquo;&nbsp; in Figma,
+				and
+				use the Slajdomat plugin and your drawing skills to create slides. </p>
+
+			<p><b>Step 4. Export from Figma to this app. </b> When you want to run your slides, press the
+				&lsquo;Export&rsquo;&nbsp; button in the Slajdomat plugin in Figma. This will send the slides from Figma
+				to
+				the presentation folder, and you will be able to view them in this app. </p>
+
+		</div>
+
+		<!-- the presentations tab is the main tab, where the folders and presentations are listed -->
+
+		<div id='presentations-tab' class='main-window-tab'>
+			<div id='toolbar' class='tab-toolbar'>
+				<i class="material-icons toolbar-button disabled"
+					title="Run the shell script that is stored in the file .gitscript in the presentations directory. You can use this script to upload your slides to your webpage, e.g. using git"
+					id="git-script"> file_upload
+				</i>
+				<i class="material-icons toolbar-button disabled" title="Go to parent folder" id="parent-folder-button">
+					chevron_left
+				</i>
+				<div id="link-to-current-folder">
+				</div>
+			</div>
+
+			<div id="empty-folder-text" class='tab-main-content hidden'>
+				There are no presentations in this folder. Create a new presentation using the Slajdomat plugin for
+				Figma.
+			</div>
+			<div id="no-presentations-text" class='tab-main-content hidden'>
+				You have not selected any presentations.
+			</div>
+			<div id="directory-listing" class='tab-main-content'>
+			</div>
+
+		</div>
+
+		<div id="messages-tab" class='main-window-tab'>
+			<div class="tab-toolbar">			A message log. You should only look here when things go wrong.
+			</div>
+			<div id="messages-list" class="tab-main-content"> </div>
 		</div>
 	</div>
-	<div id='no-pre' class='panel'>
-		<p><b>Step 1. Choose a folder. </b>Select a folder for your presentations, using &lsquo;Choose presentation folder&rsquo;&nbsp; in the &lsquo;File&rsquo;&nbsp; menu of this app. This will be the folder where you keep all of your Slajdomat presentations. It can have subfolders. If you copy the presentation folder to your website, it will be viewable online as a web page. </p> 
 
-		<p><b>Step 2. Set up Figma. </b> In order to use Slajdomat, you need to have Figma, and the Slajdomat plugin for Figma (the plugin is not the same as this app). To add the Slajdomat plugin to Figma, use &lsquo;Manage plugins...&rsquo;&nbsp;  in the &lsquo;Plugins&rsquo;&nbsp; menu of Figma.  </p>
 
-		<p><b>Step 3. Make the presentation in Figma. </b> Create a new &lsquo;Design file&rsquo;&nbsp;  in Figma, and use the Slajdomat plugin and your amazing drawing skills to create slides.  </p>
-
-		<p><b>Step 4. Export from Figma to this app. </b> When you want to run your slides, prese the &lsquo;Export&rsquo;&nbsp; button in the Slajdomat plugin in Figma. This will send the slides from Figma to the presentation folder, and you will be able to view them in this app.    </p>
-		
-	</div>
-
-	<div id='presentation-panel' class='panel hidden'>
-		<div id="empty-folder-text" class="hidden">
-			There are no presentations in this folder. Create a new presentation using the Slajdomat plugin for Figma.
-		</div>
-		<div id="all-presentations">
-		</div>
-	</div>
-
-	<div id='status-panel' class='panel'>
-	</div>
 	<!-- <script src="./render-code.js"> -->
 	</script>
 

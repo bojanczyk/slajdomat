@@ -1,31 +1,3 @@
-/**
- * This file will automatically be loaded by webpack and run in the "renderer" context.
- * To learn more about the differences between the "main" and the "renderer" context in
- * Electron, visit:
- *
- * https://electronjs.org/docs/tutorial/application-architecture#main-and-renderer-processes
- *
- * By default, Node.js integration in this file is disabled. When enabling Node.js integration
- * in a renderer process, please be aware of potential security implications. You can read
- * more about security risks here:
- *
- * https://electronjs.org/docs/tutorial/security
- *
- * To enable Node.js integration in this file, open up `main.js` and enable the `nodeIntegration`
- * flag:
- *
- * ```
- *  // Create the browser window.
- *  mainWindow = new BrowserWindow({
- *    width: 800,
- *    height: 600,
- *    webPreferences: {
- *      nodeIntegration: true
- *    }
- *  });
- * ```
- */
-
 import './index.css';
 
 //I would like to use fontsource fonts, but do not know yet how to make this work with stupid webpack
@@ -36,46 +8,63 @@ import './index.css';
 // import {
 //     ipcRenderer
 // } from 'electron'
-const { ipcRenderer } = window.require( 'electron' );
+const { ipcRenderer } = window.require('electron');
 
 
-
-import {
-    PresentationListMessage
-} from '../main/server'
+import { sendMessageToMain, MessageToMain, MessageToRenderer } from './messages';
 
 
+ipcRenderer.on('message-to-renderer', (event, arg : MessageToRenderer) => {
+    switch (arg.type) {
+        case 'stop-spin':
+            document.getElementById('spinner').classList.remove('myspinner');
+            break;
 
-//print a message at the status update at the bottom
-ipcRenderer.on('status-update', (event, arg) => {
-    const div = document.createElement('div');
-    div.innerHTML = arg;
-    const statusPanel = document.getElementById('status-panel');
-    statusPanel.appendChild(div);
-    statusPanel.scrollTo(0, statusPanel.scrollHeight);
-})
+        case 'status-update':
+            const div = document.createElement('div');
+            div.innerHTML = arg.text;
+            const statusPanel = document.getElementById('messages-list');
+            statusPanel.appendChild(div);
+            statusPanel.scrollTo(0, statusPanel.scrollHeight);
+            break;
 
-//stop the spinner for a toolbar element
-ipcRenderer.on('stop-spin', (event, arg) => {
-    if (arg == 'git-script') {
-        const buttonHTML = document.getElementById('git-script');
-        buttonHTML.innerHTML = 'file_upload';
-        buttonHTML.classList.remove('myspinner');
+        case 'presentation-list':
+            receivePresentations(arg);
+            break;
+
+    
+        default:
+            throw('unkown message');
+            break;
     }
-
-})
-
+});
 
 
 
+
+
+
+function selectTab(tab : 'presentations' | 'instructions' | 'messages') {
+    console.log('selecting',tab);
+    for (const tabHead of document.getElementsByClassName('tab-head')) 
+    tabHead.classList.remove('selected');
+
+    for (const tabHead of document.getElementsByClassName('main-window-tab')) 
+    tabHead.classList.remove('selected');
+
+    document.getElementById(tab+'-head').classList.add('selected');
+    document.getElementById(tab+'-tab').classList.add('selected');
+
+}
 
 
 
 //we receive the list of presentations in the current folder
-ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
-
-    // console.log("Received presentations: ", msg);
-
+function receivePresentations (msg : MessageToRenderer) : void
+{
+    if (msg.type != 'presentation-list')
+        throw('wrong message');
+    
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');
         retval.classList.add('presentation-name');
@@ -90,34 +79,36 @@ ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
         retval.innerHTML = 'trending_up';
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
-            ipcRenderer.send('upgrade', name)
+            sendMessageToMain({ type: 'upgrade', name: name });
         })
         return retval;
     }
 
-    function revealButton(name: string, type: 'folder' | 'presentation') {
+    function revealButton(name: string, kind: 'folder' | 'presentation') {
         const retval = document.createElement('i');
         retval.classList.add('material-icons');
         retval.innerHTML = 'folder_open'
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
-            ipcRenderer.send('reveal-finder', { type: type, name: name })
+            sendMessageToMain({ type: 'reveal-in-finder', name: name, kind: kind });
         })
         return retval;
     }
 
-    //show or hide the parent folder button depending on whether we are in the root of the current slide directory
-    document.getElementById('parent-folder').style.display = (msg.atRoot ? 'none' : '')
+    //enable/disable the parent folder button depending on whether we are in the root of the current slide directory
+    if (msg.atRoot)
+        document.getElementById('parent-folder-button').classList.add('disabled')
+    else
+        document.getElementById('parent-folder-button').classList.remove('disabled');
 
 
-    document.getElementById('folder-link').innerHTML = msg.dir;
-    document.getElementById('presentation-panel').classList.remove('hidden');
-    document.getElementById('no-pre').classList.add('hidden');
-    const ul = document.getElementById("all-presentations");
+    document.getElementById('git-script').classList.remove('disabled');
+    document.getElementById('link-to-current-folder').innerHTML = msg.dir;
+    selectTab('presentations');
+    const ul = document.getElementById("directory-listing");
     ul.innerHTML = '';
 
-    //is there at least one presentation that can be upgraded
-    let canUpgrade = false;
+
 
     if (Object.keys(msg.presentations).length == 0 && msg.subfolders.length == 0) {
         //if there are no presentations in the current directory, then a message is displayed which says that such presentations can be created using the figma plugin
@@ -126,6 +117,8 @@ ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
 
         //if there are presentations in the current directory, then they are shown
         document.getElementById('empty-folder-text').classList.add('hidden');
+
+
         for (const i of Object.keys(msg.presentations)) {
 
             const li = document.createElement("div");
@@ -133,54 +126,65 @@ ipcRenderer.on('presentationList', (event, msg: PresentationListMessage) => {
             const name = nameDiv('presentation', i);
             li.appendChild(name)
             name.addEventListener('click', () => {
-                ipcRenderer.send('open-viewer', msg.dir + '/' + msg.presentations[i].file + '/index.html')
+                sendMessageToMain({ type: 'open-viewer', name: msg.dir + '/' + msg.presentations[i].file + '/index.html' })
             })
             li.appendChild(revealButton(i, 'presentation'));
             if (!msg.presentations[i].updated) {
-                li.appendChild(updateButton(i));
-                canUpgrade = true;
+                //here there could be code for upgrading presentations, which is not currently used
+                // li.appendChild(updateButton(i));
+                // canUpgrade = true;
             }
             ul.appendChild(li);
         }
 
 
         for (const f of msg.subfolders) {
-            console.log(f);
             const li = document.createElement("div");
             li.classList.add('presentation-line')
             const name = nameDiv('folder', f);
             li.appendChild(name);
             name.addEventListener('click', () => {
-                ipcRenderer.send('goto-folder', f)
+                sendMessageToMain({ type: 'goto-folder', name: f });
             })
             ul.appendChild(li);
         }
     }
-    canUpgrade = true;
-    const upgradeButton = document.getElementById('upgrade-presentations') as HTMLElement;
-    if (canUpgrade) { upgradeButton.style.display = '' }
-    else { upgradeButton.style.display = 'none' }
+}
 
-});
+//switch tabs in the main window
+document.getElementById('instructions-head').addEventListener('click', (e) => selectTab('instructions'));
+document.getElementById('messages-head').addEventListener('click', (e) => selectTab('messages'));
+document.getElementById('presentations-head').addEventListener('click', (e) => selectTab('presentations'));
 
 
-document.getElementById('parent-folder').addEventListener('click', () => {
-    ipcRenderer.send('parent-folder');
-})
-
+//a button in the toolbar has been clicked
 document.getElementById('toolbar').addEventListener('click', (event) => {
 
-    const button = (event.target as HTMLElement).id;
-    ipcRenderer.send('toolbar', button);
+    const target = event.target as HTMLElement;
 
-    //for toolbar buttons that take more time, we do a spinner
-    if (button == 'git-script') {
-        const buttonHTML = document.getElementById('git-script');
-        buttonHTML.innerHTML = 'autorenew';
-        buttonHTML.classList.add('myspinner');
+    if (target.classList.contains('disabled'))
+        return;
+
+    switch (target.id) {
+        case 'parent-folder-button':
+            sendMessageToMain({ type: 'parent-folder-button' });
+            break;
+        case 'git-script':
+            sendMessageToMain({ type: 'git-script' });
+            //start the spinner
+            document.getElementById('spinner').classList.add('myspinner');
+            break;
+        case 'link-to-current-folder':
+            sendMessageToMain({ type: 'parent-folder-button' });
+            break;
+
     }
 
+})
 
+
+document.getElementById('select-folder-button').addEventListener('mouseup', () => {
+    sendMessageToMain({ type: 'choose-presentations-folder' });
 })
 
 

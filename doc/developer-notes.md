@@ -6,8 +6,6 @@ This file contains notes to the developer that may be useful in maintaning the a
 Things to implement in the future
 
 ### Viewer app
-- keep the instructions available in the viewer app, even when the presentation folder has already been selected
-- disable various buttons in the viewer app when they are not needed, for example when the presentation folder has not been selected
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
 
 ### Plugin 

@@ -1,14 +1,20 @@
-import { app, BrowserWindow, ipcMain, dialog} from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { createMenu } from './menubar'
 import * as child from 'child_process'
 
-// import * as fs from 'fs'
-const fs = require('fs');
+import * as fs from 'fs'
+// const fs = require('fs');
 
 
-import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, upgradePresentation, upgradeAllPresentations,revealFinder } from './server'
+import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, revealFinder, SlajdomatSettings } from './server'
+import {MessageToMain, MessageToRenderer} from '../renderer/messages';
 
-export { sendStatus, mainWindow, openPreferences, openFolder }
+
+export { sendStatus, mainWindow, openPreferences, choosePresentationsFolder, sendMessageToRenderer }
+
+
+
+
 
 //this is the link to the main window html, produced by the despicable webpack
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -20,7 +26,7 @@ let mainWindow = null as BrowserWindow;
 
 
 function sendStatus(text: string): void {
-  mainWindow.webContents.send('status-update', text);
+  sendMessageToRenderer({type : 'status-update', text : text});
 }
 
 
@@ -38,7 +44,7 @@ const createWindow = (): void => {
       nodeIntegration: true,
       // for modern versions of electron the following is also needed to enable interprocess communication
       // (otherwise one should use contextBridge)
-      contextIsolation: false, 
+      contextIsolation: false,
     }
   });
 
@@ -73,9 +79,63 @@ app.on('activate', () => {
   }
 });
 
+//the event handler for messages from the renderer process
+ipcMain.on('message-to-main', (event, arg) => {
+  const message = arg as MessageToMain;
+
+  switch (message.type) {
+    case 'choose-presentations-folder':
+      choosePresentationsFolder();
+      break;
+
+    case 'reveal-in-finder':
+      revealFinder(message.name, message.kind);
+      break;
+
+    case 'open-viewer':
+      openViewer(message.name);
+      break;
+
+    case 'goto-folder':
+      gotoChild(message.name);
+      break;
+
+    case 'upgrade':
+      //not currently used
+      throw ('upgrade event is not currently supported');
+      //   upgradePresentation(arg);
+      //   readPresentations()
+      break;
+
+    case 'parent-folder-button':
+      gotoParent();
+      break;
+
+    case 'git-script':
+      //the button for running the git script
+      runGitScript();
+      break;
+
+    case 'link-to-current-folder':
+      revealFinder('', 'folder');
+      break;
+
+    case 'settings-closed':
+      if (message.settings != undefined) {
+        //the settings window was not  cancelled
+        assignSettings(message.settings);
+      }
+      preferencesWindow.close();
+      break;
+
+
+
+  }
+});
 
 //the user has clicked a presentation name, which should result in opening that presentation in a new window
-ipcMain.on('open-viewer', (event, arg) => {
+function openViewer(name: string) {
+  console.log('opening viewer', name);
   const offset = mainWindow.getPosition();
   const viewerWin = new BrowserWindow({
     width: 800,
@@ -86,37 +146,27 @@ ipcMain.on('open-viewer', (event, arg) => {
       nodeIntegration: true,
       // for modern versions of electron the following is also needed to enable interprocess communication
       // (otherwise one should use contextBridge)
-      contextIsolation: false, 
+      contextIsolation: false,
     },
     show: false
   })
 
-  viewerWin.loadFile(arg)
+  viewerWin.loadFile(name);
   viewerWin.once('ready-to-show', () => {
     viewerWin.show()
 
     // Open the DevTools.
     //viewerWin.webContents.openDevTools();
   })
-})
-
-
-//the user has clicked on a folder name
-ipcMain.on('goto-folder', (event, arg) => {
-  gotoChild(arg);
-})
-
-//the user has clicked on the button for the parent folder
-ipcMain.on('parent-folder', () => { gotoParent() })
-
-//the user has clicked on the button for the parent folder
-ipcMain.on('upgrade', (event, arg) => {
-  upgradePresentation(arg);
-  readPresentations()
 }
-)
 
 
+
+
+//the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
+function sendMessageToRenderer(msg: MessageToRenderer): void {
+  mainWindow.webContents.send('message-to-renderer', msg);
+}
 
 
 function runGitScript(): void {
@@ -142,44 +192,20 @@ function runGitScript(): void {
         sendStatus('Git script successful.')
       else
         sendStatus('Git script failed.')
-      mainWindow.webContents.send('stop-spin', 'git-script');
+      
+      sendMessageToRenderer({type : 'stop-spin'});
     });
   }
 }
 
-//a button in the toolbar has been clicked
-ipcMain.on('toolbar', (event, arg) => {
-  switch (arg) {
-
-    case 'git-script':
-      //the button for running the git script
-      runGitScript();
-      break;
-
-
-    case 'upgrade-presentations':
-      upgradeAllPresentations();
-      readPresentations();
-      break;
-
-    default:
-    //do nothing
-
-  }
-})
-
-ipcMain.on('reveal-finder', (event,arg) => {
-  revealFinder(arg.name, arg.type);      
-});
-
 
 
 //the menu item for choosing a presentation directory
-function openFolder(): Promise<void> {
+function choosePresentationsFolder(): Promise<void> {
+
   return dialog.showOpenDialog({ properties: ['openDirectory'] }).then(
     result => {
       if (!result.canceled) {
-        //console.log('not cancelled')
         slajdomatSettings.directory = result.filePaths[0];
         readPresentations(slajdomatSettings.directory);
         saveSettings();
@@ -189,10 +215,12 @@ function openFolder(): Promise<void> {
 }
 
 
+//the preferences window
 let preferencesWindow: BrowserWindow;
+
 //open the preferences, which for the moment only uses the port number
 function openPreferences(): void {
-  // console.log('preferences')
+
   preferencesWindow = new BrowserWindow({
     height: 250,
     width: 300,
@@ -204,7 +232,7 @@ function openPreferences(): void {
       nodeIntegration: true,
       // for modern versions of electron the following is also needed to enable interprocess communication
       // (otherwise one should use contextBridge)
-      contextIsolation: false, 
+      contextIsolation: false,
     }
   });
 
@@ -218,32 +246,26 @@ function openPreferences(): void {
   });
 }
 
-//the preferences window was closed, either through ok or cancel
-ipcMain.on('settings-closed', (event, arg) => {
-  if (arg != undefined) {
-    //the settings window was not  cancelled
-    assignSettings(arg);
-  }
-  preferencesWindow.close();
-})
+
 
 function startApp(): void {
 
-  if (loadSettings()){
-  if (fs.existsSync(slajdomatSettings.directory) &&
-    fs.lstatSync(slajdomatSettings.directory).isDirectory()) {
-    readPresentations(slajdomatSettings.directory);
-  }
-  startServer();
+  if (loadSettings()) {
+    if (fs.existsSync(slajdomatSettings.directory) &&
+      fs.lstatSync(slajdomatSettings.directory).isDirectory()) {
+      readPresentations(slajdomatSettings.directory);
+    }
+    startServer();
   }
   else {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Alert',
-    message: 'Could not access the settings file. It should be inside the app, buried in a directory ending with resources/settings.json. If you are a developer, this probably means that there was an issue when running the script post-electron.sh.',
-    buttons: ['Too bad, I will quit now.'],
-  });}
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Alert',
+      message: 'Could not access the settings file. It should be inside the app, buried in a directory ending with resources/settings.json. If you are a developer, this probably means that there was an issue when running the script post-electron.sh.',
+      buttons: ['Too bad, I will quit now.'],
+    });
+  }
 
 
-  
+
 }

@@ -2,7 +2,7 @@
 export{ createMenu}
 
 import {app,Menu} from 'electron'
-import {openPreferences,openFolder} from './index'
+import {openPreferences,choosePresentationsFolder} from './index'
 
 
 function createMenu() : void
@@ -34,7 +34,7 @@ const template : any = [
   {
     label: 'File',
     submenu: [
-      { label : 'Choose presentations folder', click : () => {openFolder();}, accelerator : 'CommandOrControl+O'},
+      { label : 'Choose presentations folder', click : () => {choosePresentationsFolder();}, accelerator : 'CommandOrControl+O'},
 
       // add Preferences to File menu for non-Mac OS 
       ...(isMac ? [] : [
