@@ -105,6 +105,12 @@ function receivePresentations (msg : MessageToRenderer) : void
     document.getElementById('git-script').classList.remove('disabled');
     document.getElementById('link-to-current-folder').innerHTML = msg.dir;
     selectTab('presentations');
+    
+
+    //hide the text which says that there is no presentations folder selected
+    document.getElementById('no-presentations-text').classList.add('hidden');
+
+    //this is where the list of subfolders or presentations will be given
     const ul = document.getElementById("directory-listing");
     ul.innerHTML = '';
 
@@ -161,6 +167,7 @@ document.getElementById('presentations-head').addEventListener('click', (e) => s
 document.getElementById('toolbar').addEventListener('click', (event) => {
 
     const target = event.target as HTMLElement;
+    console.log('here goes');
 
     if (target.classList.contains('disabled'))
         return;
@@ -175,7 +182,7 @@ document.getElementById('toolbar').addEventListener('click', (event) => {
             document.getElementById('spinner').classList.add('myspinner');
             break;
         case 'link-to-current-folder':
-            sendMessageToMain({ type: 'parent-folder-button' });
+            sendMessageToMain({ type: 'reveal-in-finder', name: '', kind : 'folder' });
             break;
 
     }

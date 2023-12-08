@@ -7,7 +7,6 @@ import {sendMessageToMain} from './messages'
 let settings : SlajdomatSettings;
 
 ipcRenderer.on('settings', (event, msg) => {
-    console.log('got this');
     settings = msg as SlajdomatSettings;
     (document.getElementById('port-number') as HTMLInputElement).value = settings.port.toString(); 
     (document.getElementById('ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg; 

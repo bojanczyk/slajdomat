@@ -48,10 +48,10 @@ tabs and switching between in the main window */
 /* a single tab head */
 .tab-head {
     background-color: whitesmoke;
-    margin-left : 10px;
+    margin-left: 10px;
     margin-right: 10px;
-    padding-left : 10px;
-    padding-right : 10px;
+    padding-left: 10px;
+    padding-right: 10px;
     padding-top: 3px;
     padding-bottom: 3px;
     cursor: pointer;
@@ -70,8 +70,8 @@ tabs and switching between in the main window */
 /* the spinner in the top right corner */
 #spinner {
     position: absolute;
-    right : 5px;
-    top : 5px;
+    right: 5px;
+    top: 5px;
 }
 
 #spinner:not(.myspinner) {
@@ -85,12 +85,14 @@ tabs and switching between in the main window */
 /* Keyframes for spinning animation */
 @keyframes spin {
     0% {
-      transform: rotate(0deg);
+        transform: rotate(0deg);
     }
+
     100% {
-      transform: rotate(360deg); /* Rotate a full circle */
+        transform: rotate(360deg);
+        /* Rotate a full circle */
     }
-  }
+}
 
 
 /* what is below the tab, i.e. this is most of the contents of the viewer window */
@@ -151,7 +153,7 @@ tabs and switching between in the main window */
 
 
 .tab-toolbar {
-    padding : 10px;
+    padding: 10px;
     display: flex;
     align-items: center;
     align-self: flex-start;
@@ -159,7 +161,7 @@ tabs and switching between in the main window */
 }
 
 .tab-main-content {
-    padding-left : 5px;
+    padding-left: 5px;
     flex-grow: 1;
     align-self: flex-start;
     overflow: scroll;
@@ -169,7 +171,7 @@ tabs and switching between in the main window */
 #directory-listing {
     font-size: 12px;
     font-weight: 300;
-    width : 100%;
+    width: 100%;
 }
 
 
@@ -182,54 +184,16 @@ tabs and switching between in the main window */
 #instructions-tab {
     flex-grow: 1;
     font-weight: 300;
-    padding : 10px;
+    padding: 10px;
 }
 
 #messages-tab {
-    padding : 10px;
+    padding: 10px;
 }
 
 #empty-folder-text {
     padding-top: 10px;
     font-weight: 200;
-}
-
-.settings-item {
-    margin: 10px;
-    font-weight: 200;
-}
-
-#dialog-buttons {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    margin: 5px;
-    padding: 5px;
-}
-
-#dialog-buttons button {
-    margin: 5px;
-}
-
-#settings-body {
-    display: flex;
-    font-size: small;
-}
-
-#settings-body button {
-    font-family: 'Roboto';
-    font-weight: 100;
-}
-
-#settings-body input {
-    margin-top: 5px;
-    padding: 5px;
-}
-
-.settings-item {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 4px;
 }
 
 
@@ -257,3 +221,52 @@ tabs and switching between in the main window */
 .hidden {
     display: none;
 }
+
+
+/* ************************************* */
+/* the settings dialog box */
+.settings-item {
+    margin: 10px;
+    font-weight: 200;
+}
+
+#dialog-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: row-reverse;
+    background-color: white;
+}
+
+#dialog-buttons button {
+    margin: 10px;
+    margin-left : 0px;
+}
+
+#settings-body {
+    flex-grow: 1;
+    overflow-y: scroll;
+}
+
+#settings-body button {
+    font-family: 'Roboto';
+    font-weight: 100;
+}
+
+#settings-body input {
+    margin-top: 5px;
+    padding: 5px;
+}
+
+.settings-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+#settings-header  {
+    font-weight: 400;
+    font-size: large;
+    padding: 10px;
+}
+
+

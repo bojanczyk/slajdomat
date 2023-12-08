@@ -18,7 +18,7 @@
 
 	<div id='tab-heads'>
 		<div id="instructions-head" class="tab-head selected">Instructions</div>
-		<div id="presentations-head" class="tab-head" >Presentations</div>
+		<div id="presentations-head" class="tab-head">Presentations</div>
 		<div id="messages-head" class="tab-head">Messages</div>
 		<i class="material-icons toolbar-icon" id="spinner"> restart_alt
 		</i>
@@ -27,15 +27,8 @@
 	<div id='tab-contents'>
 		<!-- one of the possible tables in the main window is the instructions tab -->
 		<div id='instructions-tab' class='main-window-tab selected'>
-			<p><b>Step 1. Choose a folder. </b> Use this button
-			</p>
-			<p><button class='button button--primary' id="select-folder-button">select a folder for your
-					presentations</button> </p>
-			<p> to choose the folder where you keep all of your Slajdomat presentations. It can have subfolders. If you
-				copy
-				a presentation to your website, it will be viewable online as a web page. You can change the folder
-				later in
-				the &lsquo;File&rsquo;&nbsp; menu. </p>
+			<p><b>Step 1.  Choose a folder. </b> Using the &lsquo;File&rsquo;&nbsp; menu, choose the folder where you keep all of your Slajdomat presentations. It can have subfolders. If you
+				copy this folder (or one of its subfolders) to your website, it will be viewable online as a web page.  </p>
 
 			<p><b>Step 2. Set up Figma. </b> To use Slajdomat, you need to install Figma, and the Slajdomat plugin in
 				it,
@@ -67,20 +60,25 @@
 				</div>
 			</div>
 
+
+			<div id="no-presentations-text" class='tab-main-content'> You have not yet selected a folder for your presentations. Do this using the &lsquo;File&rsquo;&nbsp; menu, or using this button
+				<p><button class='button button--primary' id="select-folder-button">select a folder for your
+						presentations</button> </p>
+				<p> Once you have selected the folder, your presentations will be visible in this tab.</p>
+			</div>
+
 			<div id="empty-folder-text" class='tab-main-content hidden'>
 				There are no presentations in this folder. Create a new presentation using the Slajdomat plugin for
 				Figma.
 			</div>
-			<div id="no-presentations-text" class='tab-main-content hidden'>
-				You have not selected any presentations.
-			</div>
+
 			<div id="directory-listing" class='tab-main-content'>
 			</div>
 
 		</div>
 
 		<div id="messages-tab" class='main-window-tab'>
-			<div class="tab-toolbar">			A message log. You should only look here when things go wrong.
+			<div class="tab-toolbar"> A message log. You should only look here when things go wrong.
 			</div>
 			<div id="messages-list" class="tab-main-content"> </div>
 		</div>

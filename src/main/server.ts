@@ -40,8 +40,7 @@ import * as child from 'child_process'
 
 import * as fs from 'fs'
 import * as path from 'path'
-// const fs = require('fs');
-// const path = require('path');
+import * as which from 'which'
 
 
 
@@ -60,8 +59,8 @@ import {
     LiveRecording
 } from '../viewer/types'
 
-import { 
-    MessageToRenderer, 
+import {
+    MessageToRenderer,
 } from '../renderer/messages'
 
 
@@ -100,6 +99,12 @@ function loadSettings(): Boolean {
     try {
         const data = fs.readFileSync(resourceDir() + '/settings.json').toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
+
+        if (slajdomatSettings.ffmpeg == '')
+            slajdomatSettings.ffmpeg = which.sync('ffmpeg');
+        if (slajdomatSettings.ffprobe == '')
+            slajdomatSettings.ffprobe = which.sync('ffprobe');
+
         return true;
     }
     catch (err) {

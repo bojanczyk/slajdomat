@@ -3,29 +3,37 @@
 <html>
 
 <head>
-	<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
-	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-	<title>Preferences</title>
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
+    <title>Preferences</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
 
 </head>
 
-<body id='settings-body'>
-	<div class='settings-item'>
-        Port number <input type="text" id="port-number"/>
+<body>
+    <div id="settings-header"> Settings </div>
+    <div id='settings-body'>
+        <div class='settings-item'>
+            <b>Port number.</b> This number is used for communication between Slajdomat and the Figma plugin. The
+            default is
+            3001.
+            If you use a non-default number (because 3001 is used by some other program on your computer) then make sure
+            that the Figma plugin is configured to use the same number. <input type="text" id="port-number" />
+        </div>
+        <div class='settings-item'>
+            <b>Paths to ffmpeg and ffprobe.</b>
+            These programs are needed for recording sound. If the two fields below are
+            empty,
+            then Slajdomat could not find these paths, which likely means that you have not installed the programs.
+            <input type="text" id="ffmpeg-path" />
+            <input type="text" id="ffprobe-path" />
+        </div>
     </div>
-    <div class='settings-item'>
-        Path to ffmpeg 
-        <input type="text" id="ffmpeg-path"/>
-    </div>
-    <div class='settings-item'>
-        Path to ffprobe 
-        <input type="text" id="ffprobe-path"/>
-    </div>
+
     <div id="dialog-buttons">
-    <button id='cancel'>Cancel</button>
-    <button id='ok'>OK</button>
-</div>
+        <button id='cancel'>Cancel</button>
+        <button id='ok'>OK</button>
+    </div>
 </body>
 
 </html>

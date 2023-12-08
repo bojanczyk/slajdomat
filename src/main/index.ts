@@ -3,7 +3,6 @@ import { createMenu } from './menubar'
 import * as child from 'child_process'
 
 import * as fs from 'fs'
-// const fs = require('fs');
 
 
 import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, revealFinder, SlajdomatSettings } from './server'
@@ -222,8 +221,8 @@ let preferencesWindow: BrowserWindow;
 function openPreferences(): void {
 
   preferencesWindow = new BrowserWindow({
-    height: 250,
-    width: 300,
+    height: 450,
+    width: 350,
     // modal : true // I would like to understand how to do this
     //parent : mainWindow,
     frame: false,
