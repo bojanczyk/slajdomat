@@ -91,6 +91,8 @@ function queueError() {
     loadStruct.onError = [];
 }
 
+
+
 //function that is called once the svg for a slide finishes loading. The function extracts the svg from the loaded object, attaches the svg to the event and its overlays, and sets the initial visibility of overlays accordingly. Finally, the svg of the slide is attached to the main svg, using a separate function.
 function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
@@ -119,78 +121,11 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
             }
         }
 
-        // We replace every rect filled with an image pattern by the original image definition
-        // Besides simplifying the document structure, this enables animated images 
-        // (e.g. [A]PNG) on all browsers, not just Firefox!
-        // This piece of code basically overcomes a problem with animations embedded in svg patterns,
-        // which are currently poorly supported in Chrome and Safari.
-        for (const r of svg.querySelectorAll('rect')) {
-            //if the rectangle has a fill with an url, then this needs to be prepended with the slide id
-            let fill = r.getAttribute('fill'); // should start with "url(#pattern..."
-            if ((fill != null) && (fill.startsWith('url(#'))) {
-                fill = 'url(#' + slide.id + fill.slice(5);
-                r.setAttribute('fill', fill);
-            }
-            else
-                fill = null;
-            //find pattern and corresponding use and image referenced by rectangle fill url 
-            let pattern;
-            if ((defs != null) && (fill != null)) {
-                let patternId = fill.slice(5).slice(0, -1);
-                for (const p of defs.childNodes) {
-                    if (p.nodeName == 'pattern') {
-                        const pat = p as SVGPatternElement;
-                        if (pat.id == patternId)
-                            pattern = pat;
-                    }
-                }
-            }
-            if (pattern != null) {
-                for (const u of pattern.childNodes) {
-                    if (u.nodeName == 'use') {
-                        const use = u as SVGUseElement;
-                        let xlink = use.getAttribute('xlink:href'); // should start with "#<slideId>image...
-                        let image;
-                        if (xlink != null) {
-                            for (const i of defs.childNodes) {
-                                if (i.nodeName == 'image') {
-                                    const img = i as SVGImageElement;
-                                    if (img.id == xlink.slice(1))
-                                        image = img;
-                                }
-                            }
-                        }
-                        if (image != null) {
-                            // now, the relevant objects are nested as follows:
-                            //    <rect id="..." x="..." y="..." ...>
-                            //       <use xlink:href="..." transform="..." ...>
-                            //          <image id="..." width="..." height="..." ...>
-                            // we need to replace <rect> by <g>, but for this we need to
-                            // turn x,y,width,height attributes into a transform attribute
-                            let rectG = document.createElementNS("http://www.w3.org/2000/svg", 'g') as SVGGElement;
-                            const x = parseFloat(r.getAttribute('x') || '0');
-                            const y = parseFloat(r.getAttribute('y') || '0');
-                            const w = parseFloat(r.getAttribute('width') || '1');
-                            const h = parseFloat(r.getAttribute('height') || '1');
-                            const imgW = parseFloat(image.getAttribute('width') || '1');
-                            const imgH = parseFloat(image.getAttribute('height') || '1');
-                            const scaleX = w / imgW;
-                            const scaleY = h / imgH;
-                            rectG.id = r.id;
-                            rectG.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + scaleX + ' ' + scaleY + ')');
-                            let imageClone = image.cloneNode(true) as SVGImageElement;
-                            let parent = r.parentNode;
-                            parent.insertBefore(rectG, r);
-                            rectG.appendChild(imageClone);
-                            parent.removeChild(r);
-                            pattern.remove();
-                            // stop looking for use
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        //we also change the code of some rectangles, such as those which store pictures, see comments for CleanRect below.
+        for (const r of svg.querySelectorAll('rect'))
+            cleanRect(r, slide, defs);
+
+
 
         // we also need to fix a bug related to SVG <a href=...> nodes:
         // the export function of Figma unfortunately detaches those nodes 
@@ -270,6 +205,111 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 }
 
 
+
+//each slide has its definitions, but they use the same id's, e.g. 'image0' is used in every slide that has an image. As a result all images would point to the last occurrence of image0 in the document. Probably there is a namespace way to fix this, but since I do not understand namespaces, I simply prepend the slide id to every id in the definitions. 
+function cleanDefs(svg: SVGElement, slide: ZoomEvent): void {
+    for (const c of svg.childNodes) {
+        let child = c as SVGElement;
+        child.id = slide.id + child.id;
+
+        //the following two lines might not make sense any more, I forgot why they were needed
+        if (child.nodeName == 'clipPath')
+            child.remove();
+
+        //As far as I know, the id's in the defs are references in two places: inside the defs in a 'use' tag, which is fixed below, and inside rects in the slide itself, which is treated earlier. 
+        if (child.nodeName == 'pattern') {
+
+            for (const use of child.getElementsByTagName('use')) {
+                const oldLink = use.getAttribute('xlink:href');
+                const newLink = '#' + slide.id + oldLink.slice(1);
+                use.setAttribute('xlink:href', newLink);
+            }
+        }
+
+
+    }
+}
+
+
+
+//This code looks at rectangles that store pictures, or have patterns, and modifies their code so that it displays correctly. These are hacks that are used to overcome incompatibilities between Figma's export and the way that browsers display images inside svg's.
+
+function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
+
+    // We replace every rect filled with an image pattern by the original image definition
+    // Besides simplifying the document structure, this enables animated images 
+    // (e.g. [A]PNG) on all browsers, not just Firefox!
+    // This piece of code basically overcomes a problem with animations embedded in svg patterns,
+    // which are currently poorly supported in Chrome and Safari.
+    //if the rectangle has a fill with an url, then this needs to be prepended with the slide id
+    let fill = r.getAttribute('fill'); // should start with "url(#pattern..."
+    if ((fill != null) && (fill.startsWith('url(#'))) {
+        fill = 'url(#' + slide.id + fill.slice(5);
+        r.setAttribute('fill', fill);
+    }
+    else
+        fill = null;
+    //find pattern and corresponding use and image referenced by rectangle fill url 
+    let pattern;
+    if ((defs != null) && (fill != null)) {
+        let patternId = fill.slice(5).slice(0, -1);
+        for (const p of defs.childNodes) {
+            if (p.nodeName == 'pattern') {
+                const pat = p as SVGPatternElement;
+                if (pat.id == patternId)
+                    pattern = pat;
+            }
+        }
+    }
+    if (pattern != null) {
+        for (const u of pattern.childNodes) {
+            if (u.nodeName == 'use') {
+                const use = u as SVGUseElement;
+                let xlink = use.getAttribute('xlink:href'); // should start with "#<slideId>image...
+                let image;
+                if (xlink != null) {
+                    for (const i of defs.childNodes) {
+                        if (i.nodeName == 'image') {
+                            const img = i as SVGImageElement;
+                            if (img.id == xlink.slice(1))
+                                image = img;
+                        }
+                    }
+                }
+                if (image != null) {
+                    // now, the relevant objects are nested as follows:
+                    //    <rect id="..." x="..." y="..." ...>
+                    //       <use xlink:href="..." transform="..." ...>
+                    //          <image id="..." width="..." height="..." ...>
+                    // we need to replace <rect> by <g>, but for this we need to
+                    // turn x,y,width,height attributes into a transform attribute
+                    let rectG = document.createElementNS("http://www.w3.org/2000/svg", 'g') as SVGGElement;
+                    const x = parseFloat(r.getAttribute('x') || '0');
+                    const y = parseFloat(r.getAttribute('y') || '0');
+                    const w = parseFloat(r.getAttribute('width') || '1');
+                    const h = parseFloat(r.getAttribute('height') || '1');
+                    const imgW = parseFloat(image.getAttribute('width') || '1');
+                    const imgH = parseFloat(image.getAttribute('height') || '1');
+                    const scaleX = w / imgW;
+                    const scaleY = h / imgH;
+                    rectG.id = r.id;
+                    rectG.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + scaleX + ' ' + scaleY + ')');
+                    let imageClone = image.cloneNode(true) as SVGImageElement;
+                    let parent = r.parentNode;
+                    parent.insertBefore(rectG, r);
+                    rectG.appendChild(imageClone);
+                    parent.removeChild(r);
+                    pattern.remove();
+                    // stop looking for use
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+
 //attaches the svg for a node to the main svg of the presentation. The node's svg is attached as a direct child of the main svg (not as a descendant in the tree structure), with a suitably computed transformation.
 function attachSVG(node: SlideEvent) {
 
@@ -314,31 +354,4 @@ function attachSVG(node: SlideEvent) {
         updatePageNumber()
     }
 
-}
-
-
-//each slide has its definitions, but they use the same id's, e.g. 'image0' is used in every slide that has an image. As a result all images would point to the last occurrence of image0 in the document. Probably there is a namespace way to fix this, but since I do not understand namespaces, I simply prepend the slide id to every id in the definitions. 
-function cleanDefs(svg: SVGElement, slide : ZoomEvent): void {
-    for (const c  of svg.childNodes) {
-        let child = c as SVGElement;
-        child.id = slide.id + child.id;
-
-        //the following two lines might not make sense any more, I forgot why they were needed
-        if (child.nodeName == 'clipPath')
-            child.remove(); 
-
-        //As far as I know, the id's in the defs are references in two places: inside the defs in a 'use' tag, which is fixed below, and inside rects in the slide itself, which is treated earlier. 
-        if (child.nodeName == 'pattern')
-        {
-
-            for (const use of child.getElementsByTagName('use'))
-                {
-                    const oldLink = use.getAttribute('xlink:href');
-                    const newLink = '#' + slide.id + oldLink.slice(1);
-                    use.setAttribute('xlink:href', newLink);
-                }
-        }
-        
-            
-    }
 }

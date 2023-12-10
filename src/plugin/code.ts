@@ -27,7 +27,7 @@ import {
     matematykWord
 } from './matematyk'
 
-import { freshName, sanitize } from '../common/helper'
+import { freshName, sanitize, freshRect } from '../common/helper'
 import {
     Rect
 } from '../viewer/transform'
@@ -114,76 +114,26 @@ function initPlugin() {
 //Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
 function createNewSlide(width: number, height: number, name: string): FrameNode {
 
+    let basex, basey = 0;
 
-    //finds a place for the new slide, by searching in a spiral around the current slide (or the origin, if there is no current slide)
-    function findPlace(width: number, height: number): Rect {
-        //does rectangle a intersect any frame
-        function intersectsNothing(a: Rect) {
-            function intersects(a: Rect, b: FrameNode) {
-                if (a.x > b.x + b.width || a.x + a.width < b.x)
-                    return false;
-                if (a.y > b.y + b.height || a.y + a.height < b.y)
-                    return false;
-                return true;
-            }
-            for (const b of allSlides())
-                if (intersects(a, b))
-                    return false;
-            return true;
-        }
-
-        const candidate: Rect = {
-            width: width,
-            height: height,
-            x: 0,
-            y: 0
-        };
-
-        const basex = (state.currentSlide == null ? 0 : state.currentSlide.x);
-        const basey = (state.currentSlide == null ? 0 : state.currentSlide.y);
-
-        //search for free space below the current slide,
-        //using the city metric (i.e. the search follows a square spiral pattern)
-        let i = 0;
-        let searching = true;
-        while (searching) {
-            i++;
-            for (let j = 0; j < i && searching; j++) {
-                candidate.x = basex + j * width;
-                candidate.y = basey + (i + 0.2) * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = basex + (i + 0.2) * width;
-                candidate.y = basey + j * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = basex - j * width;
-                candidate.y = basey + (i + 0.2) * height;
-                if (intersectsNothing(candidate)) {
-                    searching = false;
-                    break;
-                }
-                candidate.x = basex - (i + 0.2) * width;
-                candidate.y = basey + j * height;
-                if (intersectsNothing(candidate))
-                    searching = false;
-            }
-        }
-        return candidate;
+    try {
+        basex = state.currentSlide.x;
+        basey = state.currentSlide.y;
+    } catch (e) {
+        //the slide might not be defined, or defined and removed
+        basex = 0;
+        basey = 0;
     }
 
 
-    const place = findPlace(width, height);
+
+    const place = freshRect({width : width, height : height, x : basex, y : basey}, allSlides());
     const newSlide = figma.createFrame();
     newSlide.name = name;
     newSlide.x = place.x;
     newSlide.y = place.y
     newSlide.resize(width, height);
-    const id = freshName(sanitize(newSlide.name), avoidList(newSlide));
+    const id = freshName(sanitize(newSlide.name), avoidList(undefined));
     const database: Database = {
         name: newSlide.name,
         id: id,
@@ -229,11 +179,14 @@ function sendDropDownList() {
 
 //send the event list of the current slide
 function sendEventList() {
-    cleanDatabase();
-    sendToUI({
-        type: 'eventList',
-        events: state.database.events
-    });
+    //the slide might be removed
+    if (state.currentSlide != null && !state.currentSlide.removed) {
+        cleanDatabase();
+        sendToUI({
+            type: 'eventList',
+            events: state.database.events
+        });
+    }
 }
 
 //returns a unique id for an event, inside the current slide
@@ -266,9 +219,13 @@ function createChildEvent(id: string): RectangleNode {
     }
     state.database.events.push(newEvent);
 
+    const newplace = freshRect({ width : 100, height : 100 * slide.height / slide.width, x : 100, y : 100}, state.currentSlide.children as FrameNode[]);
+
     const width = 100;
     const rect = figma.createRectangle();
     rect.resize(width, width * slide.height / slide.width);
+    rect.x = newplace.x;
+    rect.y = newplace.y;
     rect.fills = [{
         type: 'SOLID',
         color: {
@@ -281,8 +238,7 @@ function createChildEvent(id: string): RectangleNode {
     rect.setPluginData("childLink", id)
     rect.name = "Link to " + slide.name;
     state.currentSlide.appendChild(rect);
-    rect.x = 100
-    rect.y = 100
+  
     return rect;
 
 }
@@ -465,7 +421,7 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
 
 
 //these frames are displayed when the mouse hovers over an event. In principle, there should be at most one, but for some reason the delete events are not matched with the create events, and therefore I keep a list of all frames, and delete all of them.
-const hoverFrames : RectangleNode[] = []
+const hoverFrames: RectangleNode[] = []
 
 //deletes all hover frames
 function deleteHoverFrames() {
@@ -477,15 +433,15 @@ function deleteHoverFrames() {
 function hoverEvent(index: number): void {
 
     if (index == -1) {
-    //if the index is -1, then the mouse has left, and the frames should be deleted
+        //if the index is -1, then the mouse has left, and the frames should be deleted
         deleteHoverFrames();
-        }
+    }
     else {
-        
+
         //otherwise, the index says which event is hovered over. It will be surrounded by a frame
         const event = state.database.events[index];
         const link = findEventObject(event, state.currentSlide);
-        if (link != null){
+        if (link != null) {
 
             const hoverFrame = figma.createRectangle();
 
@@ -506,13 +462,13 @@ function hoverEvent(index: number): void {
             hoverFrames.push(hoverFrame);
         }
 
-            
+
     }
 }
 
 
 //code that is run when the plugin is closed
-function closePlugin() : void {
+function closePlugin(): void {
     deleteHoverFrames();
 }
 
@@ -522,7 +478,7 @@ function clickEvent(index: number): void {
     const event = state.database.events[index];
     if (event.type == 'child') {
         gotoSlide(findSlide(event.id));
-    } 
+    }
 }
 
 // I use my own id's, instead of those of figma, so that copy and paste between presentations works
@@ -536,15 +492,27 @@ function slideId(slide: FrameNode): string {
 }
 
 //list of id's to avoid when creating a new id in a slide
-function avoidList(slide: FrameNode): string[] {
+/*If the argument is defined, then we are generating an id for an event inside slideWithEvent. If it is undefined then we are generating an id for slide. The conflicts to be avoided are: 1. two id's in the same slide; 2. an event id with a slide id anywhere; 3. two slide id's. */
 
-    const avoid = [] as string[];
+function avoidList(slideWithEvent: FrameNode): string[] {
 
-    for (const child of slide.children)
-        avoid.push(child.getPluginData('id'));
+    const avoid: string[] = [];
 
+    //we definitely want to avoid conflicts with all slide id's
     for (const slide of allSlides())
         avoid.push(slideId(slide));
+
+    //we want to avoid avoid conflicts with event id's in the list slides, which is either a singleton [slideWithEvent] if we are generating an id for an event inside slideEvent, or otherwise all slides.
+    let slides: FrameNode[] = [];
+    if (slideWithEvent != undefined)
+        slides.push(slideWithEvent);
+    else
+        slides = allSlides();
+
+    for (const slide of slides)
+        for (const child of slide.children)
+            avoid.push(child.getPluginData('id'));
+
 
     return avoid;
 }
@@ -772,19 +740,17 @@ function setRoot(): void {
 
 
 //event handler for when the document has changed. We use this to re-proportion the red rectangles for the child link
-function docChange( changes : DocumentChangeEvent) : void {
+function docChange(changes: DocumentChangeEvent): void {
     for (const x of changes.documentChanges) {
-        if ((x.type == 'PROPERTY_CHANGE'))
-            {
-                const change = x.node as SceneNode;
-                if ((!change.removed) && (change.getPluginData('childLink') != ''))
-                    {
-                        const rect = change as RectangleNode;
-                        rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width); 
-                    }
-
-
+        if ((x.type == 'PROPERTY_CHANGE')) {
+            const change = x.node as SceneNode;
+            if ((!change.removed) && (change.getPluginData('childLink') != '')) {
+                const rect = change as RectangleNode;
+                rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width);
             }
+
+
+        }
     }
 
 }
@@ -794,62 +760,62 @@ function selChange(): void {
 
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
 
-        const slide = slideWithSelection();
+    const slide = slideWithSelection();
 
 
-        //we change the current slide if it satisfies certain conditions: or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
-        if
-            //it has been removed; or
-            ((state.currentSlide != null && state.currentSlide.removed) ||
-            //the selection has moved to some other non-null slide; or 
-            (slide != state.currentSlide && slide != null) ||
-            //the name of the slide has changed
-            (state.currentSlide != null && state.currentSlide == slide && state.currentSlide.name != slide.name))
-            setCurrentSlide(slide);
-        else if (state.currentSlide != undefined && state.database.name != state.currentSlide.name) {
-            //if the name of the current slide was changed, then we also send this to the ui
-            setCurrentSlide(state.currentSlide);
+    //we change the current slide if it satisfies certain conditions: or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
+    if
+        //it has been removed; or
+        ((state.currentSlide != null && state.currentSlide.removed) ||
+        //the selection has moved to some other non-null slide; or 
+        (slide != state.currentSlide && slide != null) ||
+        //the name of the slide has changed
+        (state.currentSlide != null && state.currentSlide == slide && state.currentSlide.name != slide.name))
+        setCurrentSlide(slide);
+    else if (state.currentSlide != undefined && state.database.name != state.currentSlide.name) {
+        //if the name of the current slide was changed, then we also send this to the ui
+        setCurrentSlide(state.currentSlide);
+    }
+    else if (state.currentSlide != null)
+        sendEventList();
+
+    const sel = figma.currentPage.selection;
+
+
+
+
+    const msg: MessageToUI = {
+        type: 'selChange',
+        selected: false, // is there at least one object that can be used for show/hide
+        latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
+        canInsert: false, // is the caret in a text field where characters can be inserted
+        currentFont: null as FontName
+    };
+
+    for (const item of figma.currentPage.selection) {
+        if (isShowHideNode(item))
+            msg.selected = true;
+    }
+
+    // this part of the code is for the math features of latexit and inserting characters
+
+    if (sel.length == 1) {
+        if (sel[0].type == "TEXT") //the selected object can be latexed
+            msg.latexState = LatexState.Latex;
+        if (matematykData(sel[0]) != null) //the selected object can be de-latexed
+            msg.latexState = LatexState.Delatex
+    }
+    if (figma.currentPage.selectedTextRange != null) {
+        const r = figma.currentPage.selectedTextRange.end;
+        if (r > 0) {
+            msg.currentFont = (sel[0] as TextNode).getRangeFontName(r - 1, r) as FontName
         }
-        else if (state.currentSlide != null)
-            sendEventList();
-
-        const sel = figma.currentPage.selection;
-
-      
+        msg.canInsert = true;
+    }
 
 
-        const msg: MessageToUI = {
-            type: 'selChange',
-            selected: false, // is there at least one object that can be used for show/hide
-            latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
-            canInsert: false, // is the caret in a text field where characters can be inserted
-            currentFont: null as FontName
-        };
-
-        for (const item of figma.currentPage.selection) {
-            if (isShowHideNode(item))
-                msg.selected = true;
-        }
-
-        // this part of the code is for the math features of latexit and inserting characters
-
-        if (sel.length == 1) {
-            if (sel[0].type == "TEXT") //the selected object can be latexed
-                msg.latexState = LatexState.Latex;
-            if (matematykData(sel[0]) != null) //the selected object can be de-latexed
-                msg.latexState = LatexState.Delatex
-        }
-        if (figma.currentPage.selectedTextRange != null) {
-            const r = figma.currentPage.selectedTextRange.end;
-            if (r > 0) {
-                msg.currentFont = (sel[0] as TextNode).getRangeFontName(r - 1, r) as FontName
-            }
-            msg.canInsert = true;
-        }
-
-
-        //send the information about the updated selection
-        sendToUI(msg)
+    //send the information about the updated selection
+    sendToUI(msg)
 }
 
 
@@ -964,7 +930,7 @@ function onMessage(msg: MessageToCode) {
 
 figma.on('documentchange', docChange);
 figma.on("selectionchange", selChange);
-figma.on('close',closePlugin);
+figma.on('close', closePlugin);
 figma.showUI(__html__, {
     width: 230,
     height: 500

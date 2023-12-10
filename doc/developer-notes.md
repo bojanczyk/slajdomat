@@ -5,6 +5,9 @@ This file contains notes to the developer that may be useful in maintaning the a
 ## Todo
 Things to implement in the future
 
+### Bugs
+- when the current directory in Slajdomat is deleted, the presentation is not created, but this error is not sent back to the plugin.
+
 ### Viewer app
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
 
@@ -24,9 +27,25 @@ Things to implement in the future
 
 
 
+## The toolchain
+
+Generally speaking, the toolchain in web development is a mess, and it seems to be written in large part by unprofessional developers. 
+The source code is in typescript. The types from typescript are useful to avoid mistakes once the project is large. The program is constructed by a chain of three tools. 
+
+- The first tool in the chain is the typescript transpiler, which generates javascript code from typescript.  The tsconfig.json file contains some typescript options, including options about the module system which are hard to understand (require vs import, the latter one is used here).
+- The second tool in the chain is webpack, which makes the javascipt files smaller, and combines multiple files into single ones. Small files are useful for the generated presentations, while a single file is required for the figma plugin (and therefore webpack is useful, since it is much easier to spread out the figma plugin code throughout several files, including some files with code shared by other parts of the program).  Unfortunately, webpack is very flaky and unpleasant to use, with multiple cryptic configuration files.
+- The third tool is electron, which is used for the app. This takes the javascript and hides in some subfolder of a copy of chrome so that it can pretend to be an app. It is built by tools such as "electron forge" which are rather flaky as well.
+
+
+There are options for npm to automatically recompile the software upon software changes using "npm run watch", but this has upredicatable results for me (i.e. often nothing happens), especially for the app, so I often simply do "npm run make" before running the app. A part of the toolchain that is more dependable is typescript, it can be run in Visual Studio Code by running  a watch process called "tsc: watch - tsconfig.json". The tsc tool gives good error messages.
+
+Debugging the electron app is another mystery for me.
+
 
 ## Notes on hacks used 
 Notes about various hacks used in the setup. This may be common knowledge, but it can be easier to have them in one place for less professional developers such as Mikolaj.
+
+
 
 ### Code signing on mac
 
