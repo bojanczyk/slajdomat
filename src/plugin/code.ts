@@ -36,6 +36,7 @@ import {
     SlideEvent,
     ZoomEvent
 } from '../viewer/types'
+import { stat } from 'original-fs'
 
 
 
@@ -127,7 +128,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
 
 
 
-    const place = freshRect({width : width, height : height, x : basex, y : basey}, allSlides());
+    const place = freshRect({ width: width, height: height, x: basex, y: basey }, allSlides());
     const newSlide = figma.createFrame();
     newSlide.name = name;
     newSlide.x = place.x;
@@ -203,8 +204,51 @@ function newEventId(): string {
     return retval.toString();
 }
 
+
+
+
+function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: Rect) : void {
+    const targetSlide: FrameNode = findSlide(targetSlideId);
+
+    const redColor = {
+        type: 'SOLID',
+        color: {
+            r: 1,
+            g: 0,
+            b: 0
+        }
+    } as Paint;
+
+    // red semi-transparent rectangle, which will be later filled with the thumbnail
+    const rectNode = figma.createRectangle();
+    rectNode.resize(where.width, where.width);
+    rectNode.x = where.x;
+    rectNode.y = where.y;
+    rectNode.fills = [redColor];
+    rectNode.opacity = 0.5;
+    rectNode.setPluginData('thumbnail', 'yes');
+    state.currentSlide.appendChild(rectNode);
+
+    // a red frame, which will stay even when the thumbnail appears
+    const frameNode = figma.createRectangle();
+    frameNode.resize(where.width, where.width);
+    frameNode.x = where.x;
+    frameNode.y = where.y;
+    frameNode.fills = [];
+    frameNode.strokes = [redColor];
+    state.currentSlide.appendChild(frameNode);
+
+
+
+    // Create a group with the nodes
+    const groupNode = figma.group([rectNode,frameNode], state.currentSlide);
+    groupNode.setPluginData("childLink", targetSlideId);
+    groupNode.expanded = false;
+}
+
+
 //Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
-function createChildEvent(id: string): RectangleNode {
+function createChildEvent(id: string): void {
 
     const slide: FrameNode = findSlide(id);
     const newEvent: ZoomEvent =
@@ -219,28 +263,8 @@ function createChildEvent(id: string): RectangleNode {
     }
     state.database.events.push(newEvent);
 
-    const newplace = freshRect({ width : 100, height : 100 * slide.height / slide.width, x : 100, y : 100}, state.currentSlide.children as FrameNode[]);
-
-    const width = 100;
-    const rect = figma.createRectangle();
-    rect.resize(width, width * slide.height / slide.width);
-    rect.x = newplace.x;
-    rect.y = newplace.y;
-    rect.fills = [{
-        type: 'SOLID',
-        color: {
-            r: 1,
-            g: 0,
-            b: 0
-        }
-    }];
-    rect.opacity = 0.5;
-    rect.setPluginData("childLink", id)
-    rect.name = "Link to " + slide.name;
-    state.currentSlide.appendChild(rect);
-  
-    return rect;
-
+    const newplace = freshRect({ width: 100, height: 100 * slide.height / slide.width, x: 100, y: 100 }, state.currentSlide.children as FrameNode[]);
+    createThumbnail(state.currentSlide, id, newplace);
 }
 
 //give the list of all texts used in descendants
@@ -655,7 +679,7 @@ function cleanDatabase(): void {
                 const f = findSlide(event.id);
                 if (f != null) {
                     event.name = f.name;
-                    node.name = f.name;
+                    node.name = 'link to ' + f.name;
                     event.disabled = false;
                 }
             }
@@ -680,6 +704,52 @@ function parentSlide(slide: FrameNode): FrameNode {
     return null;
 }
 
+
+//update the thumbnails for slide children
+async function updateThumbnails() {
+    const nodes = state.currentSlide.findAll((node: SceneNode) => node.getPluginData("childLink") != '');
+
+    for (const child of nodes) {
+        const slide = findSlide(child.getPluginData('childLink'));
+
+        //if the child link was created in an old version of Slajdomat, then it is simply a rectangle. In this case it needs to be upgraded to a new version, where it is a group containing two rectangles.
+        if (child.type == 'RECTANGLE') {
+            const where = { width : child.width, height : child.height, x : child.x, y : child.y};
+            child.remove();
+            createThumbnail(state.currentSlide, slideId(slide), where);
+        }
+
+
+
+        let rect: RectangleNode;
+        //finds the rectangle where the thumbnail should go; this is indicated by plugin data
+        if (child.type == 'GROUP') { 
+            for (const grandchild of child.children) 
+                if (grandchild.getPluginData('thumbnail')) 
+                {
+                    rect = grandchild as RectangleNode;
+                }
+        }
+
+        //if such a rectangle has been found, then its fill should be replaced with the thumbnail
+        if (rect != null) {
+            const image = figma.createImage(await slide.exportAsync({
+                format: 'PNG'
+            }));
+            rect.fills = [
+                {
+                    type: 'IMAGE',
+                    imageHash: image.hash,
+                    scaleMode: 'FILL'
+                }
+            ]
+        }
+
+    }
+}
+
+
+
 //set the current slide of the plugin
 function setCurrentSlide(slide: FrameNode): void {
 
@@ -696,6 +766,8 @@ function setCurrentSlide(slide: FrameNode): void {
 
         sendToUI(msg);
         sendEventList();
+        updateThumbnails();
+
     } else {
         sendToUI({
             type: 'noSlide'

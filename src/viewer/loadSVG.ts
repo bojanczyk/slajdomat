@@ -322,15 +322,26 @@ function attachSVG(node: SlideEvent) {
         let placeholder: Rect;
         for (const s of svgMap.get(node.parent).children)
             if (s.id == node.id) {
+
+
+                
                 //s is the child link. This could be a group, or a rectangle. We find the dimensions by searching for a rectangle, which could be s or one of its children (the latter happens when s is a group that contains other stuff).
-                let rect: SVGRectElement = null;
+                let rect :SVGRectElement;
                 if (s.nodeName == 'rect')
                     rect = (s as unknown) as SVGRectElement;
                 else
-                    for (const c of s.children) {
-                        if (c.nodeName == 'rect')
-                            rect = (c as unknown) as SVGRectElement;
-                    }
+                {
+                    //querySelectorAll does not count the root element, so the above branch, when s is 'rect', is needed
+                    const possibleRects = s.querySelectorAll('rect');
+                    console.log(s);
+                    console.log(possibleRects);
+                    if (possibleRects.length == 0)
+                        throw('found no rectangles')
+                    else
+                        rect = possibleRects[0];
+                }
+                    
+
                 placeholder = {
                     x: (rect.x as SVGAnimatedLength).baseVal.value,
                     y: (rect.y as SVGAnimatedLength).baseVal.value,
