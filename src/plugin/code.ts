@@ -1,8 +1,13 @@
+/* 
+// This is the backend of the plugin. It edits the figma artboard. It sends messages to the frontend (in the file src/plugin/ui.ts), which handles user interaction and the contents of the plugin window.
+*/
+
 import { } from '@figma/plugin-typings'
 
 export {
     allSlides, allTexts, findEventObject, findSlide, getDatabase, getRoot, loadCurrentData, pluginSettings, saveCurrentData, sendSettings, sendToUI, state
 }
+
 
 import {
     Database,
