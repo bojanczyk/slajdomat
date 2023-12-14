@@ -7,6 +7,8 @@ Things to implement in the future
 
 ### Bugs
 - when the current directory in Slajdomat is deleted, the presentation is not created, but this error is not sent back to the plugin.
+- the thumbnails are created outside the slide
+- 
 
 ### Viewer app
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
@@ -19,7 +21,7 @@ Things to implement in the future
 ### Extra features of the system
 - move event
 - comments on slides
-
+- show events for slides
 
 
 

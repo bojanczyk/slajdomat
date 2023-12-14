@@ -19,7 +19,7 @@ function freshName(base: string, avoid: string[]): string {
 
 
 //finds a place for the new slide, by searching in a spiral around the current slide (or the origin, if there is no current slide)
-function freshRect(initial : {width: number, height: number, x : number, y : number}, avoidList: FrameNode[]): Rect {
+function freshRect(initial : {width: number, height: number, x : number, y : number}, avoidList: FrameNode[], inside : Rect): Rect {
 
     console.log('initial', initial);
     console.log('avoid list', avoidList);
@@ -27,15 +27,16 @@ function freshRect(initial : {width: number, height: number, x : number, y : num
     for (const avoid of avoidList){
         console.log(avoid.x,avoid.y,avoid.width, avoid.height);
     }
+
+    function intersects(a: Rect, b: FrameNode | Rect) {
+        if (a.x > b.x + b.width || a.x + a.width < b.x)
+            return false;
+        if (a.y > b.y + b.height || a.y + a.height < b.y)
+            return false;
+        return true;
+    }
     //does rectangle a intersect any frame
     function intersectsNothing(a: Rect) {
-        function intersects(a: Rect, b: FrameNode) {
-            if (a.x > b.x + b.width || a.x + a.width < b.x)
-                return false;
-            if (a.y > b.y + b.height || a.y + a.height < b.y)
-                return false;
-            return true;
-        }
         for (const b of avoidList)
             if (intersects(a, b))
                 return false;
