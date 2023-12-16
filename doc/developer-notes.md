@@ -7,7 +7,6 @@ Things to implement in the future
 
 ### Bugs
 - when the current directory in Slajdomat is deleted, the presentation is not created, but this error is not sent back to the plugin.
-- the thumbnails are created outside the slide
 - 
 
 ### Viewer app

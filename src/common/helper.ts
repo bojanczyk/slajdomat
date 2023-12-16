@@ -19,68 +19,67 @@ function freshName(base: string, avoid: string[]): string {
 
 
 //finds a place for the new slide, by searching in a spiral around the current slide (or the origin, if there is no current slide)
-function freshRect(initial : {width: number, height: number, x : number, y : number}, avoidList: FrameNode[], inside : Rect): Rect {
+function freshRect(width: number, height: number, avoidList: FrameNode[], dimensions: { width: number, height: number }): Rect {
 
-    console.log('initial', initial);
-    console.log('avoid list', avoidList);
+    let insideFrame: Rect;
+    //this is the frame that we should stay inside
+    if (dimensions != undefined)
+        insideFrame = { x: 0, y: 0, width: dimensions.width, height: dimensions.height };
 
-    for (const avoid of avoidList){
-        console.log(avoid.x,avoid.y,avoid.width, avoid.height);
-    }
+    let initial = { x : 50, y : 50, width : width, height : height};
 
     function intersects(a: Rect, b: FrameNode | Rect) {
+        if (b == undefined)
+            return true;
         if (a.x > b.x + b.width || a.x + a.width < b.x)
             return false;
         if (a.y > b.y + b.height || a.y + a.height < b.y)
             return false;
         return true;
     }
-    //does rectangle a intersect any frame
-    function intersectsNothing(a: Rect) {
-        for (const b of avoidList)
-            if (intersects(a, b))
-                return false;
-        return true;
-    }
-
-    const candidate = initial;
 
     //search for free space below the current slide,
-    //using the city metric (i.e. the search follows a square spiral pattern)
-    let i = 0;
-    let searching = true;
-    const xoffset = initial.width * 1.1;
-    const yoffset = initial.height * 1.1;
+    //using the city metric (i.e. the search follows a square spiral pattern) 
 
-    while (searching) {
-        i++;
-        for (let j = 0; j <= i && searching; j++) {
-            candidate.x = initial.x + j * xoffset;
-            candidate.y = initial.y + i * yoffset;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
+    const xoffset = width * 1.1;
+    const yoffset = height * 1.1;
+
+
+    for (let i = 0; true; i++)
+        for (let j = 0; j <= i; j++) {
+
+
+            let candidates: Rect[] = [];
+
+            candidates.push({ width: initial.width, height: initial.height, x: initial.x + j * xoffset, y: initial.y + i * yoffset });
+            candidates.push({ width: initial.width, height: initial.height, x: initial.x + i * xoffset, y: initial.y + j * yoffset });
+            candidates.push({ width: initial.width, height: initial.height, x: initial.x - j * xoffset, y: initial.y + i * yoffset });
+            candidates.push({ width: initial.width, height: initial.height, x: initial.x - i * xoffset, y: initial.y + j * yoffset });
+
+            let someFits = false;
+            for (const candidate of candidates) {
+
+                if (intersects(candidate, insideFrame)) {
+                    someFits = true;
+
+                    let intersectsAvoidList = false;
+                    for (const avoid of avoidList) {
+                        if (intersects(candidate, avoid))
+                            intersectsAvoidList = true;
+                    }
+                    if (!intersectsAvoidList)
+                        return candidate;
+                }
             }
-            candidate.x = initial.x + i * xoffset;
-            candidate.y = initial.y + j * yoffset;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = initial.x - j * xoffset;
-            candidate.y = initial.y + i * yoffset;
-            if (intersectsNothing(candidate)) {
-                searching = false;
-                break;
-            }
-            candidate.x = initial.x - i * xoffset;
-            candidate.y = initial.y + j * yoffset;
-            if (intersectsNothing(candidate))
-                searching = false;
+
+            if (!someFits)
+                return initial;
+
+
         }
-    }
-    return candidate;
+
 }
+
 
 
 

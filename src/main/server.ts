@@ -40,7 +40,7 @@ import * as child from 'child_process'
 
 import * as fs from 'fs'
 import * as path from 'path'
-import * as which from 'which'
+
 
 
 
@@ -94,16 +94,46 @@ function resourceDir(): string {
     return app.getAppPath() + '/resources'
 }
 
+
+
+//my own implementation of which (actually, chatGPT's), since the npm 'which' package fails when the electron app is run from the Applications folder in macos.
+
+function findExecutableInPath(executableName: string) {
+    const paths = process.env.PATH.split(':'); // Split PATH variable into individual paths
+
+    paths.push('/opt/homebrew/bin');
+
+    // Iterate through each path in the PATH variable
+    for (const dir of paths) {
+        sendStatus(dir);
+        const fullPath = path.join(dir, executableName);
+
+        try {
+            // Check if the file exists and is executable
+            const stat = fs.statSync(fullPath);
+            if (stat.isFile() && stat.mode & fs.constants.S_IXUSR) {
+                return fullPath; // Return the path to the executable
+            }
+        } catch (err) {
+            // Ignore errors and continue searching
+            continue;
+        }
+    }
+    return ''; // Executable not found
+}
+
 function loadSettings(): Boolean {
 
     try {
         const data = fs.readFileSync(resourceDir() + '/settings.json').toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
 
+
         if (slajdomatSettings.ffmpeg == '')
-            slajdomatSettings.ffmpeg = which.sync('ffmpeg');
+            slajdomatSettings.ffmpeg = findExecutableInPath('ffmpeg');
+
         if (slajdomatSettings.ffprobe == '')
-            slajdomatSettings.ffprobe = which.sync('ffprobe');
+            slajdomatSettings.ffprobe = findExecutableInPath('ffprobe');
 
         return true;
     }
