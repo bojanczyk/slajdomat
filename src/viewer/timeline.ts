@@ -213,7 +213,6 @@ function createTimeline(recorded: LiveRecording): void {
     if (recorded == undefined) {
         //if we had a live recording, then the page numbers have been loaded from the file. Otherwise, we need to  compute the page numbers. The page number is 1 + the number of distinct targets of preceding zoom events, not counting zooms back to the root
 
-        console.log('kuku');
         const seen: Set<ZoomEvent> = new Set();
         let pageCount = 1;
         for (const step of allSteps()) {

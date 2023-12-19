@@ -7,7 +7,7 @@
     color : black;
     display : flex;
     flex-direction: column;
-    background-color: var(--very-light-blue);
+    background-color: var(--light-blue);
     width : 0;
     vertical-align: top;
     cursor: default;
@@ -86,9 +86,6 @@
 #search-panel {
     display: flex;
     flex-direction: column;
-    padding : 10px;
-    border-top : 1px solid var(--light-blue);
-    border-bottom : 1px solid var(--light-blue);
 }
 
 #search-box {
@@ -123,3 +120,60 @@
     color: grey;
 
 }
+
+/* the container with the tab heads */
+#tab-heads {
+    display: flex;
+    flex-direction: row;
+}
+
+/* the tab heads them selves */
+#tab-heads > div {
+    margin-left : 10px;
+    padding : 5px;
+    border: 1px solid var(--blue);
+    border-bottom: none;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    cursor: pointer;
+}
+
+/* if the tab head is active, then it has a different colour */
+#tab-heads > .active { 
+    background-color: var(--very-light-blue);
+}
+
+#tab-contents {
+    background-color: var(--very-light-blue);
+    flex-grow: 1;
+}
+
+#tab-contents > div {
+    display : none;
+}
+
+#tab-contents > div.active {
+    display : flex;
+    flex-direction: column;
+    overflow-y: scroll;
+}
+
+
+
+#tab-contents > div > div {
+    padding : 10px;
+    border-bottom : 1px solid var(--light-blue);
+}
+
+p {
+    white-space : initial;
+    margin-top : 0px;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+

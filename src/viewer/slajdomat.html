@@ -13,7 +13,6 @@
 </head>
 
 <body>
-	<!-- <img id='help-panel' src="img/help.svg"> -->
 
 	<div id='loader-text'>
 		Loading slides...
@@ -30,23 +29,64 @@
 		<div id="left-panel">
 			<!-- <i id="close-panel" class="material-icons">close</i> -->
 			<div id="made-using-slajdomat">
-			<img src='slajdomat-logo-blue.svg'> 
+				<img src='slajdomat-logo-blue.svg'>
 			</div>
-			<div id='search-panel'>
-				<div id='search-box'>
-					<i class="material-icons">search</i>
-					<input type="input" id='search-input' placeholder='Search in presentation' />
-				</div>
-				<div id='search-results'>
-				</div>
 
+			<!-- the left panel has several tabs, and these are their heads -->
+			<div id='tab-heads'>
+				<div id='index-tab-head' class='active'> Index</div>
+				<div id='present-tab-head'> Present</div>
+				<div id='sound-tab-head'> Sound </div>
 			</div>
-			<div id='slide-stack-container'>
-				<div id="slide-stack" class="slide-stack">
+			<!-- the contents of the tabs -->
+			<div id='tab-contents'>
+				<div id="index-tab" class="active">
+					<div id='search-panel'>
+						<div id='search-box'>
+							<i class="material-icons">search</i>
+							<input type="input" id='search-input' placeholder='Search in presentation' />
+						</div>
+						<div id='search-results'>
+						</div>
+
+					</div>
+					<div id='slide-stack-container'>
+						<div id="slide-stack" class="slide-stack">
+						</div>
+					</div>
+				</div>
+				<div id="present-tab">
+					<div>
+						<p> <b> Drawing tools.</b> Create rudimentary annotation that will not be saved.
+							You can also activate them by pressing "d".</p>
+						<div class="checkbox-container">
+							<input type="checkbox" id="drawing-tools-checkbox">
+							<label for="drawing-tools-checkbox">show drawing tools</label>
+						</div>
+					</div>
+					<div id="test-the-class">
+						<p> <b> Next/previous keys. </b>Slajdomat goes to the next slide when the user presses either
+							"right arrow" or "page down"; likewise for previous. Here you can configure other keys, e.g.
+							because of your presenter. The buttons below use the most recently pressed key.
+						</p>
+						<p> <button id='new-prev-key'>
+							Use <span class="most-recently-pressed-key"> </span> for previous slide
+						</button></p>
+						<p> 
+							<button id='new-next-key'>
+								Use <span class="most-recently-pressed-key"> </span> for next slide
+							</button>
+						</p>
+						<p id='list-of-key-bindings'>
+						</p>
+						
+					</div>
+				</div>
+				<div id="sound-tab">
+					sound tab
 				</div>
 			</div>
-			<!-- <div id="resizer">
-			</div> -->
+
 		</div>
 
 		<!-- the panel that contains the svg with the slides -->

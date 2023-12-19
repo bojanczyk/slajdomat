@@ -11,7 +11,8 @@ export {
     markDisabled,
     soundIcon,
     timelineSeen,
-    timelineHTML
+    timelineHTML,
+    userDefinedKeys
 }
 
 
@@ -390,8 +391,78 @@ function togglePanel(): void {
         showPanel(true);
 }
 
+let mostRecentlyPressed = undefined as string;
+const userDefinedKeys: { [key: string]: () => void } = {};
+
+//switch a tab in the left panel. 
+function switchLeftPanelTab(tab: string) {
+
+    // activate the current tab head
+    document.getElementById('tab-heads').querySelectorAll('*').forEach(child => child.classList.remove('active'));
+    document.getElementById(tab + '-tab-head').classList.add('active');
+
+    // activate the current tab contents
+    document.getElementById('tab-contents').querySelectorAll('*').forEach(child => child.classList.remove('active'));
+    document.getElementById(tab + '-tab').classList.add('active');
 
 
+}
+
+//add event listeners for the left panel. So far these are mainly for switching tabs
+function initLeftPanel(): void {
+
+    function listUserDefinedKeys() {
+        let list = '';
+        document.getElementById('list-of-key-bindings').innerHTML = '';
+        for (let key in userDefinedKeys) {
+            if (userDefinedKeys[key] == prevButton)
+                list = list + key + ': previous slide <br>';
+            if (userDefinedKeys[key] == nextButton)
+            list = list + key + ': next slide <br>';
+        }
+        document.getElementById('list-of-key-bindings').innerHTML = list;
+    }
+
+    //switch tabs in the left panel
+    document.getElementById('tab-heads').addEventListener('click', event => {
+        const target = event.target as HTMLElement;
+        if (target.id.endsWith('tab-head')) {
+            switchLeftPanelTab(target.id.slice(0, -9));
+        }
+    })
+
+    //sketchpad checkbox in the presenter tab
+    document.getElementById('drawing-tools-checkbox').addEventListener('change', event => {
+        toggleSketchpad();
+    });
+
+    //scans most recently pressed key to display in the non-standard next/previous key selection from presenter tab
+    document.addEventListener("keydown", setMostRecentlyPressed);
+
+    for (const button of document.querySelectorAll('button'))
+        button.addEventListener('click', event => {
+            const target = event.target as HTMLElement;
+            switch (target.id) {
+
+                case 'new-prev-key':
+                    if (mostRecentlyPressed != undefined)
+                        userDefinedKeys[mostRecentlyPressed] = prevButton;
+                    listUserDefinedKeys();
+                    break;
+                case 'new-next-key':
+                    if (mostRecentlyPressed != undefined)
+                        userDefinedKeys[mostRecentlyPressed] = nextButton;
+                    listUserDefinedKeys();
+                    break;
+            }
+        })
+}
+
+function setMostRecentlyPressed(event: KeyboardEvent): void {
+    mostRecentlyPressed = event.key
+    for (const span of document.querySelectorAll('.most-recently-pressed-key'))
+        span.innerHTML = mostRecentlyPressed;
+}
 
 //initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
 function initPanels(): void {
@@ -415,8 +486,9 @@ function initPanels(): void {
     if (Object.keys(manifest.soundDict).length > 0) {
         document.body.classList.add('has-sound');
     }
-
     soundIcon();
+    initLeftPanel();
+
 }
 
 

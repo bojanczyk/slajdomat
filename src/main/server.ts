@@ -91,7 +91,8 @@ let slajdomatSettings: SlajdomatSettings;
 
 
 function resourceDir(): string {
-    return app.getAppPath() + '/resources'
+    
+    return path.join(app.getAppPath(), 'resources');
 }
 
 
@@ -125,7 +126,7 @@ function findExecutableInPath(executableName: string) {
 function loadSettings(): Boolean {
 
     try {
-        const data = fs.readFileSync(resourceDir() + '/settings.json').toString();
+        const data = fs.readFileSync(path.join(resourceDir(),'settings.json')).toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
 
 
@@ -144,7 +145,7 @@ function loadSettings(): Boolean {
 }
 
 function saveSettings(): void {
-    writeFile(resourceDir() + '/settings.json', myStringify(slajdomatSettings));
+    writeFile(path.join(resourceDir(),'settings.json'), myStringify(slajdomatSettings));
 }
 
 //I use this function, because the variable slajdomatSettings is read-only outside this module
@@ -180,7 +181,7 @@ function gotoParent(): void {
 
 //goes to child directory
 function gotoChild(arg: string): void {
-    readPresentations(currentDir + '/' + arg)
+    readPresentations(path.join(currentDir, arg))
 }
 
 //shows the folder in the finder
@@ -189,7 +190,7 @@ function revealFinder(name: string, type: 'folder' | 'presentation'): void {
     if (type == 'presentation')
         dir = presentationDir(name);
     else
-        dir = currentDir + '/' + name;
+        dir = path.join(currentDir,name);
     shell.showItemInFolder(dir);
 }
 
@@ -206,10 +207,10 @@ function presentationDir(presentationName: string) {
         const dirName = freshName(sanitize(presentationName), dirList(currentDir));
         presentations[presentationName] = { file: dirName, updated: true };
         sendStatus('adding ' + dirName)
-        fs.mkdirSync(currentDir + '/' + dirName);
+        fs.mkdirSync(path.join(currentDir,dirName));
 
     }
-    return currentDir + '/' + presentations[presentationName].file;
+    return path.join(currentDir,presentations[presentationName].file);
 }
 
 //returns the directory for a slide in a presentation, and if it does not exist, then it creates the directory
@@ -227,13 +228,13 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
         writeManifest(manifest);
         sendStatus('Received slide ' + dirName);
         try {
-            fs.mkdirSync(presentationDir(presentation) + '/' + dirName)
+            fs.mkdirSync(path.join(presentationDir(presentation),dirName))
         } catch (e) {
             sendStatus(e)
         }
     }
 
-    const dir = presentationDir(presentation) + '/' + manifest.slideDict[slideId];
+    const dir = path.join(presentationDir(presentation),manifest.slideDict[slideId]);
 
     //it could be the case that the directory disappeared for some reason, in which case the directory will be created
     if (!fs.existsSync(dir))
@@ -246,22 +247,22 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
 function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     //copy the latest version of the html files to the slide directory
-    const htmlSourceDir = app.getAppPath() + '/resources';
+    const htmlSourceDir = path.join(app.getAppPath(),'resources');
     for (const file of ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg']) {
-        fs.copyFileSync(htmlSourceDir + '/' + file, presDir + '/' + file)
+        fs.copyFileSync(path.join(htmlSourceDir,file), path.join(presDir,file))
     }
 }
 
 
 //writes the manifest of a presentation to disk
 function writeManifest(manifest: Manifest) {
-    fs.writeFileSync(presentationDir(manifest.presentation) + '/manifest.json', myStringify(manifest));
+    fs.writeFileSync(path.join(presentationDir(manifest.presentation),'manifest.json'), myStringify(manifest));
 }
 
 //reads the manifest of a presentation 
 function readManifest(presentation: string): Manifest {
     try {
-        const data = fs.readFileSync(presentationDir(presentation) + '/manifest.json').toString();
+        const data = fs.readFileSync(path.join(presentationDir(presentation), 'manifest.json')).toString();
         const json = JSON.parse(data) as Manifest;
         return json;
     } catch (error) {
@@ -277,7 +278,7 @@ function readManifest(presentation: string): Manifest {
 function dirList(dir: string): string[] {
     const retval = [];
     for (const file of fs.readdirSync(dir))
-        if (fs.lstatSync(dir + '/' + file).isDirectory())
+        if (fs.lstatSync(path.join(dir,file)).isDirectory())
             retval.push(file);
 
     return retval;
@@ -297,10 +298,10 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
     };
 
     for (const file of dirList(currentDir)) {
-        const fullName = currentDir + '/' + file;
+        const fullName = path.join(currentDir,file);
         try {
             //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
-            const data = fs.readFileSync(fullName + '/manifest.json').toString();
+            const data = fs.readFileSync(path.join(fullName,'manifest.json')).toString();
             const json = JSON.parse(data) as Manifest;
             msg.presentations[json.presentation] = { file: file, updated: !oldVersion(json) };
         } catch (e) {
@@ -342,7 +343,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
             soundDescription = ` current step in the live recording`;
         }
         else {
-            fileName = slideDir(manifest, msg.forWhat.slideId) + '/' + msg.forWhat.eventId;
+            fileName = path.join(slideDir(manifest, msg.forWhat.slideId), msg.forWhat.eventId);
             soundDescription = `for event ${msg.forWhat.eventId} in slide ${manifest.slideDict[msg.forWhat.slideId]}`;
         }
 
@@ -435,7 +436,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
         for (const slide of msg.slideList) {
             const dir = slideDir(manifest, slide.database.id, slide.database.name)
-            writeFile(dir + '/image.svg', slide.svg);
+            writeFile(path.join(dir,'image.svg'), slide.svg);
             sendStatus('Received slides for ' + slide.database.name);
         }
         writeManifest(manifest);
@@ -466,7 +467,7 @@ function createLive(msg: MessageToServerLive): ServerResponse {
 
         //create a directory for the liver recording
         const dir = freshName(`live_recording${manifest.live.length}`, dirList(presentationDir(msg.presentation)));
-        fs.mkdirSync(presentationDir(msg.presentation) + '/' + dir);
+        fs.mkdirSync(path.join(presentationDir(msg.presentation),dir));
 
 
         manifest.live.push(
@@ -537,7 +538,7 @@ function startServer(): void {
                     break;
 
                 default:
-                    throw "unexpected message type "
+                    throw "unexpected  message type "
             }
 
 

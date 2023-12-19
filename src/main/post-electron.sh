@@ -28,3 +28,6 @@ fi
 echo I am copying the resources to $res_dir
 mkdir -p $res_dir 
 cp -r resources $res_dir
+
+# copy the most recent version of the viewer to the testing directory
+cp resources/index.html resources/viewer.js test-slides/ 

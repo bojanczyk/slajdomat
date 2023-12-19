@@ -110,16 +110,21 @@ function draw(event: Event): void {
 
 
 function toggleSketchpad(): void {
+
+    const sketchPanel = document.getElementById('sketch-panel'); 
+    const checkbox = document.getElementById('drawing-tools-checkbox') as HTMLInputElement;
     switch (currentTool) {
         case 'red':
         case 'blue':
-            document.getElementById('sketch-panel').style.display = 'none';
+            checkbox.checked = false;
+            sketchPanel.style.display = 'none';
             selectTool('none');
             break;
 
         case 'none':
+            checkbox.checked = true;
             selectTool('red');
-            document.getElementById('sketch-panel').style.display = 'flex';
+            sketchPanel.style.display = 'flex';
             undoButtons();
             break;
 

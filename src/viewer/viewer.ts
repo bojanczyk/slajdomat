@@ -21,7 +21,8 @@ import {
 import {
     initPanels,
     updatePageNumber,
-    userAlert
+    userAlert,
+    userDefinedKeys
 } from "./html";
 
 import {
@@ -92,7 +93,7 @@ function playButton(): void {
 
 //what happens when the next button or right arrow are pressed
 function nextButton(): void {
-    if (timeline.future.length > 0) {
+    if (timeline.future.length > 0)  {
         switch (soundState) {
             case SoundState.Play:
                 soundAdvance(1);
@@ -169,8 +170,8 @@ function recordButton() {
 function keyListener(event: KeyboardEvent) {
 
     if (event.target != document.getElementById('search-input')) {
-
-        switch (event.key) {
+            
+        switch (event.key) { 
             case 'ArrowRight': 
             case 'PageDown': //this is for some clickers
                 nextButton();
@@ -200,6 +201,13 @@ function keyListener(event: KeyboardEvent) {
             case 'p':
                 // console.log("Export pdf");
                 exportPdf();
+                break;
+            
+            default:
+                if (event.key in userDefinedKeys)
+                    userDefinedKeys[event.key]();   
+
+
         }
     }
 }

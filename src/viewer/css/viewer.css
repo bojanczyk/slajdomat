@@ -13,9 +13,17 @@ body, html {
     overflow: hidden;
 }
 
-body, div {
+body, div, button {
     font-family: 'Roboto';
     font-weight: 200;
+    font-size: 12px;
+}
+
+button { 
+    background-color: var(--very-light-blue);
+    border : 1px solid var(--niebieski);
+    border-radius: 3px;
+    cursor: pointer;
 }
 
 body {
