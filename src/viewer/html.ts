@@ -48,6 +48,7 @@ import {
 import { SlideEvent, ZoomEvent } from './types';
 import { toggleSketchpad, currentTool } from './sketchpad';
 import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, OverlayStep, ZoomStep, allSteps } from './timeline'
+import { exportPdf } from './client-print';
 
 
 
@@ -408,9 +409,19 @@ function switchLeftPanelTab(tab: string) {
 
 }
 
-//add event listeners for the left panel. So far these are mainly for switching tabs
+//display the pdf links if the files exist
+async function pdfLinks() {
+    if (manifest.pdfFile != undefined) {
+        const theLink = document.getElementById('link-to-pdf');
+        theLink.classList.remove('hidden');
+    }
+
+}
+
+//add event listeners for the left panel. 
 function initLeftPanel(): void {
 
+    pdfLinks();
     function listUserDefinedKeys() {
         let list = '';
         document.getElementById('list-of-key-bindings').innerHTML = '';
@@ -418,7 +429,7 @@ function initLeftPanel(): void {
             if (userDefinedKeys[key] == prevButton)
                 list = list + key + ': previous slide <br>';
             if (userDefinedKeys[key] == nextButton)
-            list = list + key + ': next slide <br>';
+                list = list + key + ': next slide <br>';
         }
         document.getElementById('list-of-key-bindings').innerHTML = list;
     }
@@ -439,26 +450,46 @@ function initLeftPanel(): void {
     //scans most recently pressed key to display in the non-standard next/previous key selection from presenter tab
     document.addEventListener("keydown", setMostRecentlyPressed);
 
-    for (const button of document.querySelectorAll('button'))
-        button.addEventListener('click', event => {
-            const target = event.target as HTMLElement;
-            switch (target.id) {
 
-                case 'new-prev-key':
+
+    for (const button of document.querySelectorAll('span')) {
+
+        switch (button.id) {
+            case 'new-prev-key':
+                button.addEventListener('click', event => {
                     if (mostRecentlyPressed != undefined)
                         userDefinedKeys[mostRecentlyPressed] = prevButton;
                     listUserDefinedKeys();
-                    break;
-                case 'new-next-key':
+                })
+                break;
+            case 'new-next-key':
+                button.addEventListener('click', event => {
+                    const target = event.target as HTMLElement;
                     if (mostRecentlyPressed != undefined)
                         userDefinedKeys[mostRecentlyPressed] = nextButton;
                     listUserDefinedKeys();
-                    break;
-            }
-        })
+                })
+                break;
+            case 'pdf-print-button':
+                button.addEventListener('click', event => {
+                    exportPdf()
+                })
+                break;
+            case 'link-to-pdf':
+                button.addEventListener('click', event => {
+                    window.open(manifest.pdfFile, 'open');
+                })
+                break;
+        }
+    }
+
+
 }
 
 function setMostRecentlyPressed(event: KeyboardEvent): void {
+    for (const button of document.querySelectorAll('.key-binding'))
+        button.classList.remove('disabled');
+
     mostRecentlyPressed = event.key
     for (const span of document.querySelectorAll('.most-recently-pressed-key'))
         span.innerHTML = mostRecentlyPressed;

@@ -9,7 +9,7 @@ import './index.css';
 //     ipcRenderer
 // } from 'electron'
 const { ipcRenderer } = window.require('electron');
-
+import * as path from 'path'
 
 import { sendMessageToMain, MessageToMain, MessageToRenderer } from './messages';
 
@@ -132,7 +132,7 @@ function receivePresentations (msg : MessageToRenderer) : void
             const name = nameDiv('presentation', i);
             li.appendChild(name)
             name.addEventListener('click', () => {
-                sendMessageToMain({ type: 'open-viewer', name: msg.dir + '/' + msg.presentations[i].file + '/index.html' })
+                sendMessageToMain({ type: 'open-viewer', name: path.join(msg.dir, msg.presentations[i].file)  })
             })
             li.appendChild(revealButton(i, 'presentation'));
             if (!msg.presentations[i].updated) {

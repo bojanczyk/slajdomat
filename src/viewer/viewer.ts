@@ -42,7 +42,8 @@ import {
 import {
     fetchJSON,
     presentationDir,
-    probeServer
+    probeServer,
+    sendToServer
 } from './files'
 
 import {
@@ -54,7 +55,7 @@ import {
 } from "./sketchpad";
 import { createTimeline, currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
 
-import { exportPdf } from './print'
+import { exportPdf } from './client-print'
 
 
 let manifest: Manifest;
@@ -93,7 +94,7 @@ function playButton(): void {
 
 //what happens when the next button or right arrow are pressed
 function nextButton(): void {
-    if (timeline.future.length > 0)  {
+    if (timeline.future.length > 0) {
         switch (soundState) {
             case SoundState.Play:
                 soundAdvance(1);
@@ -170,9 +171,9 @@ function recordButton() {
 function keyListener(event: KeyboardEvent) {
 
     if (event.target != document.getElementById('search-input')) {
-            
-        switch (event.key) { 
-            case 'ArrowRight': 
+
+        switch (event.key) {
+            case 'ArrowRight':
             case 'PageDown': //this is for some clickers
                 nextButton();
                 break;
@@ -198,14 +199,9 @@ function keyListener(event: KeyboardEvent) {
                 liveButton()
                 break;
 
-            case 'p':
-                // console.log("Export pdf");
-                exportPdf();
-                break;
-            
             default:
                 if (event.key in userDefinedKeys)
-                    userDefinedKeys[event.key]();   
+                    userDefinedKeys[event.key]();
 
 
         }
@@ -227,12 +223,11 @@ function getStepFromURL(): Step {
 }
 
 
-function getManifest(): Promise<Manifest> {
-    return fetchJSON(presentationDir() + '/manifest.json').then(j => {
-        if (j == null)
-            throw "The manifest is missing for the presentation"
-        return j as Manifest;
-    })
+async function getManifest(): Promise<Manifest> {
+    const j = await fetchJSON(presentationDir() + '/manifest.json')
+    if (j == null)
+        throw "The manifest is missing for the presentation"
+    return j as Manifest
 }
 
 
@@ -244,15 +239,32 @@ function serverConnected(): boolean {
 
 //adapt the view depending on whether or not we are a tablet, or connected to the server
 function checkFeatures() {
+    async function ifServerConnected() {
+        const response = await sendToServer({ type: 'probe' });
+        if (response.status == 'server working') {
+            serverConnectedVar = true;
+            document.getElementById('author-tab').classList.remove('hidden');
+            document.getElementById('author-tab-head').classList.remove('hidden');
+        }
+    }
+    ifServerConnected();
 
     //if a tablet is used, then we enable the tablet style, which makes the play buttons bigger
     if (('ontouchstart' in window) ||
         (navigator.maxTouchPoints > 0)) // obsolete?:  || (navigator.msMaxTouchPoints > 0))
         document.body.classList.add('tablet');
-
-    //if we are connected to the server, then 
-    probeServer().then(v => { serverConnectedVar = v });
 }
+
+
+
+//this function will be executed if the viewer is opened from the App
+//currently, there is no need for that
+function runFromApp() : void {
+
+}
+
+
+
 
 
 function getRecordedSteps(): LiveRecording {

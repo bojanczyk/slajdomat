@@ -170,10 +170,8 @@ function endRecording(direction: -1 | 0 | 1) : void {
             async function send() {
                 try {
                     const serverResponse = await sendToServer(retval);
-                    const json = await serverResponse.json();
-                    const status = json.status;
-                    if (status != 'Sound recorded successfully')
-                        throw status;
+                    if (serverResponse.status != 'sound recorded')
+                        throw serverResponse.status;
                     else
                         if (soundState == SoundState.None) {
                             {

@@ -13,8 +13,12 @@ export {
     writeManifest,
     readManifest,
     copyHTMLFiles,
-    PresentationList
+    PresentationList,
+    presentationDir
 }
+
+import {exportPdf} from './server-print'
+
 import {
     sendStatus,
     mainWindow,
@@ -103,10 +107,10 @@ function findExecutableInPath(executableName: string) {
     const paths = process.env.PATH.split(':'); // Split PATH variable into individual paths
 
     paths.push('/opt/homebrew/bin');
+    paths.push('/user/local/bin');
 
     // Iterate through each path in the PATH variable
     for (const dir of paths) {
-        sendStatus(dir);
         const fullPath = path.join(dir, executableName);
 
         try {
@@ -357,7 +361,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         const retval: ServerResponse = {
-            status: 'Sound recorded successfully'
+            status: 'sound recorded'
         };
 
 
@@ -445,12 +449,12 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
         readPresentations();
 
         return {
-            status: "ok"
+            status: 'slides received'
         }
     } catch (error) {
         sendStatus(`Error receiving slide ${error.toString()}`);
         return {
-            status: 'error'
+            status: 'error', explanation : `Error receiving slide ${error.toString()}` 
         }
     }
 
@@ -481,13 +485,14 @@ function createLive(msg: MessageToServerLive): ServerResponse {
 
         writeManifest(manifest)
         return {
-            status: 'ok'
+            status: 'live recording started'
         };
     }
     catch (e) {
         sendStatus(e)
         return {
-            status: 'error'
+            status: 'error',
+            explanation : e
         };
     }
 
@@ -510,11 +515,13 @@ function startServer(): void {
         const body: any[] = [];
         req.on('data', (chunk) => {
             body.push(chunk);
-        }).on('end', () => {
+        }).on('end', async () => {
             const msgBody = Buffer.concat(body).toString();
             const msg = JSON.parse(msgBody) as MessageToServer;
 
             let response: ServerResponse;
+            console.log('switching');
+            sendStatus(msg.type);
             switch (msg.type) {
                 case 'wav':
                     //receives a sound file
@@ -529,12 +536,16 @@ function startServer(): void {
                 case 'probe':
                     //asks if the server is working
                     response = {
-                        status: 'ok'
+                        status: 'server working'
                     };
                     break
 
                 case 'startLive':
                     response = createLive(msg);
+                    break;
+
+                case 'toPdf':
+                    response = await exportPdf(msg);
                     break;
 
                 default:

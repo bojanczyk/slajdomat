@@ -66,10 +66,20 @@
 #made-using-slajdomat {
     margin : 10px;
     padding-left: 7px;
+    /* display: flex;
+    flex-direction: row;
+    align-items: center; */
 }
 
 #made-using-slajdomat img {
     width : 100px;
+}
+
+/* this is the pdf button */
+#link-to-pdf {
+    float: right;
+    cursor: pointer;
+    color: var(--blue);
 }
 
 
@@ -177,3 +187,33 @@ p {
 }
 
 
+.hidden {
+    display : none;
+}
+
+
+/*  a div with a button and caption in the left panel */
+.button-line {
+    display : flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+
+.button-line > span.material-icons  {
+    cursor: pointer;
+    color: var(--blue);
+    margin-left : 7px;
+    margin-right : 7px;
+}
+
+.button-line.disabled > span.material-icons  {
+    cursor: default;
+    color: gray;
+}
+/* disabled class for button lines */
+
+.button-line.disabled {
+    color : gray;
+    cursor : default;
+}

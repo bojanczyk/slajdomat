@@ -3,7 +3,7 @@ import { createMenu } from './menubar'
 import * as child from 'child_process'
 
 import * as fs from 'fs'
-
+import * as path from 'path'
 
 import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, revealFinder, SlajdomatSettings } from './server'
 import {MessageToMain, MessageToRenderer} from '../renderer/messages';
@@ -150,9 +150,11 @@ function openViewer(name: string) {
     show: false
   })
 
-  viewerWin.loadFile(name);
+
+  viewerWin.loadFile(path.join(name,'index.html'));
   viewerWin.once('ready-to-show', () => {
-    viewerWin.show()
+    viewerWin.show();
+    viewerWin.webContents.executeJavaScript("window.runFromApp('"+name+"')");
 
     // Open the DevTools.
     //viewerWin.webContents.openDevTools();

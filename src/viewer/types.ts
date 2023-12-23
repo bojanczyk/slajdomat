@@ -12,6 +12,7 @@ export {
     MessageToServerSound,
     MessageToServerSlide,
     MessageToServerLive,
+    MessageToServerPdf,
     LiveRecording,
     ServerResponse,
     EventDescription,
@@ -68,7 +69,8 @@ interface Manifest {
         }
     },
     tree: ZoomEvent,
-    live?: LiveRecording[]
+    live?: LiveRecording[],
+    pdfFile? : string
 }
 
 interface LiveRecording {
@@ -103,15 +105,42 @@ type MessageToServerLive = {
     presentation: string
 }
 
-type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive
+type MessageToServerPdf = {
+    type : 'toPdf',
+    svg : string,
+    width : number,
+    height : number,
+    presentation : string,
+    index : number,
+    maxindex : number
+}
+
+type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive | MessageToServerPdf
     |
 {
     type: 'probe'
 }
 
 //the response sent by the server to the plugin and the sound part of the slides
-type ServerResponse = {
-    status: string,
+type ServerResponse = 
+{
+    status: 'server working'
+} |
+{
+    status: 'sound recorded',
     duration?: number // the duration of a recorded sound
+} |
+{
+    status: 'pdf created'
+} |
+{
+    status: 'slides received'
+} |
+{
+    status: 'live recording started'
+} |
+{
+    status : 'error',
+    explanation : string
 }
 

@@ -236,6 +236,7 @@ function cleanDefs(svg: SVGElement, slide: ZoomEvent): void {
 
 function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
 
+
     // We replace every rect filled with an image pattern by the original image definition
     // Besides simplifying the document structure, this enables animated images 
     // (e.g. [A]PNG) on all browsers, not just Firefox!
@@ -250,7 +251,7 @@ function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
     else
         fill = null;
     //find pattern and corresponding use and image referenced by rectangle fill url 
-    let pattern;
+    let pattern :SVGPatternElement;
     if ((defs != null) && (fill != null)) {
         let patternId = fill.slice(5).slice(0, -1);
         for (const p of defs.childNodes) {
@@ -333,8 +334,6 @@ function attachSVG(node: SlideEvent) {
                 {
                     //querySelectorAll does not count the root element, so the above branch, when s is 'rect', is needed
                     const possibleRects = s.querySelectorAll('rect');
-                    console.log(s);
-                    console.log(possibleRects);
                     if (possibleRects.length == 0)
                         throw('found no rectangles')
                     else
