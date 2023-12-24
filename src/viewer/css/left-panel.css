@@ -3,59 +3,59 @@
 
 
 #left-panel {
-    position : relative;
-    color : black;
-    display : flex;
+    position: relative;
+    color: black;
+    display: flex;
     flex-direction: column;
     background-color: var(--light-blue);
-    width : 0;
+    width: 0;
     vertical-align: top;
     cursor: default;
     white-space: nowrap;
     overflow: hidden;
-    resize :horizontal;
+    resize: horizontal;
     font-size: 12px;
 }
 
 
 
 .tree-view-item {
-    overflow: hidden;    
+    overflow: hidden;
     white-space: nowrap;
-    display:block;
-    color :gray;
-    margin-bottom : 5px;
+    display: block;
+    color: gray;
+    margin-bottom: 5px;
     cursor: pointer;
 }
 
-.tree-view-item-seen {    
+.tree-view-item-seen {
     color: black;
 }
 
 .tree-view-item-loading {
-    color : red;
+    color: red;
 }
 
 .tree-view-item i {
     margin-right: 5px;
-    cursor : pointer;
+    cursor: pointer;
     font-size: 10px;
 }
 
 .slide-stack {
     font-size: 10px;
-    margin-top : 5px;
+    margin-top: 5px;
     margin-left: 1.5em;
     overflow: scroll;
 }
 
 .slide-stack-hidden {
-    display : none;
+    display: none;
 }
 
 #slide-stack-container {
-   overflow : scroll; 
-   margin-top : 10px
+    overflow: scroll;
+    margin-top: 10px
 }
 
 .disabled-event {
@@ -64,7 +64,7 @@
 
 
 #made-using-slajdomat {
-    margin : 10px;
+    margin: 10px;
     padding-left: 7px;
     /* display: flex;
     flex-direction: row;
@@ -72,7 +72,7 @@
 }
 
 #made-using-slajdomat img {
-    width : 100px;
+    width: 100px;
 }
 
 /* this is the pdf button */
@@ -84,13 +84,13 @@
 
 
 #logo-line {
-    font-size : 20px;
-    margin-top  : 5px;
-    margin-bottom : 5px;
-    }
+    font-size: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
 
-#logo-second-line {    
-    margin : 0px;
+#logo-second-line {
+    margin: 0px;
 }
 
 #search-panel {
@@ -100,25 +100,25 @@
 
 #search-box {
     display: flex;
-    margin-top : 5px;
+    margin-top: 5px;
 }
 
 #search-box i {
-    margin : 3px;
+    margin: 3px;
     font-size: 18px;
 }
 
 #search-box input {
-    width : 100%;
+    width: 100%;
 }
 
 #search-results {
-    margin-left : 5px;
-    margin-top : 5px;
+    margin-left: 5px;
+    margin-top: 5px;
 }
 
 .one-result {
-    padding : 5px;
+    padding: 5px;
 }
 
 .one-result:hover {
@@ -126,7 +126,7 @@
     cursor: pointer;
 }
 
-.search-result-text {    
+.search-result-text {
     color: grey;
 
 }
@@ -138,9 +138,9 @@
 }
 
 /* the tab heads them selves */
-#tab-heads > div {
-    margin-left : 10px;
-    padding : 5px;
+#tab-heads>div {
+    margin-left: 10px;
+    padding: 5px;
     border: 1px solid var(--blue);
     border-bottom: none;
     border-top-left-radius: 5px;
@@ -149,7 +149,7 @@
 }
 
 /* if the tab head is active, then it has a different colour */
-#tab-heads > .active { 
+#tab-heads>.active {
     background-color: var(--very-light-blue);
 }
 
@@ -158,26 +158,25 @@
     flex-grow: 1;
 }
 
-#tab-contents > div {
-    display : none;
+#tab-contents>div {
+    display: none;
 }
 
-#tab-contents > div.active {
-    display : flex;
+#tab-contents>div.active {
+    display: flex;
     flex-direction: column;
     overflow-y: scroll;
 }
 
 
 
-#tab-contents > div > div {
-    padding : 10px;
-    border-bottom : 1px solid var(--light-blue);
+#tab-contents>div>div {
+    padding: 10px;
+    border-bottom: 1px solid var(--light-blue);
 }
 
 p {
-    white-space : initial;
-    margin-top : 0px;
+    white-space: initial;
 }
 
 .checkbox-container {
@@ -188,32 +187,59 @@ p {
 
 
 .hidden {
-    display : none;
+    display: none;
 }
 
 
 /*  a div with a button and caption in the left panel */
 .button-line {
-    display : flex;
+    display: flex;
     flex-direction: row;
     align-items: center;
 }
 
 
-.button-line > span.material-icons  {
+.button-line>span.material-icons {
     cursor: pointer;
     color: var(--blue);
-    margin-left : 7px;
-    margin-right : 7px;
+    margin-left: 7px;
+    margin-right: 7px;
 }
 
-.button-line.disabled > span.material-icons  {
+.button-line.disabled>span.material-icons {
     cursor: default;
     color: gray;
 }
+
 /* disabled class for button lines */
 
 .button-line.disabled {
-    color : gray;
-    cursor : default;
+    color: gray;
+    cursor: default;
 }
+
+
+
+.growAndShrink {
+    transition: transform 0.3s ease-in-out;
+    /* Transition property for smooth scaling */
+    animation: growAndShrinkFrames 1s infinite ease-in-out;
+    /* Duration and easing */
+}
+
+/* Define the animation */
+@keyframes growAndShrinkFrames {
+
+    0%,
+    100% {
+        transform: scale(1);
+        /* Start and end state: normal size */
+    }
+
+    50% {
+        transform: scale(1.2);
+        color: red;
+        /* Middle state: slightly larger */
+    }
+}
+

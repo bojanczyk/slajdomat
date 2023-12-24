@@ -260,9 +260,6 @@ function afterSound(): void {
 
 //starts a new live recording 
 function soundLive(): void {
-
-    console.log('starting live recording');
-    console.log(new Error().stack)
     const msg: MessageToServerLive = {
         type: 'startLive',
         presentation: manifest.presentation,
@@ -361,7 +358,6 @@ function initSoundTimeline(recording: LiveRecording): void {
             totalSoundDuration += retval.duration;
         }
         catch (e) {
-            console.log('found no sound file')
             // there is no sound file
         }
     }

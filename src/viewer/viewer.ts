@@ -261,7 +261,10 @@ function checkFeatures() {
 //currently, there is no need for that
 function runFromApp() : void {
 
+    //we don't use such code for the moment, since we try to communicate with the server as much as possible.
+
 }
+(window as any).runFromApp = runFromApp;
 
 
 
