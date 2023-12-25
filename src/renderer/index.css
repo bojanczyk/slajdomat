@@ -78,8 +78,12 @@ tabs and switching between in the main window */
     display: none;
 }
 
+/* we need the webkit prefix, otherwise it does not work
+this is not an issue, since it will be executed in the browser of figma, which is webkit
+the second line is just to avoid an error message */
 .myspinner {
     animation: spin 2s infinite linear;
+    -webkit-animation: spin 2s infinite linear;
 }
 
 /* Keyframes for spinning animation */

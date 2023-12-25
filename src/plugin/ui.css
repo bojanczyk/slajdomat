@@ -283,18 +283,21 @@ background-color : var(--select-color);
 }
 
 
-
+/* we need the webkit prefix, otherwise it does not work
+this is not an issue, since it will be executed in the browser of figma, which is webkit
+the second line is just to avoid an error message */
 .myspinner {
-		-animation: rotation 2s infinite linear;
+		-webkit-animation: spin 2s linear infinite ;
+    animation: spin 2s linear infinite ;
 }
 
-@keyframes rotation {
-		from {
-				-webkit-transform: rotate(0deg);
-		}
-		to {
-				-webkit-transform: rotate(359deg);
-		}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg); /* Start rotation at 0 degrees */
+  }
+  100% {
+    transform: rotate(360deg); /* End rotation at 360 degrees (full circle) */
+  }
 }
 
 /* settings column ************ */
@@ -515,8 +518,4 @@ background-color : var(--select-color);
 #spinner {
   position: absolute;
   right : 5px;
-}
-
-#spinner:not(.myspinner) {
-  display: none;
 }

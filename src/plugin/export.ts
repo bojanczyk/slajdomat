@@ -16,7 +16,8 @@ import {
     sendToUI,
     state,
     allTexts,
-    getRoot
+    getRoot,
+    deleteHoverFrames
 } from './code'
 
 
@@ -57,6 +58,8 @@ function compileKeywords(event: ZoomEvent, frame: FrameNode) {
 //send the svg file to the ui, which then sends it to the server
 function exportSlides(): void {
     
+    //in case there are some straggler blue frames, delete them
+    deleteHoverFrames();
     
     //the list of slides and their svg files
     const slideList: {

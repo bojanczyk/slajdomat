@@ -13,7 +13,6 @@ Things to implement in the future
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
 
 ### Plugin 
-- error when same name for slide and overlay
 - check when a new live is created spuriously (not sure what that means anymore)
 
 

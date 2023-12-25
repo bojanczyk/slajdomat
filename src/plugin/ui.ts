@@ -150,9 +150,9 @@ function showColumn(column: WindowMode): void {
 function exportWaiting(waiting: boolean): void {
   const button = document.getElementById("spinner");
   if (waiting) {
-    button.classList.add('myspinner');
+    button.classList.remove('hidden');
   } else {
-    button.classList.remove('myspinner');
+    button.classList.add('hidden');
   }
 }
 

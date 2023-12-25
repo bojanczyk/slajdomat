@@ -5,7 +5,7 @@
 import { } from '@figma/plugin-typings'
 
 export {
-    allSlides, allTexts, findEventObject, findSlide, getDatabase, getRoot, loadCurrentData, pluginSettings, saveCurrentData, sendSettings, sendToUI, state
+    allSlides, allTexts, findEventObject, findSlide, getDatabase, getRoot, loadCurrentData, pluginSettings, saveCurrentData, sendSettings, sendToUI, state, deleteHoverFrames
 }
 
 

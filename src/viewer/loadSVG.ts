@@ -251,7 +251,7 @@ function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
     else
         fill = null;
     //find pattern and corresponding use and image referenced by rectangle fill url 
-    let pattern :SVGPatternElement;
+    let pattern: SVGPatternElement;
     if ((defs != null) && (fill != null)) {
         let patternId = fill.slice(5).slice(0, -1);
         for (const p of defs.childNodes) {
@@ -285,16 +285,50 @@ function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
                     // we need to replace <rect> by <g>, but for this we need to
                     // turn x,y,width,height attributes into a transform attribute
                     let rectG = document.createElementNS("http://www.w3.org/2000/svg", 'g') as SVGGElement;
-                    const x = parseFloat(r.getAttribute('x') || '0');
-                    const y = parseFloat(r.getAttribute('y') || '0');
-                    const w = parseFloat(r.getAttribute('width') || '1');
-                    const h = parseFloat(r.getAttribute('height') || '1');
+
                     const imgW = parseFloat(image.getAttribute('width') || '1');
                     const imgH = parseFloat(image.getAttribute('height') || '1');
-                    const scaleX = w / imgW;
-                    const scaleY = h / imgH;
+                    const w = parseFloat(r.getAttribute('width') || '1');
+                    const h = parseFloat(r.getAttribute('height') || '1');
+                    let scaleX = w / imgW;
+                    let scaleY = h / imgH;
+
+
+
+                    let transformMatrix: number[];
+
+                    //in the examples that I have, either there are x and y attributes, or otherwise (in  case of a reflection), there is a transform that hides them 
+                    if (r.hasAttribute('x') && (r.hasAttribute('y'))) {
+                        const x = parseFloat(r.getAttribute('x') || '0');
+                        const y = parseFloat(r.getAttribute('y') || '0');
+                        transformMatrix = [scaleX, 0, 0, scaleY, x, y];
+                    }
+                    else if (r.hasAttribute('transform')) {
+                        //in the examples that I have, the value of the transform attribute will be something like matrix(-1 0 0 1 757 41), where -1 indicates horizontal reflection, 1 indicates vertical non-reflection, and x=757 and  y=41
+
+                        function composeMatrices(m1 : number[], m2 : number[]) {
+                            return [
+                            m2[0] * m1[0] + m2[2] * m1[1],
+                            m2[1] * m1[0] + m2[3] * m1[1],
+                            m2[0] * m1[2] + m2[2] * m1[3],
+                            m2[1] * m1[2] + m2[3] * m1[3],
+                            m2[0] * m1[4] + m2[2] * m1[5] + m2[4],
+                            m2[1] * m1[4] + m2[3] * m1[5] + m2[5]
+                            ]
+                          }
+                        const firstMatrix = [scaleX, 0, 0, scaleY, 0 ,0];
+                        const secondMatrix = r.getAttribute('transform').slice(7, -1).split(' ').map(parseFloat);
+                        transformMatrix = composeMatrices(firstMatrix,secondMatrix);
+                    }
+                    else throw ('unknown type of rect with image')
+
+                    const transformMatrixString = transformMatrix.map(String).join(' ');
+                    console.log(transformMatrixString);
+                    rectG.setAttribute('transform', 'matrix(' + transformMatrixString + ')');
+
+
                     rectG.id = r.id;
-                    rectG.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + scaleX + ' ' + scaleY + ')');
+
                     let imageClone = image.cloneNode(true) as SVGImageElement;
                     let parent = r.parentNode;
                     parent.insertBefore(rectG, r);
@@ -325,21 +359,20 @@ function attachSVG(node: SlideEvent) {
             if (s.id == node.id) {
 
 
-                
+
                 //s is the child link. This could be a group, or a rectangle. We find the dimensions by searching for a rectangle, which could be s or one of its children (the latter happens when s is a group that contains other stuff).
-                let rect :SVGRectElement;
+                let rect: SVGRectElement;
                 if (s.nodeName == 'rect')
                     rect = (s as unknown) as SVGRectElement;
-                else
-                {
+                else {
                     //querySelectorAll does not count the root element, so the above branch, when s is 'rect', is needed
                     const possibleRects = s.querySelectorAll('rect');
                     if (possibleRects.length == 0)
-                        throw('found no rectangles')
+                        throw ('found no rectangles')
                     else
                         rect = possibleRects[0];
                 }
-                    
+
 
                 placeholder = {
                     x: (rect.x as SVGAnimatedLength).baseVal.value,
