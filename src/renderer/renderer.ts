@@ -1,40 +1,79 @@
 import './index.css';
+export { selectTab }
 
 //I would like to use fontsource fonts, but do not know yet how to make this work with stupid webpack
 // import '@fontsource/roboto'
 
-// // Below is a replacement of the old import of electron
-// // (note that from renderer we must use window.require instead of just require)
-// import {
-//     ipcRenderer
-// } from 'electron'
+
 const { ipcRenderer } = window.require('electron');
 import * as path from 'path'
 
-import { sendMessageToMain, MessageToMain, MessageToRenderer } from './messages';
+import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
+import { SlajdomatSettings } from '../main/server';
+export { sendElectronRendererToMain };
 
 
-ipcRenderer.on('message-to-renderer', (event, arg : MessageToRenderer) => {
+
+//the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
+function sendElectronRendererToMain(msg: ElectronRendererToMain): void {
+    ipcRenderer.send('message-to-main', msg);
+}
+
+
+//there are two logs, one for the uploads, and one for other things
+function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
+
+    switch (subtype) {
+
+        //the type types git and log use  scrolling log windows
+        case 'upload':
+        case 'log':
+            const div = document.createElement('div');
+            div.innerHTML = text;
+            let statusPanel;
+        
+            if (subtype == 'log')
+                statusPanel = document.getElementById('general-status');
+            else
+                statusPanel = document.getElementById('upload-status');
+        
+            statusPanel.appendChild(div);
+            statusPanel.scrollTo(0, statusPanel.scrollHeight);
+            break;
+
+        //this pops up some text at the bottom of the screen for a 5 seconds
+        case 'quick':
+            const quickStatus : HTMLElement = document.querySelector('#quick-status');
+            quickStatus.innerHTML = text;
+            quickStatus.style.opacity = '1';
+            setTimeout(() => {quickStatus.style.opacity = '0';}, 2500);
+            break;
+
+    }
+
+}
+
+//message handler, for messages that come from Electron Main
+ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
     switch (arg.type) {
         case 'stop-spin':
             document.getElementById('spinner').classList.remove('myspinner');
             break;
 
         case 'status-update':
-            const div = document.createElement('div');
-            div.innerHTML = arg.text;
-            const statusPanel = document.getElementById('messages-list');
-            statusPanel.appendChild(div);
-            statusPanel.scrollTo(0, statusPanel.scrollHeight);
+            statusUpdate(arg.text, arg.subtype);
             break;
 
         case 'presentation-list':
             receivePresentations(arg);
             break;
 
-    
+        case 'settings':
+            displaySettings(arg.settings);
+            break;
+
         default:
-            throw('unkown message');
+            throw ('unkown message');
             break;
     }
 });
@@ -44,27 +83,29 @@ ipcRenderer.on('message-to-renderer', (event, arg : MessageToRenderer) => {
 
 
 
-function selectTab(tab : 'presentations' | 'instructions' | 'messages') {
-    console.log('selecting',tab);
-    for (const tabHead of document.getElementsByClassName('tab-head')) 
-    tabHead.classList.remove('selected');
+function selectTab(tab: 'presentations' | 'instructions' | 'messages' | 'upload' | 'settings') {
+    for (const tabHead of document.getElementsByClassName('tab-head'))
+        tabHead.classList.remove('selected');
 
-    for (const tabHead of document.getElementsByClassName('main-window-tab')) 
-    tabHead.classList.remove('selected');
+    for (const tabHead of document.getElementsByClassName('main-window-tab'))
+        tabHead.classList.remove('selected');
 
-    document.getElementById(tab+'-head').classList.add('selected');
-    document.getElementById(tab+'-tab').classList.add('selected');
+    document.getElementById(tab + '-head').classList.add('selected');
+    document.getElementById(tab + '-tab').classList.add('selected');
 
 }
 
 
 
 //we receive the list of presentations in the current folder
-function receivePresentations (msg : MessageToRenderer) : void
-{
+function receivePresentations(msg: ElectronMainToRenderer): void {
     if (msg.type != 'presentation-list')
-        throw('wrong message');
-    
+        throw ('wrong message');
+
+    if (msg.gitscript != undefined) {
+        (document.querySelector('#upload-script-text') as HTMLTextAreaElement).value = msg.gitscript;
+    }
+
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');
         retval.classList.add('presentation-name');
@@ -79,7 +120,7 @@ function receivePresentations (msg : MessageToRenderer) : void
         retval.innerHTML = 'trending_up';
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
-            sendMessageToMain({ type: 'upgrade', name: name });
+            sendElectronRendererToMain({ type: 'upgrade', name: name });
         })
         return retval;
     }
@@ -90,7 +131,7 @@ function receivePresentations (msg : MessageToRenderer) : void
         retval.innerHTML = 'folder_open'
         retval.classList.add('toolbar-button');
         retval.addEventListener('click', () => {
-            sendMessageToMain({ type: 'reveal-in-finder', name: name, kind: kind });
+            sendElectronRendererToMain({ type: 'reveal-in-finder', name: name, kind: kind });
         })
         return retval;
     }
@@ -102,10 +143,10 @@ function receivePresentations (msg : MessageToRenderer) : void
         document.getElementById('parent-folder-button').classList.remove('disabled');
 
 
-    document.getElementById('git-script').classList.remove('disabled');
+    document.getElementById('upload-script-button').classList.remove('disabled');
     document.getElementById('link-to-current-folder').innerHTML = msg.dir;
     selectTab('presentations');
-    
+
 
     //hide the text which says that there is no presentations folder selected
     document.getElementById('no-presentations-text').classList.add('hidden');
@@ -132,7 +173,7 @@ function receivePresentations (msg : MessageToRenderer) : void
             const name = nameDiv('presentation', i);
             li.appendChild(name)
             name.addEventListener('click', () => {
-                sendMessageToMain({ type: 'open-viewer', name: path.join(msg.dir, msg.presentations[i].file)  })
+                sendElectronRendererToMain({ type: 'open-viewer', name: path.join(msg.dir, msg.presentations[i].file) })
             })
             li.appendChild(revealButton(i, 'presentation'));
             if (!msg.presentations[i].updated) {
@@ -150,7 +191,7 @@ function receivePresentations (msg : MessageToRenderer) : void
             const name = nameDiv('folder', f);
             li.appendChild(name);
             name.addEventListener('click', () => {
-                sendMessageToMain({ type: 'goto-folder', name: f });
+                sendElectronRendererToMain({ type: 'goto-folder', name: f });
             })
             ul.appendChild(li);
         }
@@ -158,41 +199,70 @@ function receivePresentations (msg : MessageToRenderer) : void
 }
 
 //switch tabs in the main window
+
+
 document.getElementById('instructions-head').addEventListener('click', (e) => selectTab('instructions'));
-document.getElementById('messages-head').addEventListener('click', (e) => selectTab('messages'));
+document.getElementById('upload-head').addEventListener('click', (e) => selectTab('upload'));
 document.getElementById('presentations-head').addEventListener('click', (e) => selectTab('presentations'));
+document.getElementById('messages-head').addEventListener('click', (e) => selectTab('messages'));
+document.getElementById('settings-head').addEventListener('click', (e) => selectTab('settings'));
+
 
 
 //a button in the toolbar has been clicked
-document.getElementById('toolbar').addEventListener('click', (event) => {
+for (const button of document.querySelectorAll('.toolbar-button'))
+    button.addEventListener('click', () => {
+        if (button.classList.contains('disabled'))
+            return;
 
-    const target = event.target as HTMLElement;
-    console.log('here goes');
+        const script = (document.querySelector('#upload-script-text') as HTMLTextAreaElement).value;
+        switch (button.id) {
+            case 'parent-folder-button':
+                sendElectronRendererToMain({ type: 'parent-folder-button' });
+                break;
+            case 'upload-script-button':
+                sendElectronRendererToMain({ type: 'upload-script', script: script });
+                //start the spinner
+                document.getElementById('spinner').classList.add('myspinner');
+                break;
+            case 'link-to-current-folder':
+                sendElectronRendererToMain({ type: 'reveal-in-finder', name: '', kind: 'folder' });
+                break;
+            case 'save-script':
+                sendElectronRendererToMain({ type: 'save-script', script: script });
+                break;
+            case 'save-settings':
+                sendSettings();
+                break;
+            case 'download-new-viewer':
+                sendElectronRendererToMain({ type: 'download-new-versions' });
+                break;
+        }
+    })
 
-    if (target.classList.contains('disabled'))
-        return;
-
-    switch (target.id) {
-        case 'parent-folder-button':
-            sendMessageToMain({ type: 'parent-folder-button' });
-            break;
-        case 'git-script':
-            sendMessageToMain({ type: 'git-script' });
-            //start the spinner
-            document.getElementById('spinner').classList.add('myspinner');
-            break;
-        case 'link-to-current-folder':
-            sendMessageToMain({ type: 'reveal-in-finder', name: '', kind : 'folder' });
-            break;
-
-    }
-
-})
 
 
 document.getElementById('select-folder-button').addEventListener('mouseup', () => {
-    sendMessageToMain({ type: 'choose-presentations-folder' });
+    sendElectronRendererToMain({ type: 'choose-presentations-folder' });
 })
 
 
+//display the settings in the forms in the settings tab
+function displaySettings(settings: SlajdomatSettings) {
+    (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
+    (document.querySelector('#ffprobe-path') as HTMLInputElement).value = settings.ffprobe;
+    (document.querySelector('#port-number') as HTMLInputElement).value = settings.port.toString();
+}
+
+
+
+//send back the settings to the main process, so that they can be saved to disk
+function sendSettings() {
+    const settings: SlajdomatSettings = {
+        ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
+        ffprobe: (document.querySelector('#ffprobe-path') as HTMLInputElement).value,
+        port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value)
+    }
+    sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
+}
 

@@ -14,10 +14,12 @@ export {
     readManifest,
     copyHTMLFiles,
     PresentationList,
-    presentationDir
+    presentationDir,
+    setResourceDir,
+    downloadViewerFiles
 }
 
-import {exportPdf} from './server-print'
+import { exportPdf } from './server-print'
 
 import {
     sendStatus,
@@ -41,6 +43,7 @@ import express from 'express'
 import cors from 'cors'
 import * as http from 'http'
 import * as child from 'child_process'
+import * as https from 'https'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -64,8 +67,9 @@ import {
 } from '../viewer/types'
 
 import {
-    MessageToRenderer,
-} from '../renderer/messages'
+    ElectronMainToRenderer,
+} from '../renderer/messages-main-renderer'
+
 
 
 
@@ -90,13 +94,73 @@ let presentations: PresentationList;
 
 let slajdomatSettings: SlajdomatSettings;
 
+//these are the files in the resource directory that should be copied to each presentation
+const theHTMLFiles = ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg'];
+
 // let localDir: string = undefined;
 
 
 
-function resourceDir(): string {
-    
-    return path.join(app.getAppPath(), 'resources');
+//this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
+let customViewerDirectory: string = undefined;
+
+async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
+
+    for (const fileName of theHTMLFiles) {
+        const downloadPath = path.join(customViewerDirectory, fileName);
+        function download() {
+
+            sendStatus('Downloading file ' + fileName);
+            const fileUrl = 'https://github.com/bojanczyk/slajdomat/tree/master/resources' + fileName; // Replace with the URL of the file to download
+            const fileStream = fs.createWriteStream(downloadPath);
+            https.get(fileUrl, (response) => {
+                response.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    sendStatus('Successfully downloaded ' + fileName);
+                    fileStream.close();
+                });
+            }).on('error', (err) => {
+                sendStatus('Failed downloading ' + err);
+            });
+        }
+
+        if (mode == 'unconditionally')
+            download();
+        else
+            fs.access(downloadPath, fs.constants.F_OK, (err) => {
+                if (err) {
+                    download();
+                    return;
+                }
+            });
+    }
+}
+
+function setResourceDir() {
+    customViewerDirectory = app.getPath('userData')
+    //we check if the indicated directory contains the viewer file
+
+    const customDir = process.argv[1];
+    if (customDir != undefined)
+        fs.access(customDir, fs.constants.F_OK, (err) => {
+            if (err) {
+                sendStatus('Error: could not access directory ' + customDir);
+                return;
+            }
+            sendStatus('Custom viewer code will be used from' + customDir);
+            customViewerDirectory = customDir;
+        });
+
+    //checks if a file is there, and if not, downloads it from github
+
+
+
+    downloadViewerFiles('if not there');
+}
+
+function getResourceDir(): string {
+
+    return customViewerDirectory;
 }
 
 
@@ -127,29 +191,30 @@ function findExecutableInPath(executableName: string) {
     return ''; // Executable not found
 }
 
-function loadSettings(): Boolean {
+function loadSettings() {
 
     try {
-        const data = fs.readFileSync(path.join(resourceDir(),'settings.json')).toString();
+        const fileName = path.join(app.getPath('userData'), 'settings.json');
+        const data = fs.readFileSync(fileName).toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
-
-
-        if (slajdomatSettings.ffmpeg == '')
-            slajdomatSettings.ffmpeg = findExecutableInPath('ffmpeg');
-
-        if (slajdomatSettings.ffprobe == '')
-            slajdomatSettings.ffprobe = findExecutableInPath('ffprobe');
-
-        return true;
     }
     catch (err) {
-        return false;
+        // this should be called when there are no settings, i.e. the app is loaded for the first time
+
+
+        slajdomatSettings = {
+            ffmpeg: findExecutableInPath('ffmpeg'),
+            ffprobe: findExecutableInPath('ffprobe'),
+            port: 3001,
+        }
     }
 
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings });
 }
 
 function saveSettings(): void {
-    writeFile(path.join(resourceDir(),'settings.json'), myStringify(slajdomatSettings));
+    const fileName = path.join(app.getPath('userData'), 'settings.json')
+    writeFile(fileName, myStringify(slajdomatSettings));
 }
 
 //I use this function, because the variable slajdomatSettings is read-only outside this module
@@ -162,6 +227,7 @@ function assignSettings(arg: SlajdomatSettings): void {
     }
     slajdomatSettings = arg;
     saveSettings();
+    sendStatus('Saved settings', 'quick')
 }
 
 //writes the file in the local directory
@@ -178,7 +244,12 @@ function gotoParent(): void {
         throw ('cannot go above parent folder');
     }
     else {
-        readPresentations(path.join(currentDir, '..'));
+        try {
+            readPresentations(path.join(currentDir, '..'));
+        }
+        catch (e) {
+            sendStatus('Error: you clicked on parent, but the parent directory has been deleted')
+        }
     }
 }
 
@@ -194,7 +265,7 @@ function revealFinder(name: string, type: 'folder' | 'presentation'): void {
     if (type == 'presentation')
         dir = presentationDir(name);
     else
-        dir = path.join(currentDir,name);
+        dir = path.join(currentDir, name);
     shell.showItemInFolder(dir);
 }
 
@@ -211,10 +282,10 @@ function presentationDir(presentationName: string) {
         const dirName = freshName(sanitize(presentationName), dirList(currentDir));
         presentations[presentationName] = { file: dirName, updated: true };
         sendStatus('adding ' + dirName)
-        fs.mkdirSync(path.join(currentDir,dirName));
+        fs.mkdirSync(path.join(currentDir, dirName));
 
     }
-    return path.join(currentDir,presentations[presentationName].file);
+    return path.join(currentDir, presentations[presentationName].file);
 }
 
 //returns the directory for a slide in a presentation, and if it does not exist, then it creates the directory
@@ -232,13 +303,13 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
         writeManifest(manifest);
         sendStatus('Received slide ' + dirName);
         try {
-            fs.mkdirSync(path.join(presentationDir(presentation),dirName))
+            fs.mkdirSync(path.join(presentationDir(presentation), dirName))
         } catch (e) {
             sendStatus(e)
         }
     }
 
-    const dir = path.join(presentationDir(presentation),manifest.slideDict[slideId]);
+    const dir = path.join(presentationDir(presentation), manifest.slideDict[slideId]);
 
     //it could be the case that the directory disappeared for some reason, in which case the directory will be created
     if (!fs.existsSync(dir))
@@ -251,16 +322,16 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
 function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     //copy the latest version of the html files to the slide directory
-    const htmlSourceDir = path.join(app.getAppPath(),'resources');
-    for (const file of ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg']) {
-        fs.copyFileSync(path.join(htmlSourceDir,file), path.join(presDir,file))
+    const htmlSourceDir = path.join(app.getAppPath(), 'resources');
+    for (const file of theHTMLFiles) {
+        fs.copyFileSync(path.join(htmlSourceDir, file), path.join(presDir, file))
     }
 }
 
 
 //writes the manifest of a presentation to disk
 function writeManifest(manifest: Manifest) {
-    fs.writeFileSync(path.join(presentationDir(manifest.presentation),'manifest.json'), myStringify(manifest));
+    fs.writeFileSync(path.join(presentationDir(manifest.presentation), 'manifest.json'), myStringify(manifest));
 }
 
 //reads the manifest of a presentation 
@@ -282,7 +353,7 @@ function readManifest(presentation: string): Manifest {
 function dirList(dir: string): string[] {
     const retval = [];
     for (const file of fs.readdirSync(dir))
-        if (fs.lstatSync(path.join(dir,file)).isDirectory())
+        if (fs.lstatSync(path.join(dir, file)).isDirectory())
             retval.push(file);
 
     return retval;
@@ -293,19 +364,27 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
 
     currentDir = dir;
 
-    const msg: MessageToRenderer = {
+    const msg: ElectronMainToRenderer = {
         type: 'presentation-list',
         dir: currentDir,
         presentations: {} as PresentationList,
         subfolders: [] as string[],
-        atRoot: currentDir == slajdomatSettings.directory
+        atRoot: currentDir == slajdomatSettings.directory,
+        gitscript: undefined
     };
 
+    try {
+        msg.gitscript = fs.readFileSync(path.join(slajdomatSettings.directory, '.gitscript')).toString();
+    }
+    catch (e) {
+        // there is no git script
+    }
+
     for (const file of dirList(currentDir)) {
-        const fullName = path.join(currentDir,file);
+        const fullName = path.join(currentDir, file);
         try {
             //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
-            const data = fs.readFileSync(path.join(fullName,'manifest.json')).toString();
+            const data = fs.readFileSync(path.join(fullName, 'manifest.json')).toString();
             const json = JSON.parse(data) as Manifest;
             msg.presentations[json.presentation] = { file: file, updated: !oldVersion(json) };
         } catch (e) {
@@ -440,7 +519,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
         for (const slide of msg.slideList) {
             const dir = slideDir(manifest, slide.database.id, slide.database.name)
-            writeFile(path.join(dir,'image.svg'), slide.svg);
+            writeFile(path.join(dir, 'image.svg'), slide.svg);
             sendStatus('Received slides for ' + slide.database.name);
         }
         writeManifest(manifest);
@@ -454,7 +533,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
     } catch (error) {
         sendStatus(`Error receiving slide ${error.toString()}`);
         return {
-            status: 'error', explanation : `Error receiving slide ${error.toString()}` 
+            status: 'error', explanation: `Error receiving slide ${error.toString()}`
         }
     }
 
@@ -471,7 +550,7 @@ function createLive(msg: MessageToServerLive): ServerResponse {
 
         //create a directory for the liver recording
         const dir = freshName(`live_recording${manifest.live.length}`, dirList(presentationDir(msg.presentation)));
-        fs.mkdirSync(path.join(presentationDir(msg.presentation),dir));
+        fs.mkdirSync(path.join(presentationDir(msg.presentation), dir));
 
 
         manifest.live.push(
@@ -492,7 +571,7 @@ function createLive(msg: MessageToServerLive): ServerResponse {
         sendStatus(e)
         return {
             status: 'error',
-            explanation : e
+            explanation: e
         };
     }
 

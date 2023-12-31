@@ -12,10 +12,9 @@ export {
 import {
     Database,
     LatexPluginSettings,
-    LatexState,
-    MessageToCode,
-    MessageToUI
+    LatexState
 } from './plugin-types'
+
 
 import {
     upgradeVersion
@@ -43,6 +42,8 @@ import {
 } from '../viewer/types'
 import { stat } from 'original-fs'
 
+import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin'
+
 
 
 
@@ -61,7 +62,7 @@ let pluginSettings: LatexPluginSettings;
 
 
 
-function sendToUI(msg: MessageToUI): void {
+function sendToUI(msg: PluginCodeToUI): void {
     figma.ui.postMessage(msg)
 }
 
@@ -154,7 +155,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
 
 //send the  list which says what are the possible candidates for child slides. 
 function sendDropDownList() {
-    const msg: MessageToUI = {
+    const msg: PluginCodeToUI = {
         type: 'dropDownContents',
         slides: [] as {
             name: string,
@@ -761,7 +762,7 @@ function setCurrentSlide(slide: FrameNode): void {
     if (slide != null) {
         loadCurrentData(slide);
         const isRoot = getRoot() == state.currentSlide;
-        const msg: MessageToUI = {
+        const msg: PluginCodeToUI = {
             type: 'slideChange',
             docName: figma.root.name,
             slide: state.currentSlide.name,
@@ -861,7 +862,7 @@ function selChange(): void {
 
 
 
-    const msg: MessageToUI = {
+    const msg: PluginCodeToUI = {
         type: 'selChange',
         selected: false, // is there at least one object that can be used for show/hide
         latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
@@ -897,7 +898,7 @@ function selChange(): void {
 
 
 //handle messages that come from the ui
-function onMessage(msg: MessageToCode) {
+function onMessage(msg: PluginUIToCode) {
 
     switch (msg.type) {
 

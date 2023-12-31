@@ -5,9 +5,7 @@ export {
 import {
   Database,
   LatexState,
-  MessageToCode,
   LatexPluginSettings,
-  MessageToUI,
   WindowMode
 } from './plugin-types'
 
@@ -22,6 +20,7 @@ import {
 import {
   SlideEvent
 } from '../viewer/types'
+import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
 
 
@@ -213,7 +212,7 @@ function notify(text: string): void {
 }
 
 //shortcut for posting a message, so that I don't need to write the '*' each time
-function postMessage(msg: MessageToCode): void {
+function postMessage(msg: PluginUIToCode): void {
   parent.postMessage({
     pluginMessage: msg
   }, '*');
@@ -548,7 +547,7 @@ for (const toolbarButton of toolbarButtons) {
 
 //creates a link to a child with id, if id == null then a new child is created. Nothing is actually created by this code, only a request is sent to code.js
 function createChildLink(id: string): void {
-  const msg: MessageToCode = {
+  const msg: PluginUIToCode = {
     type: 'createEvent',
     id: id,
     subtype: 'child',
@@ -675,7 +674,7 @@ function pluginMouseleave() {
 // handle messages coming from figma
 onmessage =
 function (event: MessageEvent) {
-  const msg = event.data.pluginMessage as MessageToUI;
+  const msg = event.data.pluginMessage as PluginCodeToUI;
   
   switch (msg.type) {
     //reload the window when the slide changes

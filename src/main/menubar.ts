@@ -2,7 +2,7 @@
 export{ createMenu}
 
 import {app,Menu} from 'electron'
-import {openPreferences,choosePresentationsFolder} from './index'
+import {choosePresentationsFolder} from './index'
 
 
 function createMenu() : void
@@ -17,9 +17,6 @@ const template : any = [
     label: app.name,
     submenu: [
       { role: 'about' },
-      { type: 'separator' },
-      //for some reason, I need to write () => openPreferences() instead of openPreferences. This was not necessary when the createMenu function was not in a separate module, i.e. when it was part of index.ts
-      { label : 'Preferences', click : () => {openPreferences()} , accelerator : 'CommandOrControl+.'},
       { type: 'separator' },
       { role: 'services' },
       { type: 'separator' },
@@ -38,7 +35,6 @@ const template : any = [
 
       // add Preferences to File menu for non-Mac OS 
       ...(isMac ? [] : [
-      { label : 'Preferences', click : () => {openPreferences()} , accelerator : 'CommandOrControl+.'},
       { type: 'separator' },
       { role: 'about' },
       { type: 'separator' },

@@ -6,8 +6,6 @@ This file contains notes to the developer that may be useful in maintaning the a
 Things to implement in the future
 
 ### Bugs
-- when the current directory in Slajdomat is deleted, the presentation is not created, but this error is not sent back to the plugin.
-- 
 
 ### Viewer app
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
@@ -24,12 +22,17 @@ Things to implement in the future
 
 
 
+### Parameters
+If you run the app with command line parameters, then you can have a non-standard directory for the viewer files
+Do it like this in macos: open Slajdomat --args ./directory_with_files
+
 
 
 
 ## The toolchain
 
-Generally speaking, the toolchain in web development is a mess, and it seems to be written in large part by unprofessional developers. 
+Generally speaking, the toolchain in web development is a mess with little documentation, and I am an amateur as well, so the toolchain here is a mess as well.
+
 The source code is in typescript. The types from typescript are useful to avoid mistakes once the project is large. The program is constructed by a chain of three tools. 
 
 - The first tool in the chain is the typescript transpiler, which generates javascript code from typescript.  The tsconfig.json file contains some typescript options, including options about the module system which are hard to understand (require vs import, the latter one is used here).
