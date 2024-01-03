@@ -10,7 +10,7 @@ import svgToPdf from 'svg-to-pdfkit'
 import * as fs from 'fs';
 import * as path from 'path';
 import { MessageToServerPdf, ServerResponse } from "../viewer/types";
-import { sendStatus } from '.';
+import { sendStatus } from './';
 import { readManifest, writeManifest, presentationDir } from './server';
 import { sanitize } from '../common/helper';
 

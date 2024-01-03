@@ -1,17 +1,31 @@
 import './index.css';
 export { selectTab }
 
+
+
+
+// import WebFont from 'webfontloader';
+// WebFont.load({google: {families: ["Roboto:300,400,500"]}});
+
 //I would like to use fontsource fonts, but do not know yet how to make this work with stupid webpack
-// import '@fontsource/roboto'
+import '@fontsource/roboto'
 
 
 const { ipcRenderer } = window.require('electron');
 import * as path from 'path'
 
 import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
-import { SlajdomatSettings } from '../main/server';
+import { SlajdomatSettings } from './server';
 export { sendElectronRendererToMain };
 
+
+//icons 
+import '../icons/save.svg';
+import '../icons/download.svg';
+import '../icons/leftarrow.svg';
+import '../icons/folder.svg';
+import '../icons/slideshow.svg';
+import '../icons/upload.svg';
 
 
 //the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
@@ -109,7 +123,8 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');
         retval.classList.add('presentation-name');
-        retval.innerHTML = `<i class="material-icons"> ${type == 'folder' ? 'folder_open' : 'zoom_out_map'} </i> ${name}`;
+        retval.innerHTML = `
+        <span class="toolbar-button"> <img src="${type == 'folder' ? '../src/icons/folder.svg' : '../src/icons/slideshow.svg'}"></span>${name}`;
 
         return retval;
     }
@@ -126,10 +141,9 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
     }
 
     function revealButton(name: string, kind: 'folder' | 'presentation') {
-        const retval = document.createElement('i');
-        retval.classList.add('material-icons');
-        retval.innerHTML = 'folder_open'
-        retval.classList.add('toolbar-button');
+        const retval = document.createElement('div');
+        retval.innerHTML = `
+        <span class="toolbar-button"> <img src="../src/icons/folder.svg"></span>`;
         retval.addEventListener('click', () => {
             sendElectronRendererToMain({ type: 'reveal-in-finder', name: name, kind: kind });
         })
@@ -173,7 +187,7 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
             const name = nameDiv('presentation', i);
             li.appendChild(name)
             name.addEventListener('click', () => {
-                sendElectronRendererToMain({ type: 'open-viewer', name: path.join(msg.dir, msg.presentations[i].file) })
+                sendElectronRendererToMain({ type: 'open-viewer', dir : msg.dir, file :  msg.presentations[i].file })
             })
             li.appendChild(revealButton(i, 'presentation'));
             if (!msg.presentations[i].updated) {

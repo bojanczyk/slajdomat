@@ -13,7 +13,6 @@ import {
 } from './html'
 
 import { MessageToServer, ServerResponse } from './types';
-import { JsonStreamStringify } from 'json-stream-stringify';
 
 import {
     manifest

@@ -3,7 +3,7 @@ import { Manifest, ZoomEvent } from '../viewer/types'
 
 
 import { version as versionNumber } from '../..//package.json';
-import { sendStatus } from '.';
+import { sendStatus } from './';
 import * as child from 'child_process'
 import { slideDir, writeManifest, copyHTMLFiles, readManifest, readPresentations } from './server';
 

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target" :"ES6",
+    "target": "ES6",
     "allowJs": true,
     "module": "commonjs",
     "skipLibCheck": true,
@@ -15,8 +15,5 @@
       "*": ["node_modules/*"]
     }
   },
-  "include": [
-    "src/renderer/*",
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

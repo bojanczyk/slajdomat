@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
 import { createMenu } from './menubar'
 
 
@@ -6,11 +6,14 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, revealFinder, SlajdomatSettings, setResourceDir, downloadViewerFiles } from './server'
-import { ElectronRendererToMain, ElectronMainToRenderer } from '../renderer/messages-main-renderer';
-import { runUploadScript, saveUploadScript } from './upolad-tab';
+import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
+import { runUploadScript, saveUploadScript } from './upload-tab';
 
 
 export { sendStatus, mainWindow, choosePresentationsFolder, sendMessageToRenderer }
+
+
+
 
 
 
@@ -35,12 +38,15 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 }
 
 const createWindow = (): void => {
+
+  
   // Create the browser window.
   mainWindow = new BrowserWindow({
     height: 600,
     width: 400,
     webPreferences: {
       nodeIntegration: true,
+      webSecurity : false,
       // for modern versions of electron the following is also needed to enable interprocess communication
       // (otherwise one should use contextBridge)
       contextIsolation: false,
@@ -92,7 +98,7 @@ ipcMain.on('message-to-main', (event, arg) => {
       break;
 
     case 'open-viewer':
-      openViewer(message.name);
+      openViewer(path.join(message.dir, message.file));
       break;
 
     case 'goto-folder':

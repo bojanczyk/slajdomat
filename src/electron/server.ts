@@ -68,7 +68,7 @@ import {
 
 import {
     ElectronMainToRenderer,
-} from '../renderer/messages-main-renderer'
+} from './messages-main-renderer'
 
 
 

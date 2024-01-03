@@ -3,7 +3,7 @@ This file describes the communication inteface between the renderer and the main
 */
 
 export { ElectronRendererToMain, ElectronMainToRenderer};
-import { SlajdomatSettings, PresentationList } from '../main/server'
+import { SlajdomatSettings, PresentationList } from './server'
 const { ipcRenderer } = window.require('electron');
 
 
@@ -40,7 +40,8 @@ type ElectronRendererToMain = {
     kind: 'folder' | 'presentation'
 } | {
     type: 'open-viewer',
-    name: string
+    dir : string,
+    file : string
 } | {
     type: 'goto-folder',
     name: string

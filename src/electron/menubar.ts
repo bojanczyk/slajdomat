@@ -2,7 +2,7 @@
 export{ createMenu}
 
 import {app,Menu} from 'electron'
-import {choosePresentationsFolder} from './index'
+import {choosePresentationsFolder} from './'
 
 
 function createMenu() : void
