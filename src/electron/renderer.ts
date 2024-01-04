@@ -1,4 +1,4 @@
-import './index.css';
+import './electron.css';
 export { selectTab };
 
 
@@ -19,7 +19,8 @@ export { sendElectronRendererToMain };
     import '../icons/save.svg';
     import '../icons/slideshow.svg';
     import '../icons/upload.svg';
-
+    import '../icons/upload2.svg';
+    import '../icons/loading.svg';
 
 //the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
 function sendElectronRendererToMain(msg: ElectronRendererToMain): void {
@@ -142,6 +143,9 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
         })
         return retval;
     }
+
+    document.querySelector('#presentations-head').classList.remove('hidden');
+    document.querySelector('#upload-head').classList.remove('hidden');
 
     //enable/disable the parent folder button depending on whether we are in the root of the current slide directory
     if (msg.atRoot)

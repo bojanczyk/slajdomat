@@ -202,7 +202,7 @@ textarea {
 }
 
 .toolbar-button.disabled {
-    color: grey;
+    opacity: 0.2;
     cursor: default;
 }
 
@@ -224,6 +224,25 @@ textarea {
 
 .hidden {
     display: none;
+}
+
+.heading {
+    font-size: 20px;
+}
+
+b {
+    font-weight: 600;
+}
+
+.subheading {
+    font-size : 15px;
+}
+
+.inline-image {
+    width : 15px;
+    vertical-align: baseline; 
+    margin-bottom: -3px; 
+  
 }
 
 /* this button is second in a toolbar, so it should be separated from the previous one */

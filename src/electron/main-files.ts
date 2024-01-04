@@ -4,7 +4,7 @@ this source takes care of manages the files and directories used by the backend
 
 export {
     PresentationList, copyHTMLFiles, dirList, downloadViewerFiles,
-    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, version, writeFile, writeManifest
+    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, writeFile, writeManifest
 };
 
 
@@ -12,15 +12,14 @@ import { app, shell } from "electron";
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import { sendMessageToRenderer, sendStatus } from "./main";
-import { myStringify, slajdomatSettings } from "./main-settings";
-
-import { version as versionNumber } from '../..//package.json';
 import {
     freshName,
     sanitize
 } from '../common/helper';
 import { Manifest } from "../viewer/types";
+import { sendMessageToRenderer, sendStatus } from "./main";
+import { myStringify, slajdomatSettings } from "./main-settings";
+import { oldVersion } from "./main-version";
 import { ElectronMainToRenderer } from "./messages-main-renderer";
 
 
@@ -38,13 +37,7 @@ let currentDir: string;
 
 
 
-function version(): number {
-    return parseFloat(versionNumber);
-}
 
-function oldVersion(manifest: Manifest): boolean {
-    return manifest.version != version();
-}
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -84,28 +77,27 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
 
 function setResourceDir() {
     customViewerDirectory = app.getPath('userData')
-    //we check if the indicated directory contains the viewer file
 
-    const customDir = process.argv[1];
-    if (customDir != undefined)
-        fs.access(customDir, fs.constants.F_OK, (err) => {
-            if (err) {
-                sendStatus('Error: could not access directory ' + customDir);
-                return;
-            }
-            sendStatus('Custom viewer code will be used from' + customDir);
-            customViewerDirectory = customDir;
-        });
+    // the user main pass a custom directory for the viewer files, using the command line argument --viewerdir
+    const indexCustomDir = process.argv.indexOf('--viewerdir');
+    if (indexCustomDir !== -1 && indexCustomDir < process.argv.length - 1) {
+        const customDir = process.argv[indexCustomDir+1];
+        if (customDir != undefined)
+            fs.access(customDir, fs.constants.F_OK, (err) => {
+                if (err) {
+                    sendStatus('Error: could not access directory ' + customDir);
+                    return;
+                }
+                sendStatus('Custom viewer code will be used from' + customDir);
+                customViewerDirectory = customDir;
+            });
+    }
 
     //checks if a file is there, and if not, downloads it from github
-
-
-
     downloadViewerFiles('if not there');
 }
 
 function getResourceDir(): string {
-
     return customViewerDirectory;
 }
 

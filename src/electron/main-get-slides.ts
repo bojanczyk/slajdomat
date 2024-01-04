@@ -2,8 +2,9 @@ export {onGetSlide}
 
 import { Manifest, MessageToServerSlide, ServerResponse } from "../viewer/types";
 import { sendStatus } from "./main";
-import { copyHTMLFiles, readManifest, readPresentations, slideDir, version, writeFile, writeManifest } from "./main-files";
+import { copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
 import * as path from 'path';
+import { version } from "./main-version";
 
 //receive the slides from the figma plugin. The slides are copied to the appropriate directory, together with the latest versions of the html code.
 function onGetSlide(msg: MessageToServerSlide): ServerResponse {
