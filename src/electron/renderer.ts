@@ -4,12 +4,6 @@ export { selectTab }
 
 
 
-// import WebFont from 'webfontloader';
-// WebFont.load({google: {families: ["Roboto:300,400,500"]}});
-
-//I would like to use fontsource fonts, but do not know yet how to make this work with stupid webpack
-import '@fontsource/roboto'
-
 
 const { ipcRenderer } = window.require('electron');
 import * as path from 'path'
