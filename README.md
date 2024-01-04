@@ -1,6 +1,8 @@
 # slajdomat
 This is a program for making zooming slides in Figma.
 
+[User guide](doc/user-guide.md)
+
 There are two parts: 
 1. A plugin for Figma
 2. An electron app, which saves the files from the plugin to the disk
