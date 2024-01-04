@@ -62,6 +62,9 @@ type ElectronRendererToMain = {
     settings : SlajdomatSettings
 } | {
     type: 'download-new-versions'
+} | {
+    type: 'display-web-page',
+    url : string
 } 
 
 

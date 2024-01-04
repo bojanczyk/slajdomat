@@ -7,7 +7,7 @@ The main purpose of this code is to dispatch the events to the code in server.ts
 */
 
 
-import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, session, shell } from 'electron';
 import { createMenu } from './menubar'
 
 
@@ -229,6 +229,10 @@ ipcMain.on('message-to-main', (event, arg) => {
     case 'download-new-versions':
       sendStatus('Downloading new versions', 'quick');
       downloadViewerFiles('unconditionally');
+      break;
+    
+    case 'display-web-page':
+      shell.openExternal(message.url);
       break;
 
   }
