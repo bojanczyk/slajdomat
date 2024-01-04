@@ -1,5 +1,10 @@
-//this file contains code for upgrading presentations 
-//the idea is that each slide manifest is tagged with the version of the Slajdomat package, and if there were some big changes between the current and previous versions, then missing fields should be added to the new manifest.
+/*
+this is code for upgrading presentations.
+currently it is not in use, since the manifest format seems to be stable
+the idea is that each slide manifest is tagged with the version of the Slajdomat package, and if there were some big changes between the current and previous versions, then missing fields should be added to the new manifest.
+*/
+
+
 
 
 export { oldVersion, upgradeManifest, upgradePresentation, version };

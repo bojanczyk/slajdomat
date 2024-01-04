@@ -1,4 +1,8 @@
 
+/*
+this code receives svg files from the viewer, and creates a pdf out of them
+*/
+
 export { exportPdf }
 
 // variant one
@@ -20,7 +24,7 @@ let writeStream: fs.WriteStream;
 let fileName: string;
 
 
-//when exporting to pdf, the svg's are sent one by one by the viewer. This is because each
+//when exporting to pdf, the svg's are sent one by one by the viewer. Otherwise, the messages might be too large and an exception will be raised
 async function exportPdf(msg: MessageToServerPdf): Promise<ServerResponse> {
 
   try {

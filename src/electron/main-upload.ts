@@ -1,3 +1,7 @@
+/*
+this code manages the upload scripts, which are user created scripts for uploading their presentations to their web pages, e.g. by synchronising using git. The appropriate script is stored in the file .gitscript in the presentations directoryŚ
+*/
+
 export { saveUploadScript, runUploadScript };
 import * as child from 'child_process'
 import * as fs from 'fs'

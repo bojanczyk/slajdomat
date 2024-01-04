@@ -1,3 +1,7 @@
+/*
+this code takes care of receiving sound from the viewer, and saving it to disk
+*/
+
 export {onGetWav, createLive}
 
 import { LiveRecording, Manifest, MessageToServerLive, MessageToServerSound, ServerResponse } from "../viewer/types";

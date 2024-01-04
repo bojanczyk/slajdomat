@@ -1,5 +1,5 @@
 /*
-this source takes care of manages the files and directories used by the backend
+this source takes manages the files and directories used by the backend
 */
 
 export {

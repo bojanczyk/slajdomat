@@ -1,4 +1,8 @@
 
+/*
+initializes the menubar 
+*/
+
 export{ createMenu}
 
 import {app,Menu} from 'electron'

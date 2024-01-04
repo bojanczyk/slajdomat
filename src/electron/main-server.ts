@@ -1,3 +1,8 @@
+/*
+this code runs an express web server that will listen for messages from the viewer.
+messages from the renderer are sent using another mechanism, called ipc.
+*/
+
 export {
     restartServer, startServer
 };

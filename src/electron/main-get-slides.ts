@@ -1,3 +1,7 @@
+/*
+this code takes care of recieving slides from the plugin, and saving them to disk
+*/
+
 export {onGetSlide}
 
 import { Manifest, MessageToServerSlide, ServerResponse } from "../viewer/types";

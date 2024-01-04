@@ -1,3 +1,8 @@
+/*
+this is code for the electron frontend, called the renderer, as opposed to the backend which is called main. It mainly dispatches events to the backend.
+*/
+
+
 import './electron.css';
 export { selectTab, sendElectronRendererToMain };
 

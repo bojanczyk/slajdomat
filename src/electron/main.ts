@@ -3,7 +3,7 @@ This is the main file for the electron backend, which is referred to as the "mai
 
 This file contains mainly boilerplate code, which intializes the backend, and handles the user interface elements which are controlled by the backend, such as menus. 
 
-The main purpose of this code is to dispatch the events to the code in server.ts, where the logic is actually located.
+The main purpose of this code is to dispatch the events to the various files main-*, where the logic is actually located.
 */
 
 

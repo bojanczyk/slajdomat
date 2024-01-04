@@ -1,5 +1,5 @@
 /*
-This file describes the communication inteface between the renderer and the main process. So far it has only one direction (from renderer to main), but further reorganisation should cover the other direction.
+This file describes the communication inteface between the renderer and the main process. 
 */
 
 export { ElectronRendererToMain, ElectronMainToRenderer};

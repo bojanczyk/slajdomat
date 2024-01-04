@@ -1,3 +1,8 @@
+/*
+this is code manages the presentations tab, which displays the current folder and the presentations in it
+*/
+
+
 import { ElectronMainToRenderer } from "./messages-main-renderer";
 import { selectTab, sendElectronRendererToMain } from "./renderer";
 
