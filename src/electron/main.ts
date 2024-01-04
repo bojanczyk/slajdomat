@@ -14,9 +14,16 @@ import { createMenu } from './menubar'
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { startServer, slajdomatSettings, readPresentations, saveSettings, loadSettings, assignSettings, gotoChild, gotoParent, revealFinder, SlajdomatSettings, setResourceDir, downloadViewerFiles } from './server'
+import { startServer,  } from './main-server'
+
+import {slajdomatSettings, saveSettings, loadSettings, assignSettings, SlajdomatSettings } from './main-settings'
+
+import { readPresentations, gotoChild, gotoParent, revealFinder,  setResourceDir, downloadViewerFiles } from './main-files'
+
+
+
 import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
-import { runUploadScript, saveUploadScript } from './upload-tab';
+import { runUploadScript, saveUploadScript } from './main-upload';
 
 
 export { sendStatus, mainWindow, choosePresentationsFolder, sendMessageToRenderer }

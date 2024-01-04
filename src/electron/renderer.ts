@@ -1,25 +1,24 @@
 import './index.css';
-export { selectTab }
+export { selectTab };
 
 
 
 
 
 const { ipcRenderer } = window.require('electron');
-import * as path from 'path'
 
-import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
-import { SlajdomatSettings } from './server';
+import { SlajdomatSettings } from './main-settings';
+import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
 export { sendElectronRendererToMain };
 
 
 //icons 
-import '../icons/save.svg';
-import '../icons/download.svg';
-import '../icons/leftarrow.svg';
-import '../icons/folder.svg';
-import '../icons/slideshow.svg';
-import '../icons/upload.svg';
+    import '../icons/download.svg';
+    import '../icons/folder.svg';
+    import '../icons/leftarrow.svg';
+    import '../icons/save.svg';
+    import '../icons/slideshow.svg';
+    import '../icons/upload.svg';
 
 
 //the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
