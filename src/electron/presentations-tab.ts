@@ -44,7 +44,7 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
 
     document.querySelector('#presentations-head').classList.remove('hidden');
     document.querySelector('#upload-head').classList.remove('hidden');
-    document.querySelector('#instructions-head').classList.add('hidden');
+    document.querySelector('#welcome-head').classList.add('hidden');
 
     //enable/disable the parent folder button depending on whether we are in the root of the current slide directory
     if (msg.atRoot)

@@ -93,7 +93,7 @@ ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
 
 
 
-function selectTab(tab: 'presentations' | 'instructions' | 'messages' | 'upload' | 'settings') {
+function selectTab(tab: 'presentations' | 'welcome' | 'messages' | 'upload' | 'settings') {
     for (const tabHead of document.getElementsByClassName('tab-head'))
         tabHead.classList.remove('selected');
 
@@ -109,7 +109,7 @@ function selectTab(tab: 'presentations' | 'instructions' | 'messages' | 'upload'
 //switch tabs in the main window
 
 
-document.getElementById('instructions-head').addEventListener('click', (e) => selectTab('instructions'));
+document.getElementById('welcome-head').addEventListener('click', (e) => selectTab('welcome'));
 document.getElementById('upload-head').addEventListener('click', (e) => selectTab('upload'));
 document.getElementById('presentations-head').addEventListener('click', (e) => selectTab('presentations'));
 document.getElementById('messages-head').addEventListener('click', (e) => selectTab('messages'));

@@ -168,6 +168,7 @@ textarea {
 #upload-status {
     flex-grow: 1;
     overflow-y: scroll;
+    margin-bottom: 20px;
 }
 
 
