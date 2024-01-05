@@ -217,10 +217,8 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
 
 function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
-    //copy the latest version of the html files to the slide directory
-    const htmlSourceDir = path.join(app.getAppPath(), 'resources');
     for (const file of theHTMLFiles) {
-        fs.copyFileSync(path.join(htmlSourceDir, file), path.join(presDir, file))
+        fs.copyFileSync(path.join(getResourceDir(), file), path.join(presDir, file))
     }
 }
 

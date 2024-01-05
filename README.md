@@ -1,25 +1,17 @@
 # slajdomat
 This is a program for making zooming slides in Figma.
 
-[User guide](doc/user-guide.md)
+To see how the software works, and how to install it without building it yourself, see the
+[User guide](doc/user-guide.md).
 
-There are two parts: 
-1. A plugin for Figma
-2. An electron app, which saves the files from the plugin to the disk
 
-The workflow is that you use the plugin to impose a tree structure on a drawing in figma. Then, you click an export button in the figma plugin, which sends the files to the app. The app creates a directory with html files display your slides, and you can copy this directory to your web page to share the slides or use them yourself. 
-
-### Use without compiling it
-
-You can find a precompiled version of the app and the plugin in the releases section.
-https://github.com/bojanczyk/slajdomat/releases/
 
 ### How to compile
 
-Requires Node.js (for MacOS: better to use official pkg installer rather than brew)
+You need to have [Node.js](https://nodejs.org/en). 
 To compile and build, do:
 
 	npm install
 	npm run make
 
- Once you have successfully built it, then the figma plugin will be in the figma-plugin directory, you can then use Figma to load a plugin from your own disk. The app will be in the out directory. 
+ Once you have successfully built it, then the app will be in the out directory, and the figma plugin will be in the figma-plugin.
