@@ -129,7 +129,7 @@ for (const link of document.querySelectorAll('a'))
     link.addEventListener('click' , () =>
     {
             //a link is displayed by the backend, since only the backend has the ability to open a web browser
-    sendElectronRendererToMain({type : 'display-web-page',url : 'https://github.com/bojanczyk/slajdomat/blob/master/doc/user-guide.md' })
+    sendElectronRendererToMain({type : 'display-web-page',url : 'https://bojanczyk.github.io/slajdomat/tutorial.html' })
     }
     )
 }
