@@ -16,6 +16,7 @@ You will need the following software:
 - **Slajdomat plugin in Figma.** You add Slajdomat to Figma by choosing the plugin in the &lsquo;Plugins&rsquo;&nbsp; menu of Figma. 
 - **Slajdomat app.**  A standalone program, which will complie your slides, display them, and upload them to your webpage. You [can find versions for Mac, Windows and Linux at github](https://github.com/bojanczyk/slajdomat/releases). Embarrassingly, the app is the size of chrome, since it contains a copy of chrome (this is how many cross-platform programs are developed nowadays).
 
+[Tutorial](tutorial.md)
 
 ## Tutorial
 
