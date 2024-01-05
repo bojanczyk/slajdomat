@@ -1,9 +1,9 @@
 
-## Tutorial
+# Tutorial
 
 We begin in Figma by creating some content.
 
-### Create content in Figma
+## Create content in Figma
 In Figma, create a new design file (which will be a presentation) using this button:
 
 <img src="images/new-design-file.png" alt="Plugin when started" width="20%">
@@ -31,7 +31,7 @@ The meaning of these two events is that initially the slide is empty, and then t
 
 You can reorder the two events. When creating the events, the plugin tries to guess the correct order (top-to-bottom, or left-to-right). 
 
-### Exporting
+## Exporting
 
 Now we enter the second phase, where the slides are compiled. 
 We first run the Slajdomat app, the one that is the size of chrome. When you first run it, you will get a screen that looks like this.
@@ -44,7 +44,7 @@ Follow the instructions in the screen, by selecting some folder. A typical solut
 
 Once you have been working with Slajdomat, there will be lots of presentations here. Let's have our first one. Switch back to Figma and the plugin, and click the export button <img src="images/export-button.png" alt="export button" width="15px"> which is next to the eye button. If all goes well, Figma will tell you that the slides have been successfully exported.
 
-Now go back to the SLajdomat app. You should see your first presentation, like this:
+Now go back to the Slajdomat app. You should see your first presentation, like this:
 
 <img src="images/app-with-one-presentation.png" alt="Slajdomat app with no presentations" width="50%">
 
@@ -55,3 +55,19 @@ If you click the folder button on the right of your presentation name, then you 
 <img src="images/finder-view.png" alt="Finder view" width="50%">
 
 If you copy this folder to your website, then it should display as a webpage. There are also tools in Slajdomat to automate copying to your website.
+
+## Zooming
+
+So far, we have just one slide. To have more slides, we will do zooming. In Slajdomat, the slides have a tree structure. You start in the root, zoom in to your first child subtree, then return to the root, zoom in to your second child subtree, and so on. 
+
+Let us create a first child of the root. In the plugin in Figma, select the "Zoom" menu, elect the "Zoom link to new slide" option, 
+and choose a name for the child (in this example, we use "a child slide").
+<img src="images/create-child-slide.png" alt="Finder view" width="50%">
+
+After pressing enter, the plugin will create a new slide below your root slide, which as is in the following picture: 
+
+<img src="images/after-creating-child-slide.png" alt="Finder view" width="50%">
+
+The little red rectangle in the root slide tells you where the child is going to be placed in the context of the root child. The presentation will now be as follows: first it will show the first two pieces of text, and then it will zoom in to the child slide, which is currently empty.  Move the red rectangle and rescale it to where you want, and add some events to the child slide. After exporting, you will have a presentation with two slides! 
+
+Two slides is general enough for this tutorial :)
