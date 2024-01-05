@@ -19,7 +19,6 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
 
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');
-        retval.classList.add('presentation-name');
         retval.innerHTML = `
         <span class="toolbar-button"> <img src="${type == 'folder' ? '../src/icons/folder.svg' : '../src/icons/slideshow.svg'}"></span>${name}`;
 

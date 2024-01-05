@@ -19,23 +19,20 @@
   </div>
 
   <div id='tab-heads'>
-    <div id="welcome-head" class="tab-head selected">Welcome</div>
-    <div id="presentations-head" class="tab-head hidden">Folders</div>
-    <div id="upload-head" class="tab-head hidden">Upload</div>
-    <div id="settings-head" class="tab-head">Settings</div>
-    <div id="messages-head" class="tab-head">Log</div>
-    <div class="material-icons toolbar-icon" id="spinner">
+    <div id="welcome-head" class="selected">Welcome</div>
+    <div id="presentations-head" class="hidden">Folders</div>
+    <div id="upload-head" class="hidden">Upload</div>
+    <div id="settings-head">Settings</div>
+    <div id="messages-head">Log</div>
+    <div class="toolbar-icon" id="spinner">
       <img src="../src/icons/loading.svg">
     </div>
-
   </div>
+
   <div id='tab-contents'>
     <!-- one of the possible tables in the main window is the instructions tab -->
-    <div id='welcome-tab' class='main-window-tab selected'>
+    <div id='welcome-tab' class='selected'>
       <div>
-
-
-
         <div id="no-presentations-text">
           <p class="heading">Welcome to Slajdomat!</p>
           It appears that this is the first time that you are using Slajdomat,
@@ -56,7 +53,7 @@
 
     <!-- the presentations tab is the main tab, where the folders and presentations are listed -->
 
-    <div id='presentations-tab' class='main-window-tab'>
+    <div id='presentations-tab'>
       <div id='toolbar' class='tab-toolbar'>
 
         <div class="toolbar-button disabled" title="Go to parent folder" id="parent-folder-button">
@@ -65,9 +62,6 @@
         <div id="link-to-current-folder" class="toolbar-button">
         </div>
       </div>
-
-
-
 
       <div id="empty-folder-text" class='hidden'>
         There are no presentations in this folder. Create a new presentation using the Slajdomat plugin for
@@ -79,14 +73,14 @@
 
     </div>
 
-    <div id="upload-tab" class='main-window-tab'>
+    <div id="upload-tab">
 
       <div>
         <p>
           Tools to upload your presentation folder to your web page.
         </p>
         <div class='tab-toolbar'>
-          <span class="material-icons toolbar-button disabled" id="upload-script-button"> <img
+          <span class="toolbar-button disabled" id="upload-script-button"> <img
               src='../src/icons/upload.svg'> </span>
           <span> Run script. </span>
           <span class="toolbar-button" id="save-script"> <img src='../src/icons/save.svg'></span>
@@ -101,7 +95,7 @@
       </div>
     </div>
 
-    <div id="settings-tab" class='main-window-tab'>
+    <div id="settings-tab">
       <div class="tab-toolbar">
         <span class="toolbar-button" id="save-settings"> <img src='../src/icons/save.svg'></span>
         <span> Save settings </span>
@@ -135,7 +129,7 @@
       </div>
     </div>
 
-    <div id="messages-tab" class='main-window-tab'>
+    <div id="messages-tab">
       <div>
         <p> A message log. You should only look here when things go wrong.
         </p>

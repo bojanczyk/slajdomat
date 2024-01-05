@@ -99,10 +99,13 @@ ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
 
 
 function selectTab(tab: 'presentations' | 'welcome' | 'messages' | 'upload' | 'settings') {
-    for (const tabHead of document.getElementsByClassName('tab-head'))
+
+    const tabHeadContainer = document.querySelector('#tab-heads');
+    for (const tabHead of tabHeadContainer.children)
         tabHead.classList.remove('selected');
 
-    for (const tabHead of document.getElementsByClassName('main-window-tab'))
+    const tabContainer = document.querySelector('#tab-contents');
+    for (const tabHead of tabContainer.children)
         tabHead.classList.remove('selected');
 
     document.getElementById(tab + '-head').classList.add('selected');

@@ -1,6 +1,6 @@
 
 
-/* for the index page */
+
 html {
     height: 100%;
     width: 100%;
@@ -24,23 +24,13 @@ textarea {
 }
 
 
+.hidden {
+    display: none;
+}
+
 
 /* *****************************************
 tabs and switching between in the main window */
-
-.tab-item {
-    width: 100%
-}
-
-.main-window-tab {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    margin: 15px;
-}
-
-
-
 
 /* the toolbar which contains the tab heads */
 #tab-heads {
@@ -53,7 +43,7 @@ tabs and switching between in the main window */
 }
 
 /* a single tab head */
-.tab-head {
+#tab-heads > div {
     background-color: whitesmoke;
     margin-left: 10px;
     margin-right: 10px;
@@ -64,17 +54,34 @@ tabs and switching between in the main window */
     cursor: pointer;
 }
 
-
-.tab-head.selected {
+#tab-heads > div.selected {
     background-color: white;
     font-weight: 400;
 }
 
-.tab-head:not(.selected) {
+#tab-heads > div:not(.selected) {
     background-color: whitesmoke;
 }
 
-/* the spinner in the top right corner */
+/* what is below the tab, i.e. this is most of the contents of the viewer window */
+#tab-contents {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#tab-contents > div {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 15px;
+}
+
+#tab-contents > div:not(.selected) {
+    display: none;
+}
+
+
+/* the spinner in the top right corner of the tab head toolbar*/
 #spinner {
     position: absolute;
     right: 5px;
@@ -93,7 +100,6 @@ the second line is just to avoid an error message */
     -webkit-animation: spin 2s infinite linear;
 }
 
-/* Keyframes for spinning animation */
 @keyframes spin {
     0% {
         transform: rotate(0deg);
@@ -106,72 +112,7 @@ the second line is just to avoid an error message */
 }
 
 
-/* what is below the tab, i.e. this is most of the contents of the viewer window */
-#tab-contents {
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.main-window-tab:not(.selected) {
-    display: none;
-}
-
-
-/* ********************************* */
-
-.material-icons {
-    font-size: 20px;
-}
-
-
-
-#index-title {
-    font-size: large;
-}
-
-
-
-.presentation-line {
-    display: flex;
-    flex-direction: row;
-    user-select: none;
-    height: 30px;
-}
-
-.presentation-line i {
-    margin-top: 2px;
-    margin-right: 10px;
-    margin-left: 10px;
-    font-size: 15px
-}
-
-.presentation-name {
-    cursor: pointer;
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-}
-
-.presentation-name:hover {
-    background-color: #daebf7;
-}
-
-
-
-textarea {
-    width: 98%;
-    height: 200px
-}
-
-/* the status windows ocupy the rest of the screen and then scroll */
-#general-status,
-#upload-status {
-    flex-grow: 1;
-    overflow-y: scroll;
-    margin-bottom: 20px;
-}
-
-
+/* ********** toolbars and their buttons used in all tabs ************* */
 .tab-toolbar {
     display: flex;
     align-items: center;
@@ -180,23 +121,6 @@ textarea {
     padding-top: 5px;
     padding-bottom: 10px;
 }
-
-
-#directory-listing {
-    font-size: 12px;
-    font-weight: 300;
-    overflow-y: scroll;
-}
-
-
-#link-to-current-folder {
-    font-size: 12px;
-    padding-left: 10px;
-    cursor: pointer;
-}
-
-
-
 
 .toolbar-button:not(.disabled) {
     cursor: pointer;
@@ -221,11 +145,84 @@ textarea {
     background-color: #daebf7;
 }
 
-
-
-.hidden {
-    display: none;
+/* a button in a toolbar that is not the first one should have a gap separating it from previous ones */
+.tab-toolbar > .toolbar-button:not(:first-child) {
+    margin-left: 30px;
 }
+
+
+/* ********** presentations tab ************** */
+
+/* an item in the list of presentations */
+
+#directory-listing {
+    font-size: 12px;
+    font-weight: 300;
+    overflow-y: scroll;
+}
+
+#link-to-current-folder {
+    font-size: 12px;
+    padding-left: 10px;
+    cursor: pointer;
+}
+
+.presentation-line {
+    display: flex;
+    flex-direction: row;
+    user-select: none;
+    height: 30px;
+}
+
+.presentation-line > div:first-child {
+    cursor: pointer;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+.presentation-line > div:first-child:hover {
+    background-color: #daebf7;
+}
+
+
+/* *********** messages tab ******************/
+#general-status,
+#upload-status {
+    flex-grow: 1;
+    overflow-y: scroll;
+    margin-bottom: 20px;
+}
+
+
+
+
+/* ********** settings  tab *************** */
+
+textarea {
+    width: 98%;
+    height: 200px
+}
+
+/* setting items are separated by grey borders */
+#settings-tab>div {
+    border-bottom: 1px solid lightgrey;
+}
+
+
+/* the input fields for just a number */
+#port-number {
+    width: 30px;
+}
+
+/* the input fields for long paths */
+#ffmpeg-path,
+#ffprobe-path {
+    width: 200px;
+}
+
+
+/* *********** welcome tab *********** */
 
 .heading {
     font-size: 20px;
@@ -251,79 +248,9 @@ a {
     color: blue;
 }
 
-/* this button is second in a toolbar, so it should be separated from the previous one */
-#save-script {
-    margin-left: 30px;
-}
+
 
 /* ************************************* */
-/* the settings dialog box */
-.settings-item {
-    margin: 10px;
-    font-weight: 200;
-}
-
-#dialog-buttons {
-    width: 100%;
-    display: flex;
-    flex-direction: row-reverse;
-    background-color: white;
-}
-
-#dialog-buttons button {
-    margin: 10px;
-    margin-left: 0px;
-}
-
-#settings-body {
-    flex-grow: 1;
-    overflow-y: scroll;
-}
-
-#settings-body button {
-    font-family: 'Roboto';
-    font-weight: 100;
-}
-
-#settings-body input {
-    margin-top: 5px;
-    padding: 5px;
-}
-
-.settings-item {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 20px;
-}
-
-#settings-header {
-    font-weight: 400;
-    font-size: large;
-    padding: 10px;
-}
-
-
-/* setting items are separated by grey borders */
-#settings-tab>div {
-    border-bottom: 1px solid lightgrey;
-}
-
-
-/* the input fields for just a number */
-#port-number {
-    width: 30px;
-}
-
-/* the input fields for long paths */
-#ffmpeg-path,
-#ffprobe-path {
-    width: 200px;
-}
-
-.sub-radio {
-    padding-left: 30px;
-}
-
 /* the quick status bar at the bottom */
 #quick-status {
     position: fixed; 
