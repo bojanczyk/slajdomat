@@ -100,6 +100,7 @@
         <span class="toolbar-button" id="save-settings"> <img src='../src/icons/save.svg'></span>
         <span> Save settings </span>
       </div>
+      <div id="settings-contents">
       <div>
         <p>
           Use this button to download a new version of the viewer files from github.
@@ -109,7 +110,6 @@
           <span class="toolbar-button" id="download-new-viewer"> <img src='../src/icons/download.svg'></span>
           <span> Download new version </span>
         </p>
-
       </div>
       <div>
         <p><b>Port number</b> <input type="text" id="port-number" />
@@ -119,6 +119,15 @@
           sure
           that the Figma plugin is configured to use the same number.</p>
       </div>
+      <div id="comment-container">
+        <p>  <input type="checkbox" id="comments-checkbox" value="checked"> Use comments </p>
+        <p> To have comments in your slides, you need to have a access to an SQL database. See the user guide. </p>
+        <p> Server url: <input type="text" id="comment-url" /> </p>
+        <p class="tab-toolbar">
+          <span class="toolbar-button" id="check-if-comment-server-works"> <img src='../src/icons/science.svg'></span>
+          <span> Check if comment server works </span>
+        </p>
+      </div>
       <div>
         <p><b>Path to ffmpeg <input type="text" id="ffmpeg-path" /></b> </p>
         <p><b>Path to ffprobe <input type="text" id="ffprobe-path" /></b> </p>
@@ -127,6 +136,7 @@
           could not find these paths, which likely means that you have not installed the programs.
         </p>
       </div>
+    </div>
     </div>
 
     <div id="messages-tab">

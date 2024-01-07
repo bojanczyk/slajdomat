@@ -36,15 +36,15 @@ interface GenericEvent {
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
     eventId: string,
     //the parent of the event. This is only written on the viewer side, because it gets lost in the conversion to json
-    parent? : ZoomEvent
+    parent?: ZoomEvent
 
 }
 interface ShowHideEvent extends GenericEvent {
-    type: 'show' | 'hide' 
+    type: 'show' | 'hide'
 }
 
 interface AnimateEvent extends GenericEvent {
-    type: 'animate', source : number, target :number
+    type: 'animate', source: number, target: number
 }
 
 type OverlayEvent = ShowHideEvent | AnimateEvent
@@ -70,25 +70,30 @@ interface Manifest {
     },
     tree: ZoomEvent,
     live?: LiveRecording[],
-    pdfFile? : string
+    pdfFile?: string,
+    comments?:
+    {
+        server: string,
+        presentation: string
+    }
 }
 
 interface LiveRecording {
     date: string,
     dir: string,
-    steps: { step: StepDescription, duration: number}[]
+    steps: { step: StepDescription, duration: number }[]
 }
 
-type StepDescription =  { type : 'zoom', page : number,  source : string, target : string } | {type : 'overlays', page : number,  slide : string,  overlays : string[], direction : 1 | -1} | {type : 'last', page : number}
-    
-type EventDescription = {type : 'event', slideId : string, eventId : string}
+type StepDescription = { type: 'zoom', page: number, source: string, target: string } | { type: 'overlays', page: number, slide: string, overlays: string[], direction: 1 | -1 } | { type: 'last', page: number }
+
+type EventDescription = { type: 'event', slideId: string, eventId: string }
 
 type MessageToServerSound = {
     type: 'wav',
     file: number[],
     presentation: string,
-    forWhat : EventDescription | { type : 'step', description : StepDescription}
-} 
+    forWhat: EventDescription | { type: 'step', description: StepDescription }
+}
 
 type MessageToServerSlide = {
     type: 'slides',
@@ -98,7 +103,7 @@ type MessageToServerSlide = {
         database: Database,
         svg: string,
     }[]
-} 
+}
 
 type MessageToServerLive = {
     type: 'startLive',
@@ -106,13 +111,13 @@ type MessageToServerLive = {
 }
 
 type MessageToServerPdf = {
-    type : 'toPdf',
-    svg : string,
-    width : number,
-    height : number,
-    presentation : string,
-    index : number,
-    maxindex : number
+    type: 'toPdf',
+    svg: string,
+    width: number,
+    height: number,
+    presentation: string,
+    index: number,
+    maxindex: number
 }
 
 type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive | MessageToServerPdf
@@ -122,25 +127,25 @@ type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToSe
 }
 
 //the response sent by the server to the plugin and the sound part of the slides
-type ServerResponse = 
-{
-    status: 'server working'
-} |
-{
-    status: 'sound recorded',
-    duration?: number // the duration of a recorded sound
-} |
-{
-    status: 'pdf created'
-} |
-{
-    status: 'slides received'
-} |
-{
-    status: 'live recording started'
-} |
-{
-    status : 'error',
-    explanation : string
-}
+type ServerResponse =
+    {
+        status: 'server working'
+    } |
+    {
+        status: 'sound recorded',
+        duration?: number // the duration of a recorded sound
+    } |
+    {
+        status: 'pdf created'
+    } |
+    {
+        status: 'slides received'
+    } |
+    {
+        status: 'live recording started'
+    } |
+    {
+        status: 'error',
+        explanation: string
+    }
 

@@ -10,7 +10,9 @@
     "make": "webpack && electron-forge make && sh src/plugin/make-plugin-ui.sh ",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "webpack": "webpack"
+    "webpack": "webpack",
+    "watch": "webpack --watch",
+    "postbuild": "echo dupa"
   },
   "keywords": [],
   "author": {
@@ -39,7 +41,9 @@
     "eslint-plugin-import": "^2.29.1",
     "file-loader": "^6.2.0",
     "fork-ts-checker-webpack-plugin": "^7.3.0",
+    "hook-shell-script-webpack-plugin": "^0.4.0",
     "html-loader": "^4.2.0",
+    "html-webpack-plugin": "^5.6.0",
     "node-loader": "^2.0.0",
     "path-browserify": "^1.0.1",
     "pdfkit": "^0.14.0",
@@ -53,6 +57,7 @@
   "dependencies": {
     "@types/cors": "^2.8.17",
     "@types/svg-to-pdfkit": "^0.1.3",
+    "axios": "^1.6.5",
     "cors": "^2.8.5",
     "electron-squirrel-startup": "^1.0.0",
     "fuse.js": "^7.0.0",

@@ -56,7 +56,8 @@ function startServer(): void {
 
             let response: ServerResponse;
             console.log('switching');
-            sendStatus(msg.type);
+            if (msg.type != 'probe')
+                sendStatus(msg.type);
             switch (msg.type) {
                 case 'wav':
                     //receives a sound file

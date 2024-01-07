@@ -26,6 +26,7 @@ import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-
     import '../icons/upload.svg';
     import '../icons/upload2.svg';
     import '../icons/loading.svg';
+    import '../icons/science.svg';
 import { receivePresentations } from './presentations-tab';
 
 
@@ -166,6 +167,9 @@ for (const button of document.querySelectorAll('.toolbar-button'))
             case 'download-new-viewer':
                 sendElectronRendererToMain({ type: 'download-new-versions' });
                 break;
+            case 'check-if-comment-server-works':
+                sendElectronRendererToMain( { type : 'test-comment-server', url : (document.querySelector('#comment-url') as HTMLInputElement).value })
+                break;
         }
     })
 
@@ -176,11 +180,15 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 })
 
 
+
+
 //display the settings in the forms in the settings tab
 function displaySettings(settings: SlajdomatSettings) {
     (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
     (document.querySelector('#ffprobe-path') as HTMLInputElement).value = settings.ffprobe;
     (document.querySelector('#port-number') as HTMLInputElement).value = settings.port.toString();
+    (document.querySelector('#comments-checkbox') as HTMLInputElement).checked = settings.comments;
+    (document.querySelector('#comment-url') as HTMLInputElement).value = settings.commentServer;
 }
 
 
@@ -190,8 +198,31 @@ function sendSettings() {
     const settings: SlajdomatSettings = {
         ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
         ffprobe: (document.querySelector('#ffprobe-path') as HTMLInputElement).value,
-        port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value)
+        port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value),
+        comments : (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
+        commentServer : (document.querySelector('#comment-url') as HTMLInputElement).value,
     }
     sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
 }
+
+
+const commentsCheckbox = document.querySelector('#comments-checkbox') as HTMLInputElement;
+
+commentsCheckbox.addEventListener('click', e => {
+    const comments = document.querySelector('#comment-container');
+    const commentsField = document.querySelector('#comment-url') as HTMLInputElement; 
+    if (commentsCheckbox.checked) 
+    {
+        comments.classList.remove('disabled');
+        commentsField.disabled = false;
+    }
+    else
+    {
+        commentsField.disabled = true;
+        comments.classList.add('disabled');
+    }
+        
+})
+
+
 

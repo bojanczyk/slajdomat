@@ -4,7 +4,7 @@ the code for managing the settings in the main process
 
 
 export {
-    SlajdomatSettings, assignSettings, loadSettings, myStringify, saveSettings, slajdomatSettings
+    SlajdomatSettings, assignSettings, loadSettings, myStringify, saveSettings, slajdomatSettings, checkIfCommentServerWorks
 };
 
 import { PresentationList, findExecutableInPath, writeFile } from "./main-files";
@@ -21,7 +21,9 @@ type SlajdomatSettings = {
     port: number,
     directory?: string,
     ffmpeg: string,
-    ffprobe: string
+    ffprobe: string,
+    comments : boolean,
+    commentServer : string
 }
 
 let slajdomatSettings: SlajdomatSettings;
@@ -41,6 +43,8 @@ function loadSettings() {
             ffmpeg: findExecutableInPath('ffmpeg'),
             ffprobe: findExecutableInPath('ffprobe'),
             port: 3001,
+            comments : false,
+            commentServer : undefined
         }
     }
 
@@ -61,6 +65,10 @@ function saveSettings(): void {
 
 //I use this function, because the variable slajdomatSettings is read-only outside this module
 function assignSettings(arg: SlajdomatSettings): void {
+
+    //the directory is not sent, so we keep its old value
+    arg.directory = slajdomatSettings.directory;
+
     if (slajdomatSettings.port != arg.port) {
         //the port has been changed, so we restart the server
        restartServer();
@@ -68,4 +76,16 @@ function assignSettings(arg: SlajdomatSettings): void {
     slajdomatSettings = arg;
     saveSettings();
     sendStatus('Saved settings', 'quick')
+}
+
+async function checkIfCommentServerWorks(url : string) {
+    let script = url;
+    script += '&type=probe';
+    try {
+        const response = await fetch(script);
+        sendStatus('success '+ response.text(), 'quick');
+    }
+    catch (e) {
+        sendStatus('error '+ e, 'quick');
+    }
 }

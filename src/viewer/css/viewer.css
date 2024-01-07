@@ -13,7 +13,7 @@ body, html {
     overflow: hidden;
 }
 
-body, div, button {
+body, div, button, input, textarea {
     font-family: 'Roboto';
     font-weight: 200;
     font-size: 12px;

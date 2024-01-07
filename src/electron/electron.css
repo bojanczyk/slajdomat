@@ -126,7 +126,8 @@ the second line is just to avoid an error message */
     cursor: pointer;
 }
 
-.toolbar-button.disabled {
+.toolbar-button.disabled,
+.disabled .toolbar-button {
     opacity: 0.2;
     cursor: default;
 }
@@ -205,7 +206,7 @@ textarea {
 }
 
 /* setting items are separated by grey borders */
-#settings-tab>div {
+#settings-contents>div {
     border-bottom: 1px solid lightgrey;
 }
 
@@ -220,6 +221,20 @@ textarea {
 #ffprobe-path {
     width: 200px;
 }
+
+#comment-url {
+    width : 300px
+}
+
+#comment-container.disabled {
+    color : gray;
+}
+
+#settings-contents {
+    overflow-y: scroll;
+}
+
+
 
 
 /* *********** welcome tab *********** */

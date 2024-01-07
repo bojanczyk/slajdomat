@@ -28,6 +28,7 @@ import {
 } from "gsap";
 import {OverlayStep, Step, zoomsIn, ZoomStep } from './timeline'
 import { localRect, transforms, svgMap } from './loadSVG'
+import { commentSlide } from './comments';
 
 
 
@@ -47,6 +48,8 @@ function isOverlay(event: SlideEvent): boolean {
 
 //do an animated zoom to the slide on the top of the stack
 function zoomSlide(node: SlideEvent, mode: 'silent' | 'animated' = 'animated'): void {
+
+    commentSlide(node);
     function textRect(rect: Rect) {
         return " " + rect.x + " " + rect.y + " " + rect.width + " " + rect.height;
     }

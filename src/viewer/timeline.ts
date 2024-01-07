@@ -1,12 +1,13 @@
-export { createTimeline, moveHead, timeline, Step, OverlayStep, ZoomStep, zoomsIn, currentStep, gotoEvent, gotoStep, futureSlide, allSteps, loadNearbySounds }
+export { OverlayStep, Step, ZoomStep, allSteps, createTimeline, currentStep, futureSlide, gotoEvent, gotoStep, loadNearbySounds, moveHead, timeline, zoomsIn, eventToStep };
 
 import { findZoomEvent, isOverlay, runOverlay, zoomSlide, } from "./event";
 import { LiveRecording, OverlayEvent, SlideEvent, StepDescription, ZoomEvent } from "./types";
 
+
 import { markSeen, openPanelTree, openPanelTreeRec, soundIcon, timelineSeen } from "./html";
-import { manifest, updatePageNumber } from "./viewer";
-import { endRecording, loadSound } from "./sound";
 import { addToQueue } from "./loadSVG";
+import { endRecording, loadSound } from "./sound";
+import { manifest, updatePageNumber } from "./viewer";
 
 
 
@@ -228,33 +229,63 @@ function createTimeline(recorded: LiveRecording): void {
 
 //is this a future slide
 function futureSlide(event: SlideEvent): boolean {
-    const step = eventToStep(event);
+    const step = eventToStep(event, 'first');
     return timeline.future.includes(step);
 }
 
 
+
+function allSteps(): Step[] {
+    const retval = timeline.past.slice().concat(timeline.future.slice().reverse());
+
+    //if there is at least one sound, then there is also an item for the last event, which is only for its sound
+    if (Object.keys(manifest.soundDict).length > 0) {
+        retval.push(timeline.lastStep);
+    }
+    return retval;
+}
+
+
+
 //the  first step where this event is used
-function eventToStep(event: SlideEvent): Step {
+function eventToStep(event: SlideEvent, type: 'first' | 'last'): Step {
 
     if (event == manifest.tree)
         return timeline.lastStep;
 
-    const allSteps = timeline.past.concat(timeline.future);
+    const steps = allSteps();
 
-    if (event.type == 'child')
-        for (const step of allSteps)
-            if (step instanceof ZoomStep) {
-                if (step.target == event)
-                    return step;
-            }
+    if (type == 'first') {
+        // for type first, we use the first time where the event is used
+        if (event.type == 'child')
+            for (const step of steps)
+                if (step instanceof ZoomStep) {
+                    if (step.target == event)
+                        return step;
+                }
 
-    if (event.type == 'show' || event.type == 'hide')
-        for (const step of allSteps) {
-            if (step instanceof OverlayStep) {
-                if (step.overlays.includes(event))
-                    return step;
+        if (event.type == 'show' || event.type == 'hide')
+            for (const step of steps) {
+                if (step instanceof OverlayStep) {
+                    if (step.overlays.includes(event))
+                        return step;
+                }
             }
+    }
+    else 
+    {
+        //for type last, we only 
+        if (event.type != 'child')
+            throw 'eventToStep can only be called for slides, not for events';
+
+        let retval : Step = timeline.lastStep;
+        for (const step of steps) {
+            if (step.event().parent == event)
+                retval = step;
         }
+
+        return retval;
+    }
 
     return undefined;
 }
@@ -382,9 +413,11 @@ async function gotoStep(targetStep: Step, mode: 'silent' | 'animated' = 'animate
     updatePageNumber();
 }
 
+
+
 //goes to the first step after the event becomes visible
 function gotoEvent(event: SlideEvent): void {
-    const step = eventToStep(event);
+    const step = eventToStep(event, 'first');
     if (step != undefined)
         //goto step goes to before the event, so we need to go one further
         gotoStep(step).then(() => moveHead(1));
@@ -408,14 +441,4 @@ function loadNearbySounds(): void {
         loadSound(timeline.future[timeline.future.length - 2]);
     if (timeline.future.length == 1)
         loadSound(timeline.lastStep);
-}
-
-function allSteps(): Step[] {
-    const retval = timeline.past.slice().concat(timeline.future.slice().reverse());
-
-    //if there is at least one sound, then there is also an item for the last event, which is only for its sound
-    if (Object.keys(manifest.soundDict).length > 0) {
-        retval.push(timeline.lastStep);
-    }
-    return retval;
 }

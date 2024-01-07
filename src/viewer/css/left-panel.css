@@ -46,7 +46,6 @@
     font-size: 10px;
     margin-top: 5px;
     margin-left: 1.5em;
-    overflow: scroll;
 }
 
 .slide-stack-hidden {
@@ -54,7 +53,6 @@
 }
 
 #slide-stack-container {
-    overflow: scroll;
     margin-top: 10px
 }
 
@@ -156,6 +154,7 @@
 #tab-contents {
     background-color: var(--very-light-blue);
     flex-grow: 1;
+    overflow-y : scroll;
 }
 
 #tab-contents>div {
@@ -164,8 +163,7 @@
 
 #tab-contents>div.active {
     display: flex;
-    flex-direction: column;
-    overflow-y: scroll;
+    flex-direction: column
 }
 
 
@@ -241,5 +239,27 @@ p {
         color: red;
         /* Middle state: slightly larger */
     }
+}
+
+
+
+#comments > div {
+    padding : 10px;
+    cursor: pointer;
+}
+
+#comments > div:hover {
+    background-color: white;
+}
+
+
+#add-comments > input,
+#add-comments > textarea {
+    width : 98%;
+    margin-bottom : 10px
+}
+
+#comment-content {
+    height : 100px
 }
 

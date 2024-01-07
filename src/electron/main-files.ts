@@ -50,7 +50,7 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
         function download() {
 
             sendStatus('Downloading file ' + fileName);
-            const fileUrl = 'https://github.com/bojanczyk/slajdomat/tree/master/resources' + fileName; // Replace with the URL of the file to download
+            const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/' + fileName; // Replace with the URL of the file to download
             const fileStream = fs.createWriteStream(downloadPath);
             https.get(fileUrl, (response) => {
                 response.pipe(fileStream);

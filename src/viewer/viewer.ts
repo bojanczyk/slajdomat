@@ -170,7 +170,8 @@ function recordButton() {
 // the main event dispatcher
 function keyListener(event: KeyboardEvent) {
 
-    if (event.target != document.getElementById('search-input')) {
+    const tagName = ((event.target) as HTMLElement).tagName;
+    if (tagName != 'INPUT' && tagName != 'TEXTAREA') {
 
         switch (event.key) {
             case 'ArrowRight':
@@ -259,7 +260,7 @@ function checkFeatures() {
 
 //this function will be executed if the viewer is opened from the App
 //currently, there is no need for that
-function runFromApp() : void {
+function runFromApp(): void {
 
     //we don't use such code for the moment, since we try to communicate with the server as much as possible.
 

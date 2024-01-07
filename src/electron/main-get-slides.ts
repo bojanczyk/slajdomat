@@ -9,6 +9,7 @@ import { sendStatus } from "./main";
 import { copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
 import * as path from 'path';
 import { version } from "./main-version";
+import { slajdomatSettings } from "./main-settings";
 
 //receive the slides from the figma plugin. The slides are copied to the appropriate directory, together with the latest versions of the html code.
 function onGetSlide(msg: MessageToServerSlide): ServerResponse {
@@ -29,6 +30,16 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
             manifest.soundDict = oldManifest.soundDict;
             manifest.slideDict = oldManifest.slideDict;
             manifest.live = oldManifest.live;
+
+            if (slajdomatSettings.comments) {
+                manifest.comments = { 
+                    server : slajdomatSettings.commentServer,
+                    presentation : msg.presentation
+                }
+                //if there was an old manifest, then maybe there was some nonstandard presentations key for the presentations, in which case we inherit it. The idee is that manifest.comments.presentation is the presentation name by default, but it can diverge
+                if (oldManifest.comments != undefined)
+                    manifest.comments.presentation = oldManifest.comments.presentation;
+            }
         }
 
         for (const slide of msg.slideList) {

@@ -1,54 +1,44 @@
 export {
-    markSeen,
-    audioPlaying,
-    updateTimelineDisplay,
-    initPanels,
-    openPanelTree,
+    audioPlaying, initPanels, markDisabled, markSeen, openPanelTree,
     openPanelTreeRec,
-    removeLoading,
-    updatePageNumber,
-    userAlert,
-    markDisabled,
-    soundIcon,
-    timelineSeen,
-    timelineHTML,
-    userDefinedKeys
-}
+    removeLoading, soundIcon, timelineHTML, timelineSeen, updatePageNumber, updateTimelineDisplay, userAlert, userDefinedKeys
+};
 
 
 
 
-import {
-    manifest,
-    playButton,
-    prevButton,
-    nextButton
-} from './viewer'
+    import {
+        manifest,
+        nextButton,
+        playButton,
+        prevButton
+    } from './viewer';
 
 import {
+    SoundState,
+    endOfSound,
+    gotoAudio,
     playbackRateChange,
     soundState,
-    gotoAudio,
     sounds,
-    totalSoundDuration,
-    endOfSound,
-    SoundState,
-    stepAudio
-} from './sound'
+    stepAudio,
+    totalSoundDuration
+} from './sound';
 
 import {
     initSearch
-} from './search'
+} from './search';
 
 import {
     gsap
 } from "gsap";
 
 
-import { SlideEvent, ZoomEvent } from './types';
-import { toggleSketchpad, currentTool } from './sketchpad';
-import { currentStep, gotoEvent, gotoStep, Step, timeline, zoomsIn, OverlayStep, ZoomStep, allSteps } from './timeline'
 import { exportPdf } from './client-print';
+import { initComments } from './comments';
+import { currentTool, toggleSketchpad } from './sketchpad';
+import { OverlayStep, Step, ZoomStep, allSteps, currentStep, gotoEvent, gotoStep, timeline, zoomsIn } from './timeline';
+import { SlideEvent, ZoomEvent } from './types';
 
 
 
@@ -512,6 +502,7 @@ function initPanels(): void {
     timelineHTML();
 
     initSearch();
+    initComments();
 
     //if there is at least one sound, then we display the sound controls (play button, and speed button)
     if (Object.keys(manifest.soundDict).length > 0) {
