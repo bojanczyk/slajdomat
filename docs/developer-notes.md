@@ -5,6 +5,9 @@ This file contains notes to the developer that may be useful in maintaning the a
 ## Todo
 Things to implement in the future
 
+zoom menu unfolds not just on arrow
+space for new slide is chosen around the origin, not around the parent slide
+
 ### Bugs
 
 ### Viewer app
@@ -16,8 +19,7 @@ Things to implement in the future
 
 ### Extra features of the system
 - move event
-- comments on slides
-- show events for slides
+
 
 
 
