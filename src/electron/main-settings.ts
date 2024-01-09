@@ -2,14 +2,13 @@
 the code for managing the settings in the main process
 */
 
-import { exec } from "child_process";
 
 
 export {
-    SlajdomatSettings, assignSettings, loadSettings, myStringify, saveSettings, slajdomatSettings, checkIfCommentServerWorks
+    SlajdomatSettings, assignSettings, loadSettings, myStringify, saveSettings, slajdomatSettings
 };
 
-import { PresentationList, findExecutableInPath, writeFile } from "./main-files";
+    import { PresentationList, findExecutableInPath, writeFile } from "./main-files";
 
 import { app } from "electron";
 import * as fs from 'fs';
@@ -46,7 +45,7 @@ function loadSettings() {
             ffprobe: findExecutableInPath('ffprobe'),
             port: 3001,
             comments : false,
-            commentServer : undefined
+            commentServer : 'slajdomat-comments.php'
         }
     }
 
@@ -78,40 +77,4 @@ function assignSettings(arg: SlajdomatSettings): void {
     slajdomatSettings = arg;
     saveSettings();
     sendStatus('Saved settings', 'quick')
-}
-
-async function checkIfCommentServerWorks(url : string) {
-    let script = url;
-    sendStatus('Checking comment server ' + url, 'log');
-
-
-    let scriptPath = path.join(slajdomatSettings.directory, url);
-    scriptPath += '?type=probe';
-    sendStatus('Checking comment server ' + scriptPath, 'log');
-    exec(`php ${scriptPath}`, (error, stdout, stderr) => {
-        if (error) {
-            sendStatus('Script failed, see log', 'quick');
-            sendStatus('error ' + error, 'log');
-            sendStatus('I tried to use php on the local script, so it might not be installed. If that is the case, you can install it from https://www.php.net/manual/en/install.php', 'log');
-            return;
-        }
-        if (stderr) {
-            sendStatus('Script failed, see log', 'quick');
-            sendStatus('error ' + stderr, 'log');
-            return;
-        }
-        sendStatus('Script suceeded ' + stdout, 'quick');
-    });
-
-
-    return;
-
-    script += '&type=probe';
-    try {
-        const response = await fetch(script);
-        sendStatus('success '+ response.text(), 'quick');
-    }
-    catch (e) {
-        sendStatus('error '+ e, 'quick');
-    }
 }

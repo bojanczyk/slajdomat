@@ -214,13 +214,10 @@ textarea {
 }
 
 /* the input fields for long paths */
+#comment-url,
 #ffmpeg-path,
 #ffprobe-path {
     width: 200px;
-}
-
-#comment-url {
-    width : 300px
 }
 
 #comment-container.disabled {

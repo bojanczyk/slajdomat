@@ -129,11 +129,12 @@ document.getElementById('settings-head').addEventListener('click', (e) => select
 //links to web pages
 for (const link of document.querySelectorAll('a')) 
 {
+    const url = 'https://bojanczyk.github.io/slajdomat/' + link.getAttribute('myref');
     //so far there is only one link, for the user guide 
     link.addEventListener('click' , () =>
     {
             //a link is displayed by the backend, since only the backend has the ability to open a web browser
-    sendElectronRendererToMain({type : 'display-web-page',url : 'https://bojanczyk.github.io/slajdomat/tutorial.html' })
+    sendElectronRendererToMain({type : 'display-web-page',url : url })
     }
     )
 }
@@ -166,9 +167,6 @@ for (const button of document.querySelectorAll('.toolbar-button'))
                 break;
             case 'download-new-viewer':
                 sendElectronRendererToMain({ type: 'download-new-versions' });
-                break;
-            case 'check-if-comment-server-works':
-                sendElectronRendererToMain( { type : 'test-comment-server', url : (document.querySelector('#comment-url') as HTMLInputElement).value })
                 break;
         }
     })

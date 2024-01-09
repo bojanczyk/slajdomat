@@ -16,7 +16,7 @@ import * as path from 'path'
 
 import { startServer,  } from './main-server'
 
-import {slajdomatSettings, saveSettings, loadSettings, assignSettings, SlajdomatSettings, checkIfCommentServerWorks } from './main-settings'
+import {slajdomatSettings, saveSettings, loadSettings, assignSettings, SlajdomatSettings } from './main-settings'
 
 import { readPresentations, gotoChild, gotoParent, revealFinder,  setResourceDir, downloadViewerFiles } from './main-files'
 
@@ -235,9 +235,7 @@ ipcMain.on('message-to-main', (event, arg) => {
       shell.openExternal(message.url);
       break;
 
-    case 'test-comment-server':
-      checkIfCommentServerWorks(message.url);
-      break;
+
 
   }
 });

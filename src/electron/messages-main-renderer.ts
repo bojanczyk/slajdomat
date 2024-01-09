@@ -65,9 +65,6 @@ type ElectronRendererToMain = {
 } | {
     type: 'display-web-page',
     url : string
-} | {
-    type: 'test-comment-server',
-    url : string
 } 
 
 

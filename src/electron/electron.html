@@ -43,7 +43,7 @@
             presentation folder
           </div>
 
-          <a>Click here for a user guide.</a>
+          <a myref="tutorial.html">Click here for a user guide.</a>
         </div>
 
       </div>
@@ -119,12 +119,8 @@
       </div>
       <div id="comment-container">
         <p>  <input type="checkbox" id="comments-checkbox" value="checked"> Use comments </p>
-        <p> To have comments in your slides, you need to have a access to an SQL database. See the user guide. </p>
-        <p> Server url: <input type="text" id="comment-url" /> </p>
-        <p class="tab-toolbar hidden">
-          <span class="toolbar-button" id="check-if-comment-server-works"> <img src='../src/icons/science.svg'></span>
-          <span> Check if comment server works </span>
-        </p>
+        <p> To have comments in your slides, you need to have a access to an SQL database. <a myref='tutorial.md'>See the user guide. </a> </p>
+        <p> <b>Server script</b> <input type="text" id="comment-url" /> </p>
       </div>
       <div>
         <p><b>Path to ffmpeg <input type="text" id="ffmpeg-path" /></b> </p>

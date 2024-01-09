@@ -1,8 +1,7 @@
 <?php
-// these are only examples
-$servername = "database.mimuw.edu.pl";
-$username = "bojanczyk";
-$password = "a password";
+$servername = "kenny.mimuw.edu.pl";
+$username = "bojan";
+$password = "niDophFirkes";
 $dbname = "bojan";
 
 // Create connection
