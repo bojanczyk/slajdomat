@@ -1,0 +1,3 @@
+These are the html files for the presentations. They will be copied by the slajdomat app when compiling the presentation. The app stores these files in its userData folder (e.g. on mac this is in ~/Library/Application Support/...). If these files are not present, they will be downloaded from github.
+
+To release a new version of these files, copy them from the test-slides directory here, and commit them.

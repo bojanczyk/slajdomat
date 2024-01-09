@@ -4,7 +4,7 @@ this source takes manages the files and directories used by the backend
 
 export {
     PresentationList, copyHTMLFiles, dirList, downloadViewerFiles,
-    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, writeFile, writeManifest
+    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, writeFile, writeManifest, commentServerPath
 };
 
 
@@ -169,6 +169,11 @@ function revealFinder(name: string, type: 'folder' | 'presentation'): void {
     shell.showItemInFolder(dir);
 }
 
+//returns the path from a sub-folder to the root folder
+function commentServerPath(presentationName: string) {
+    const relative  =path.relative(presentationDir(presentationName),slajdomatSettings.directory);
+    return path.join(relative,slajdomatSettings.commentServer)
+}
 
 
 //returns the directory for a presentation, and if it does not exist, then it creates the directory and adds a suitable entry in the presentations json

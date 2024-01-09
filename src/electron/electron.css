@@ -24,9 +24,6 @@ textarea {
 }
 
 
-.hidden {
-    display: none;
-}
 
 
 /* *****************************************
@@ -281,3 +278,8 @@ a {
     opacity : 0;
 }
 
+/* hidden should apply last */
+
+.hidden {
+    display: none;
+}

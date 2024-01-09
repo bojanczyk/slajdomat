@@ -323,7 +323,6 @@ function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
                     else throw ('unknown type of rect with image')
 
                     const transformMatrixString = transformMatrix.map(String).join(' ');
-                    console.log(transformMatrixString);
                     rectG.setAttribute('transform', 'matrix(' + transformMatrixString + ')');
 
 

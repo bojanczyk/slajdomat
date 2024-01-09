@@ -19,14 +19,14 @@ function freshName(base: string, avoid: string[]): string {
 
 
 //finds a place for the new slide, by searching in a spiral around the current slide (or the origin, if there is no current slide)
-function freshRect(width: number, height: number, avoidList: FrameNode[], dimensions: { width: number, height: number }): Rect {
+function freshRect(x: number, y : number, width: number, height: number, avoidList: FrameNode[], dimensions: { width: number, height: number }): Rect {
 
     let insideFrame: Rect;
     //this is the frame that we should stay inside
     if (dimensions != undefined)
         insideFrame = { x: 0, y: 0, width: dimensions.width, height: dimensions.height };
 
-    let initial = { x : 50, y : 50, width : width, height : height};
+    let initial = { x: x, y : y, width : width, height : height};
 
     function intersects(a: Rect, b: FrameNode | Rect) {
         if (b == undefined)

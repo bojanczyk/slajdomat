@@ -2,14 +2,14 @@
 this code takes care of recieving slides from the plugin, and saving them to disk
 */
 
-export {onGetSlide}
+export { onGetSlide };
 
+import * as path from 'path';
 import { Manifest, MessageToServerSlide, ServerResponse } from "../viewer/types";
 import { sendStatus } from "./main";
-import { copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
-import * as path from 'path';
-import { version } from "./main-version";
+import { commentServerPath, copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
 import { slajdomatSettings } from "./main-settings";
+import { version } from "./main-version";
 
 //receive the slides from the figma plugin. The slides are copied to the appropriate directory, together with the latest versions of the html code.
 function onGetSlide(msg: MessageToServerSlide): ServerResponse {
@@ -33,7 +33,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
             if (slajdomatSettings.comments) {
                 manifest.comments = { 
-                    server : slajdomatSettings.commentServer,
+                    server :  commentServerPath(msg.presentation),
                     presentation : msg.presentation
                 }
                 //if there was an old manifest, then maybe there was some nonstandard presentations key for the presentations, in which case we inherit it. The idee is that manifest.comments.presentation is the presentation name by default, but it can diverge

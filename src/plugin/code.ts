@@ -134,7 +134,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
 
 
 
-    const place = freshRect(width, height, allSlides(), undefined);
+    const place = freshRect(basex, basey, width, height, allSlides(), undefined);
     const newSlide = figma.createFrame();
     newSlide.name = name;
     newSlide.x = place.x;
@@ -269,7 +269,7 @@ function createChildEvent(id: string): void {
     }
     state.database.events.push(newEvent);
 
-    const newplace = freshRect(100,  100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
+    const newplace = freshRect(slide.width/2, slide.height/2, 100,  100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
     createThumbnail(state.currentSlide, id, newplace);
 }
 
