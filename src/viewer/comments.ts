@@ -10,7 +10,7 @@ import { manifest, userAgent } from "./viewer";
 
 export { initComments, commentSlide }
 
-type Comment = {
+type OldComment = {
     comment_text: string,
     id: number,
     date: string,
@@ -18,6 +18,28 @@ type Comment = {
     slide: string,
     who: string
 }
+
+type Comment = {
+    comment_text: string,
+    date: Date,
+    presentation: string,
+    slide: string,
+    who: string
+}
+
+type CommentServerMessage =
+    {
+        type: 'set',
+        comment: Comment
+    } |
+    {
+        type: 'get',
+        presentation: string
+    }
+
+
+
+
 
 let phpScriptURL: string;
 let currentSlide: SlideEvent;
@@ -28,11 +50,12 @@ function commentSlide(slide: SlideEvent) {
 
 async function initComments() {
     try {
-        phpScriptURL = manifest.comments.server;
+        phpScriptURL = manifest.comments.server+'?message=';
 
         const commentContainer = document.querySelector('#comments');
-        let getScript = phpScriptURL + '?type=get';
-        getScript += '&presentation=' + manifest.comments.presentation;
+        const message = { type: 'get', presentation: manifest.comments.presentation };
+        const getScript = phpScriptURL + encodeURI(JSON.stringify(message));
+
 
 
         //remove all comments
@@ -40,6 +63,7 @@ async function initComments() {
             commentContainer.removeChild(commentContainer.firstChild);
         }
 
+        console.log(getScript);
         //load the comments from the database
 
         const response = await fetch(getScript);
@@ -47,7 +71,7 @@ async function initComments() {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        const comments: Comment[] = await response.json();
+        const comments: OldComment[] = await response.json();
         for (const comment of comments) {
 
             const date = new Date(comment.date);
@@ -80,22 +104,43 @@ async function addComment() {
     const commentField = document.querySelector('#comment-content') as HTMLInputElement;
     const whoField = document.querySelector('#comment-name') as HTMLInputElement;
 
-    let putScript = phpScriptURL + '?type=insert';
-    putScript += '&presentation=' + manifest.comments.presentation;
-    putScript += '&comment_text=' + encodeURIComponent(commentField.value);
-    putScript += '&who=' + encodeURIComponent(whoField.value);
-    putScript += '&slide=' + encodeURIComponent(currentSlide.id);
+    const newComment : Comment= {
+        comment_text: commentField.value,
+        who: whoField.value,
+        presentation: manifest.comments.presentation,
+        slide: currentSlide.id,
+        date : new Date()
+    }
 
+    const message : CommentServerMessage = { type: 'set', comment: newComment };
+    const url = phpScriptURL + encodeURI(JSON.stringify(message));
 
     try {
-        const response = await fetch(putScript);
+        const response = await fetch(url);
         userAlert(await response.text());
         initComments();
     }
     catch (e) {
         console.log(e);
         userAlert('Failed to add comment');
-    }
+    }       
+    
+    // let putScript = phpScriptURL + '?type=insert';
+    // putScript += '&presentation=' + manifest.comments.presentation;
+    // putScript += '&comment_text=' + encodeURIComponent(commentField.value);
+    // putScript += '&who=' + encodeURIComponent(whoField.value);
+    // putScript += '&slide=' + encodeURIComponent(currentSlide.id);
+
+
+    // try {
+    //     const response = await fetch(putScript);
+    //     userAlert(await response.text());
+    //     initComments();
+    // }
+    // catch (e) {
+    //     console.log(e);
+    //     userAlert('Failed to add comment');
+    // }
 }
 
 

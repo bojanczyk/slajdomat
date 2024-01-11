@@ -1,6 +1,48 @@
-<!-- a wrapper that takes one agument, called message, passes it to the script comment-server.js, and returns its output -->
 <?php
-    $message = $_GET["message"];
-    $output = shell_exec("ts-node comment-server.ts $message");
-    echo $output;
+
+
+//get the message from the 'message' query string parameter
+$messageString = $_GET['message'];
+
+// Parse the message string into an associative array
+$message = json_decode($messageString, true);
+
+
+// Check if the file comments.json exists, if not, create it and write an empty array
+if (!file_exists('comments.json')) {
+    if (file_put_contents('comments.json', '[]') === false) {
+        echo 'could not create comments.json' . PHP_EOL;
+        return;
+    }
+}
+
+// Read comments from file
+$data = file_get_contents('comments.json');
+$comments = json_decode($data, true);
+
+// echo $message['type'] . ''. $message['message'] . PHP_EOL;
+switch ($message['type']) {
+    case 'set':
+        array_push($comments, $message['comment']);
+        if (file_put_contents('comments.json', json_encode($comments)) === false) {
+            echo 'failed to write comments to file' . PHP_EOL;
+        }
+        else {
+            echo 'successfully added comment'. PHP_EOL;
+        }
+        break;
+    case 'get':
+        $presentation = $message['presentation'];
+        $filteredComments = array_filter($comments, function ($comment) use ($presentation) {
+            return $comment['presentation'] === $presentation;
+        });
+        echo json_encode($filteredComments);
+        break;
+
+    default:    
+        echo 'unknown command' . PHP_EOL;
+        break;
+
+}
+
 ?>
