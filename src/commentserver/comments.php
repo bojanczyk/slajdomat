@@ -23,17 +23,22 @@ $comments = json_decode($data, true);
 // echo $message['type'] . ''. $message['message'] . PHP_EOL;
 switch ($message['type']) {
     case 'set':
-        //set id to the maximal comment id + 1
-        $message['comment']['id'] = max(array_map(function ($comment) {
-            return $comment['id'];
-        }, $comments)) + 1;
+        //if there are not comments, set the id to 0    
+        if (count($comments) === 0) {
+            $message['comment']['id'] = 0;
+        } else {
+            //set id to the maximal comment id + 1
+            $message['comment']['id'] = max(array_map(function ($comment) {
+                return $comment['id'];
+            }, $comments)) + 1;
+
+        }
 
         array_push($comments, $message['comment']);
         if (file_put_contents('comments.json', json_encode($comments)) === false) {
             echo 'failed to write comments to file' . PHP_EOL;
-        }
-        else {
-            echo 'successfully added comment'. PHP_EOL;
+        } else {
+            echo 'successfully added comment' . PHP_EOL;
         }
         break;
     case 'get':
@@ -44,7 +49,7 @@ switch ($message['type']) {
         echo json_encode($filteredComments);
         break;
 
-    default:    
+    default:
         echo 'unknown command' . PHP_EOL;
         break;
 
