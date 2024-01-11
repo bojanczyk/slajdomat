@@ -23,6 +23,11 @@ $comments = json_decode($data, true);
 // echo $message['type'] . ''. $message['message'] . PHP_EOL;
 switch ($message['type']) {
     case 'set':
+        //set id to the maximal comment id + 1
+        $message['comment']['id'] = max(array_map(function ($comment) {
+            return $comment['id'];
+        }, $comments)) + 1;
+
         array_push($comments, $message['comment']);
         if (file_put_contents('comments.json', json_encode($comments)) === false) {
             echo 'failed to write comments to file' . PHP_EOL;

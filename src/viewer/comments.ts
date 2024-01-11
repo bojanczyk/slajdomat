@@ -10,16 +10,10 @@ import { manifest, userAgent } from "./viewer";
 
 export { initComments, commentSlide }
 
-type OldComment = {
-    comment_text: string,
-    id: number,
-    date: string,
-    presentation: string,
-    slide: string,
-    who: string
-}
+
 
 type Comment = {
+    id : number,
     comment_text: string,
     date: Date,
     presentation: string,
@@ -63,7 +57,6 @@ async function initComments() {
             commentContainer.removeChild(commentContainer.firstChild);
         }
 
-        console.log(getScript);
         //load the comments from the database
 
         const response = await fetch(getScript);
@@ -71,7 +64,7 @@ async function initComments() {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        const comments: OldComment[] = await response.json();
+        const comments: Comment[] = await response.json();
         for (const comment of comments) {
 
             const date = new Date(comment.date);
@@ -105,6 +98,7 @@ async function addComment() {
     const whoField = document.querySelector('#comment-name') as HTMLInputElement;
 
     const newComment : Comment= {
+        id : undefined, //this is set by the server
         comment_text: commentField.value,
         who: whoField.value,
         presentation: manifest.comments.presentation,
