@@ -3,9 +3,9 @@ export {
     runOverlay, zoomSlide
 };
 
-import {
-    PresentationNode, Slide
-} from './types';
+    import {
+        PresentationNode, Slide
+    } from './types';
 
 
 import {
@@ -18,8 +18,7 @@ import {
 } from './transform';
 
 import {
-    gsap,
-    TimelineMax
+    gsap
 } from "gsap";
 
 import { localRect, svgMap, transforms } from './loadSVG';
@@ -51,8 +50,10 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
         svgDom.setAttribute('viewBox', textRect(viewBox));
     }
     else {
-        const tla = new TimelineMax({});
-        tla.to(svgDom, 1.5, {
+
+        // use gsap to animate a change in the viewBox
+          gsap.to(svgDom, {
+            duration: 1.5,
             attr: {
                 viewBox: textRect(viewBox)
             }

@@ -170,14 +170,18 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
 
         //set initial visibility of overlays, which is done differently depending on whether the slide is in the past or in the future
         if (!futureSlide(slide)) {
+            // this will show the entire slide
             runOverlay(slide, 'forward', 'silent');
+            //run all overlays in forward order
             for (const event of slide.children) {
                 if (isOverlay(event))
                     runOverlay(event, 'forward', 'silent');
             }
         }
         else {
+            // this will hide the entire slide
             runOverlay(slide, 'backward', 'silent');
+            //run all overlays in reverse
             for (const event of slide.children.slice().reverse()) {
                 if (isOverlay(event))
                     runOverlay(event, 'backward', 'silent');
