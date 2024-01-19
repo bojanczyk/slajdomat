@@ -1,7 +1,7 @@
 export {
     initPanels, markDisabled, markSeen, openPanelTree,
     openPanelTreeRec, progressCache,
-    removeLoading, timelineHTML, timelineSeen, updateTimeLineForCurrent, userAlert, updateTimeCounter, timelineRecording
+    removeLoading, timelineHTML, timelineSeen, updateTimeLineForCurrent, userAlert, updateTimeCounter, timelineRecording, 
 };
 
 import {
@@ -382,30 +382,20 @@ function initPanels(): void {
 
 
 
-//displays a panel for a short time
-function shortDisplay(panel: HTMLElement): void {
-    const tl = gsap.timeline();
-    panel.style.display = 'inherit';
-    tl.to(panel, {
-        opacity: "100%",
-        duration: 0.1
-    }).to(panel, {
-        duration: 2
-    }).to(panel, {
-        opacity: "0",
-        duration: 1
-    });
-    tl.eventCallback("onComplete", function () {
-        panel.style.display = 'none';
-    });
-}
 
 
-//displays an alert for the user at the bottom of the screen
+
+//displays an alert for the user for a short time
 function userAlert(text: string): void {
-    document.getElementById("text-alert").innerHTML = text;
-    shortDisplay(document.getElementById("text-alert-box"));
+    const alert = document.getElementById('alert-box');
+    alert.style.transition = 'opacity 1s ease-in-out';
+    alert.firstElementChild.textContent = text;
+    alert.classList.add('visible');
+    setTimeout(() => {
+        alert.classList.remove('visible');
+    }, 3000);
 }
+
 
 
 

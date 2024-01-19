@@ -42,31 +42,6 @@ body {
     flex-shrink : 1;
 }
 
-#text-alert-box {
-    position : fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    z-index: 8;
-    display : none; 
-}
-
-#text-alert-background {
-    position : absolute;
-    width : 100%;
-    height : 100%;
-    background-color : lightgray;
-    opacity: 90%; 
-}
-
-#text-alert {
- padding: 10px;
- z-index: 1;
-}
-
 .hidden-svg {
     position: absolute;
     width : 0px;
@@ -102,4 +77,34 @@ path:not([fill]) {
 
 .hidden {
     display: none;
+}
+
+#alert-box {
+    position : fixed;
+    top: 20px;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    z-index: 8;
+    opacity: 0;
+    transition : opacity 0.5s ease-in-out;
+}
+
+#alert-box.visible {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#alert-box > div {
+    width: 100%;
+    height: 100%;
+    margin : 10px;
+    /* rounded corners */
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--very-light-blue);
+    font-size: large;
 }

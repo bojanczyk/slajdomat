@@ -14,7 +14,7 @@ import {
 
 
 import {
-    initPanels,
+    initPanels, userAlert
 } from "./html"
 
 import {
@@ -155,6 +155,11 @@ function keyListener(event: KeyboardEvent) {
                 prevButton()
                 break;
 
+
+            case 'a':
+                userAlert('mikli');
+                break;
+
             case ' ':
                 playButton();
                 break;
@@ -285,6 +290,8 @@ async function onLoadWindow(): Promise<void> {
     const state = getStateFromURL();
 
     await gotoState(state, 'silent');
+
+    document.getElementById('alert-box').classList.remove('visible');
     (document.getElementById('svg') as HTMLDivElement).style.opacity = '1'
 
 }
