@@ -17,7 +17,7 @@
 	<div id='loader-text'>
 		Loading slides...
 	</div>
-	<div id='upper-panel' style='opacity:0'>
+	<div id='upper-panel' style='visibility: hidden;'>
 		<div id="sketch-panel" class="noselect tool-panel">
 			<i id="sketch-red" class="material-icons selected">edit</i>
 			<i id="sketch-blue" class="material-icons">edit</i>
@@ -29,7 +29,7 @@
 		<div id="left-panel">
 			<!-- <i id="close-panel" class="material-icons">close</i> -->
 			<div id="made-using-slajdomat">
-				<img src='slajdomat-logo-blue.svg'>
+				<a href="https://github.com/bojanczyk/slajdomat"><img src='slajdomat-logo-blue.svg'></a>
 				<span id="link-to-pdf" class="material-icons hidden">picture_as_pdf</span>
 			</div>
 
@@ -73,6 +73,14 @@
 				</div>
 				<div id="present-tab">
 					<div>
+						<p> <b> Stopwatch.</b> Time your presentation. You can also activate it by pressing "t".</p>
+						<div class="button-line">
+							<span id="timer-button" class="material-icons">timer</span>
+							<span>Toggle stopwatch </span>
+							
+						</div>
+					</div>
+					<div>
 						<p> <b> Drawing tools.</b> Create rudimentary annotation that will not be saved.
 							You can also activate them by pressing "d".</p>
 						<div class="checkbox-container">
@@ -81,18 +89,14 @@
 						</div>
 					</div>
 					<div>
-						<p> <b> Next/previous keys. </b>Slajdomat goes to the next slide when the user presses either
-							"right arrow" or "page down"; likewise for previous. To configure your own keys, press a
-							key, and then one of these buttons</p>
-						<div class="button-line disabled key-binding">
-							<span>Use <span class="most-recently-pressed-key"> </span> for </span>
-							<span id="new-prev-key" class="material-icons">navigate_before</span>
+						<p> <b> Set key bindings. </b> Configure non-standard keys for your clicker using these buttons.</p>
+						<div class="button-line key-binding">
+							<span id="new-prev-key" class="material-icons">navigate_before</span> Set key for previous
 						</div>
-
-						<div class="button-line disabled key-binding">
-							<span>Use <span class="most-recently-pressed-key"> </span> for </span>
-							<span id="new-next-key" class="material-icons">navigate_next</span>
+						<div class="button-line key-binding">
+							<span id="new-next-key" class="material-icons">navigate_next</span> Set key for next
 						</div>
+						<p id="press-key-instructions" class="hidden"> Press a key to set this binding</p>
 						<p id='list-of-key-bindings'>
 						</p>
 
@@ -108,14 +112,13 @@
 						</div>
 						<p id="pdf-export-status"> </p>
 					</div>
-
 				</div>
 			</div>
 
 		</div>
 
 		<!-- the panel that contains the svg with the slides -->
-		<svg id="svg" fill="none" opacity="0"></svg>
+		<svg id="svg" fill="none"></svg>
 
 
 
@@ -126,8 +129,10 @@
 			<div id="text-alert-background"></div>
 		</div>
 	</div>
+
+
 	<!-- contains the timeline slider, the current time, and the buttons for next/previous/play -->
-	<div id="progress-panel" style='opacity:0'>
+	<div id="progress-panel" style="visibility:hidden">
 		<!-- the page counter in the lower right corner -->
 		<div id="progress-controls">
 			<i id="open-menu" class="material-icons">menu</i>
@@ -135,6 +140,9 @@
 			<i id="play-button" class="material-icons ">play_arrow</i>
 			<i id="next-event" class="material-icons">navigate_next</i>
 			<span id='sound-speed'>×1</span>
+		</div>
+		<div id="timer" class="hidden">
+			time left
 		</div>
 		<div id="progress-line">
 

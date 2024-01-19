@@ -20,16 +20,16 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
         presentation: msg.presentation,
         slideDict: {},
         tree: msg.tree,
-        soundDict: {}
+        defaultTimeLine: []
     }
 
     try {
         //if there were some sounds previously saved, we keep them
         const oldManifest: Manifest = readManifest(msg.presentation);
         if (oldManifest != undefined) {
-            manifest.soundDict = oldManifest.soundDict;
+            manifest.defaultTimeLine = oldManifest.defaultTimeLine;
             manifest.slideDict = oldManifest.slideDict;
-            manifest.live = oldManifest.live;
+            
 
             if (slajdomatSettings.comments) {
                 manifest.comments = { 

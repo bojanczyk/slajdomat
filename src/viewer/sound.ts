@@ -1,85 +1,59 @@
 export {
-    soundStop,
-    soundPlay,
-    soundRecord,
-    loadSound,
-    soundState,
-    playbackRateChange,
-    gotoAudio,
-    soundAdvance,
-    sounds,
-    totalSoundDuration,
-    initSoundTimeline,
-    resetSound,
-    soundPaused,
-    endOfSound,
-    cacheFlush,
-    SoundState,
-    soundLive,
-    endRecording,
-    stepAudio
+    loadNearbySounds, initSoundTimeline, soundState, stopSound, startRecording, soundIcon, playAudio, endRecording, canPlaySound, soundAdvance, loadSound
 }
 
 import {
     MessageToServerSound,
-    MessageToServerLive,
-    LiveRecording
+    SoundDict,
+    State
 } from './types'
 
 import {
     getManifest,
     manifest,
-    userAgent
+    serverConnected
 } from './viewer'
 
 import {
-    fileName,
     sendToServer
 } from './files'
 
-import {
-    eventDescription
-} from "./event"
 
 import {
-    audioPlaying,
-    soundIcon,
+    progressCache,
     timelineHTML,
+    timelineRecording,
+    updateTimeCounter,
     userAlert
 } from "./html"
-import { allSteps, currentStep, gotoStep, loadNearbySounds, moveHead, Step, timeline} from './timeline'
+import { StateMap, currentState, decodeState, encodeState, moveHead, sameState, timeline } from './timeline'
+import { formatTime } from './presenter-tools'
 
 
-
-
-
-
-enum SoundState {
-    Recording = "Record",
-    Live = "Live",
-    Play = "Play",
-    None = "Right",
-}
 
 
 //there are three possible states for the sound
 //"recording" means that we are recording sound
 //"play" means that we are playing sound
 //"none"  means none of the above
+type SoundState = "recording" | "playing" | "none";
+let soundState: SoundState = 'none';
 
-let soundState: SoundState = SoundState.None;
-// let globalAudio: HTMLAudioElement;
 
-let totalSoundDuration = 0; //duration of sounds so far
+
 
 type SoundInfo = {
-    filename: string,
-    duration: number,
     previousDuration: number,
     audio: HTMLAudioElement
 }
 
-const sounds: Map<Step, SoundInfo> = new Map();
+// let sounds: SoundInfo[] = undefined;
+
+
+function timelineAudio(index: number): HTMLAudioElement {
+    return timeline.frames[index].audio;
+}
+
 
 //to get new sounds, we use a trick where the audio name is extended with meaningless, but changing, string parameters
 let cacheFlushString = ''
@@ -87,84 +61,26 @@ function cacheFlush(): void {
     cacheFlushString += '?' + Date.now();
 }
 
-function soundPaused(): boolean {
-    const audio = stepAudio(currentStep());
-    if (audio != undefined && audio.currentTime > 0)
-        return true;
-    else
-        return false;
-}
-
-
-//stop playing or recording, thus making the sound state none
-function soundStop(): void {
-    if (soundState == SoundState.Play) {
-        const audio = stepAudio(currentStep());
-        if (audio != undefined) {
-            audio.pause();
-            audioPlaying(audio); //updates the timeline
-        }
-    }
-
-    if (soundState == SoundState.Recording || soundState == SoundState.Live) {
-        endRecording(0);
-    }
-
-    soundState = SoundState.None;
-    soundIcon();
-}
 
 let audioChunks: Blob[] = undefined;
 let mediaRecorder: MediaRecorder;
 
 
-function endRecording(direction: -1 | 0 | 1) : void {
+function endRecording(): void {
+
     if (mediaRecorder == null || mediaRecorder.state != 'recording') return;
 
-    let live: boolean;
-    switch (soundState) {
-        case SoundState.Recording:
-            live = false;
-            break;
-        case SoundState.Live:
-            live = true;
-            break;
-        default:
-            throw 'should not be in this state';
-    }
-
+    timelineRecording(timeline.current,'not recording');
 
     const retval: MessageToServerSound = {
         presentation: undefined,
         type: 'wav',
-        forWhat: undefined,
+        forWhat: encodeState(currentState()),
         file: undefined
-    }
-
-    if (!live) {
-        retval.forWhat = eventDescription(currentStep());
-    }
-    else {
-        retval.forWhat = { type: 'step', description: undefined };
-        switch (direction) {
-            case 1:
-                retval.forWhat.description = currentStep().description();
-                break;
-            case -1:
-                {
-                    const step = timeline.past[timeline.past.length - 1];
-                    retval.forWhat.description = step.reverse().description();
-                    break;
-                }
-            case 0:
-                retval.forWhat.description = { type: 'last' , page : currentStep().pageNumber};
-        }
     }
 
     mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunks)
-        // const audioURL = window.URL.createObjectURL(audioBlob)
-        // const audio = new Audio(audioURL)
         const fr = new FileReader()
         fr.onload = function (e) {
             async function send() {
@@ -173,20 +89,17 @@ function endRecording(direction: -1 | 0 | 1) : void {
                     if (serverResponse.status != 'sound recorded')
                         throw serverResponse.status;
                     else
-                        if (soundState == SoundState.None) {
+                        if (soundState == 'none') {
                             {
                                 //if sound recording has finished, then we reload the timeline
                                 //we reload the manifest to get the new version of the sound dictionary
                                 const man = await getManifest()
-                                manifest.soundDict = man.soundDict;
+                                manifest.defaultTimeLine = man.defaultTimeLine;
                                 //add some salt to the audio urls to flush the cache
                                 cacheFlush();
-                                initSoundTimeline(undefined);
+                                initSoundTimeline();
                                 loadNearbySounds();
                                 timelineHTML();
-
-
-
                             }
                         }
                 } catch (e) {
@@ -195,9 +108,8 @@ function endRecording(direction: -1 | 0 | 1) : void {
                 }
             }
 
-            const target = e.target as FileReader
-            const x = target.result as ArrayBuffer
-            const y = new Uint8Array(x)
+
+            const y = new Uint8Array(fr.result as ArrayBuffer)
             retval.file = Array.from(y);
             send();
         }
@@ -207,9 +119,15 @@ function endRecording(direction: -1 | 0 | 1) : void {
 }
 
 //start recording sound
-function soundRecord(live: 'live' | 'event'): void {
+async function startRecording(): Promise<void> {
+    if (serverConnected() == false) {
+        userAlert("Cannot record sound without the app running");
+        return;
+    }
 
-    async function promiseSound(): Promise<void> {
+    try {
+
+        timelineRecording(timeline.current,'recording');
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true
         })
@@ -219,37 +137,12 @@ function soundRecord(live: 'live' | 'event'): void {
         mediaRecorder.addEventListener("dataavailable", event => {
             audioChunks.push(event.data)
         })
+        soundState = 'recording';
     }
+    catch (error) {
+        soundState = 'none'
+        userAlert("Failed to record sound. " + error);
 
-    promiseSound().then(() => {
-        if (live == 'live')
-            soundState = SoundState.Live
-        else
-            soundState = SoundState.Recording;
-        soundIcon();
-    }).catch((error) => {
-        soundState = SoundState.None;
-        soundIcon();
-        if (userAgent() == "Safari") {
-            userAlert("To enable Mediarecorder  in Safari, use Develop/Experimental features");
-        } else
-            userAlert(error)
-    })
-}
-
-
-
-function afterSound(): void {
-
-    if (timeline.future.length > 0) {
-        resetSound();
-        //there is something to still play
-        moveHead(1);
-        soundPlay();
-    }
-    else {
-        //we have finished playing the last sound
-        soundStop();
     }
 }
 
@@ -258,25 +151,6 @@ function afterSound(): void {
 
 
 
-//starts a new live recording 
-function soundLive(): void {
-    const msg: MessageToServerLive = {
-        type: 'startLive',
-        presentation: manifest.presentation,
-    }
-
-    //we return to the first step, and then only start the live recording
-    gotoStep(allSteps()[0]).then(
-        () => {
-            sendToServer(msg);
-            soundRecord('live');
-            soundIcon();
-        }
-    )
-
-
-
-}
 
 const playbackRates = [1, 1.5, 2, 0.7];
 let playbackRateIndex = 0;
@@ -284,7 +158,7 @@ let playbackRateIndex = 0;
 function playbackRateChange(): void {
 
     playbackRateIndex = (playbackRateIndex + 1) % playbackRates.length;
-    const audio = stepAudio(currentStep());
+    const audio = timeline.frames[timeline.current].audio;
     if (audio != undefined)
         audio.playbackRate = playbackRates[playbackRateIndex];
     document.getElementById('sound-speed').innerHTML = '×' + playbackRates[playbackRateIndex];
@@ -292,168 +166,252 @@ function playbackRateChange(): void {
 
 
 
-function soundPlay(mode: 'normal' | 'fromEnd' = 'normal'): boolean {
-    try {
-        const audio = stepAudio(currentStep());
-        if (audio == undefined)
-            throw 'no audio';
-        audio.playbackRate = playbackRates[playbackRateIndex];
-        if (mode == 'fromEnd')
-            audio.currentTime = Math.max(0, audio.duration - 10);
-        audio.play();
-        soundState = SoundState.Play;
-        soundIcon();
-        return true;
-    }
-    catch (e) {
-        //if the sound is not in the database
-        if (sounds.get(currentStep()) != undefined)
-            userAlert("No sounds for this event");
-        soundStop();
-        return false;
-    }
+
+function findInsoundList(state: State, dict: SoundDict): number {
+    return dict.findIndex((s) => sameState(decodeState(s.key), state));
 }
 
 
 
-
 //for each step in the timeline, get its file name and duration
-function initSoundTimeline(recording: LiveRecording): void {
+function initSoundTimeline(): void {
+
+    const defaultSounds: StateMap<string> = new StateMap();
+    const defaultDurations: StateMap<number> = new StateMap();
+
+    for (const x of manifest.defaultTimeLine) {
+        const state = decodeState(x.state);
+        defaultSounds.set(state, x.soundFile);
+        defaultDurations.set(state, x.soundDuration);
+
+    }
+
+    for (const step of timeline.frames) {
+        step.soundDuration = defaultDurations.get(step.state);
+        step.soundFile = defaultSounds.get(step.state);
+    }
 
     const searchParams = (new URL(window.location.href)).searchParams;
     //this makes sure that the cache is ignored when downloading sounds, if a nocache string is present in the url
     if (searchParams.get('nocache') != undefined)
         cacheFlush();
 
+    let totalSoundDuration = 0;
 
-    sounds.clear();
-    totalSoundDuration = 0;
-    let i = 0;
-    for (const step of allSteps()) {
-        //try to get the sound information
-        try {
-            const retval: SoundInfo = {
-                filename: undefined,
-                audio: undefined,
-                duration: undefined,
-                previousDuration: totalSoundDuration
-            }
+    for (let i = 0; i < timeline.frames.length; i++) {
+        timeline.frames[i].audio = undefined;
+        timeline.frames[i].previousDuration = totalSoundDuration;
+        if (timeline.frames[i].soundDuration != undefined)
+            totalSoundDuration += timeline.frames[i].soundDuration;
+    }
 
-            if (recording == undefined) {
-                //this is a timeline based on the event tree
-                const where = eventDescription(step);
-                retval.duration = manifest.soundDict[where.slideId][where.eventId];
-                retval.filename = fileName(where.slideId, where.eventId + '.mp3' + cacheFlushString)
-            }
-            else {
-                //this is a timeline from a recording
-                retval.duration = recording.steps[i].duration;
-                retval.filename = `${recording.dir}/${i}.mp3${cacheFlushString}`
-                i++;
-            }
-            if (retval.duration == undefined)
-                throw 'no duration'
 
-            sounds.set(step, retval)
-            totalSoundDuration += retval.duration;
-        }
-        catch (e) {
-            // there is no sound file
-        }
+}
+
+
+function loadNearbySounds(): void {
+    //how far is nearby?
+    const loadRadius = 3;
+
+    loadSound(timeline.current);
+
+    for (let i = 1; i <= loadRadius; i++) {
+        if (timeline.current + i < timeline.frames.length)
+            loadSound(timeline.current + i);
+        if (timeline.current - i >= 0)
+            loadSound(timeline.current - i);
     }
 }
 
-function loadSound(step: Step): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const sound = sounds.get(step);
+//load the sound for the given index
+async function loadSound(index: number): Promise<HTMLAudioElement> {
+    const sound = timeline.frames[index];
 
-        if (sound == undefined || sound.audio != null) {
-            //if there is no sound to load, or it has already been loaded, then the loading is assumed successful
-            resolve()
-        }
-        else {
-            const filename = sound.filename;
-            const audio = new Audio(filename);
-            // audio.autoplay=true;
-            audio.addEventListener('ended', afterSound);
-
-            audio.addEventListener('progress', () => {
-                sound.audio = audio;
-                if (step == currentStep()) {
-                    soundIcon();
-                }
-                resolve();
-            })
-
-            audio.addEventListener('error', () => {
-                sounds.delete(step);
-                if (step == currentStep()) {
-                    soundIcon();
-                }
-                reject();
-            })
-
-            audio.addEventListener('timeupdate',
-                e => { audioPlaying(e.target as HTMLAudioElement) })
-        }
-    })
-}
-
-function gotoAudio(ratio: number): void {
-    const audio = stepAudio(currentStep());
-    if (audio != null) {
-        audio.currentTime = audio.duration * ratio;
-    }
-}
-
-const soundIncrement = 10;
-//advance the sound by 10 second if t=1 and by -10 seconds otherwise
-function soundAdvance(t: 1 | -1): void {
-    const audio = stepAudio(currentStep());
-    if (t < 0) {
-        if (audio.currentTime < 1) {//if we are close to the beginning then we move to the previous event
-            resetSound();
-            moveHead(-1);
-            soundPlay('fromEnd')
-
-        }
-        else {
-            audio.currentTime = Math.max(0, audio.currentTime - soundIncrement);
-            soundIcon();
-        }
+    if (sound == undefined || sound.soundFile == undefined) {
+        return undefined;
     }
     else {
-        audio.currentTime = Math.min(audio.duration - 0.01, audio.currentTime + soundIncrement);
+        if (sound.audio != undefined)
+            return sound.audio
+        else {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio(timeline.frames[index].soundFile);
+                audio.onloadeddata = () => {
+                    timeline.frames[index].audio = audio;
+                    resolve(audio);}
+                audio.addEventListener('timeupdate', updateTimeCounter)
+                audio.onerror = (e) => { timeline.frames[index].audio = undefined; resolve(undefined) };
+            });
+        }
     }
 }
 
-//returns the audio for this step
-function stepAudio(step: Step): HTMLAudioElement {
-    const sound = sounds.get(step);
-    if (sound != undefined)
-        return sound.audio;
-    else
-        return undefined;
+//advance the sound by 5 seconds if t=1 and by -5 seconds otherwise
+//return true if we have reached the end of the sound, and pause the sound
+function soundAdvance(t: number): { frame: number, time: number } {
+
+    function endTime(i: number) {
+        if (timeline.frames[i].soundDuration == undefined)
+            return timeline.frames[i].previousDuration;
+        else
+            return timeline.frames[i].previousDuration + timeline.frames[i].soundDuration;
+    }
+
+    const audio = timeline.frames[timeline.current].audio;
+    const currentTime = audio.currentTime + timeline.frames[timeline.current].previousDuration;
+
+    let i: number;
+    if (t >= 0) {
+        i = timeline.current;
+        while (i < timeline.frames.length - 1 && timeline.frames[i].audio != undefined && currentTime + t > endTime(i)) {
+            i++;
+        }
+
+    }
+    else {
+        i = timeline.current;
+        while (i > 0 && timeline.frames[i].audio != undefined && currentTime + t < timeline.frames[i].previousDuration) {
+            i--;
+        }
+    }
+    let retval = {
+        frame: i,
+        time: 0
+    }
+    if (timeline.frames[i].audio != undefined) {
+        retval.time = currentTime + t - timeline.frames[i].previousDuration;
+        if (retval.time < 0)
+            retval.time = 0;
+        if (retval.time > timeline.frames[i].audio.duration)
+            retval.time = timeline.frames[i].audio.duration;
+    }
+    return retval;
 }
 
-//resets the current sound to zero
-function resetSound(): void {
-    const audio = stepAudio(currentStep());
-    if (audio != undefined) {
-        audio.pause();
-        audio.currentTime = 0;
-        audioPlaying(audio);
-        soundIcon();
+
+
+async function whenFinishedPlaying() {
+    if (timeline.current < timeline.frames.length - 1)
+        moveHead(1);
+    else
+        stopSound();
+
+}
+
+function playAudio(audio: HTMLAudioElement, how: 'play' | 'pause'): void {
+
+    if (how == 'pause') {
+        if (audio != undefined) {
+            audio.pause();
+            audio.removeEventListener('ended', whenFinishedPlaying);
+        }
+        soundState = 'none';
+    }
+    else {
+        if (audio != undefined) {
+            audio.play();
+            audio.addEventListener('ended', whenFinishedPlaying);
+        }
+        soundState = 'playing';
     }
 }
 
-function endOfSound(): boolean {
-    const audio = stepAudio(currentStep());
 
-    if (timeline.future.length == 0 && audio != undefined && audio.currentTime == audio.duration)
-        return true;
-    else
+//stop playing or recording, thus making the sound state none
+function stopSound(): void {
+    if (soundState == 'recording') {
+        endRecording();
+    }
+    soundState = 'none'
+}
+
+
+
+// ************ html for sounds ***************
+
+
+
+
+function initSoundHTML(): void {
+    document.getElementById('sound-speed').addEventListener('click',
+        playbackRateChange);
+    // soundIcon();
+}
+
+initSoundHTML();
+
+
+
+
+// the timeline uses two kinds of display, depending on the whether the sound is playing, or not
+function updateTimelineDisplay(): void {
+    if (soundState == 'playing') {
+        document.getElementById('progress-panel').classList.add('playing');
+    } else {
+        document.getElementById('progress-panel').classList.remove('playing');
+    }
+}
+
+//is it possible to play a sound
+function canPlaySound(frame: number): boolean {
+    if (frame == undefined)
+        return false;
+    const sound = timeline.frames[frame];
+    if (sound == undefined)
+        return false;
+    if (sound.audio == undefined)
         return false;
 
+    
+    // even if the sound exists, the presentation could be finished
+    if ((sound.audio.currentTime == sound.audio.duration) && (frame == timeline.frames.length - 1))
+        return false;
+    return true;
+}
+
+//choose the right button for playing sound
+function soundIcon(): void {
+    const playButton = document.getElementById("play-button");
+
+    switch (soundState) {
+        case 'playing':
+            playButton.style.visibility = 'visible';
+            playButton.innerHTML = "pause"
+            break;
+        case 'none':
+            if (canPlaySound(timeline.current)) {
+                playButton.style.visibility = 'visible';
+                playButton.innerHTML = "play_arrow"
+            }
+            else {
+                playButton.style.visibility = 'hidden';
+            }
+            break;
+        case 'recording':
+            playButton.style.visibility = 'visible';
+            playButton.innerHTML = "mic"
+            break;
+    }
+}
+
+// this code measures the volume of the microphone
+// we might use it to block slide changing when the volume is too high
+// but it is not used now
+async function volumeCheck() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const audioContext = new AudioContext();
+    const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(stream);
+    const analyserNode = audioContext.createAnalyser();
+    mediaStreamAudioSourceNode.connect(analyserNode);
+
+    const pcmData = new Float32Array(analyserNode.fftSize);
+    const onFrame = () => {
+        analyserNode.getFloatTimeDomainData(pcmData);
+        let sumSquares = 0.0;
+        for (const amplitude of pcmData) { sumSquares += amplitude * amplitude; }
+        console.log(Math.sqrt(sumSquares / pcmData.length));
+        window.requestAnimationFrame(onFrame);
+    };
+    window.requestAnimationFrame(onFrame);
 }
 

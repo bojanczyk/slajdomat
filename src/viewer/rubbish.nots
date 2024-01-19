@@ -2,7 +2,7 @@
 const noSoundDuration = 10;
 
 //updates the duration of an event; the update concerns the timeline
-function updateEventDuration(event: SlideEvent): void {
+function updateEventDuration(event: PresentationNode): void {
     const timeline = timelines.get(event);
     if (soundDurations.get(event) != undefined) {
         timeline.style.flexGrow = soundDurations.get(event).toString();
@@ -23,7 +23,7 @@ function updateEventDuration(event: SlideEvent): void {
 function makeTimeline(): void {
 
     //for each element, find the duration of its audio
-    function computeDuration(event: SlideEvent): void {
+    function computeDuration(event: PresentationNode): void {
         for (let i = 0; i < event.children.length; i++) {
             soundOffset.set(event.children[i], totalSoundDuration);
             try {
@@ -42,7 +42,7 @@ function makeTimeline(): void {
     }
 
     //create a div in the timeline for every non-root element of the 
-    function makeTimelineRec(event: SlideEvent): void {
+    function makeTimelineRec(event: PresentationNode): void {
 
         if (parentEvent(event) == undefined) {
             //the root has no element in the timeline
@@ -83,7 +83,7 @@ function makeTimeline(): void {
 
 
 //makes visible or invisible the appropriate objects in the slide, so that events before (not including) index have already been performed
-function updateEventsSVG(slide: SlideEvent, index: number): void {
+function updateEventsSVG(slide: PresentationNode, index: number): void {
     if (slide.type != 'child' || svgMap.get(slide) == undefined)
         return;
 
@@ -115,7 +115,7 @@ function updateEventsSVG(slide: SlideEvent, index: number): void {
 
 //add a new node to the slide tree
 //the svg
-function svgLoaded(node: SlideEvent, index: number): void {
+function svgLoaded(node: PresentationNode, index: number): void {
 
 
 
@@ -194,7 +194,7 @@ function svgLoaded(node: SlideEvent, index: number): void {
 
 
 //loads the SVG for the given node in the slide tree
-function loadSVG(node: SlideEvent, index = 0, callback: (x: boolean) => void = null) {
+function loadSVG(node: PresentationNode, index = 0, callback: (x: boolean) => void = null) {
     if (node.type != 'child' || svgMap.get(node) != undefined) {
         //there is nothing to load, so the callback can be called
         if (node.type == 'child')
@@ -250,7 +250,7 @@ function loadSVG(node: SlideEvent, index = 0, callback: (x: boolean) => void = n
 
 //pushes a list of slides. The root is the first slide, which is assumed to be loaded, and then path contains a list of directions (which event number), that defines a path; ordered from last to first. The after parameter is a callback to be performed once the last slide is pushed.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function pushIndexList(root: SlideEvent, path: number[], after = (ignored: SlideEvent) => {/*do nothing */ }): void {
+function pushIndexList(root: PresentationNode, path: number[], after = (ignored: PresentationNode) => {/*do nothing */ }): void {
     if (path.length == 0) {
         curEvent = root;
         if (parentEvent(parentEvent(curEvent)) == null) {

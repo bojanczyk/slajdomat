@@ -85,5 +85,16 @@ function freshRect(x: number, y : number, width: number, height: number, avoidLi
 
 //sanitize a string so that it is a good filename 
 function sanitize(s: string): string {
-    return encodeURI(s).replace(/:/g, "_").replace(/%20/g, '_').replace(/%/g, '_');
+    const replaces = [
+        [':', '_colon'],
+        ['%20', '_'],
+        ['%', '_percent'],
+        ['*', '_star'],
+        ['?', '_question']
+    ];
+    let retval = encodeURI(s);
+    for (const replace of replaces)
+        retval = retval.replace(replace[0], replace[1]);
+
+    return retval;
 }

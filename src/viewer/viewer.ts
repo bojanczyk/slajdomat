@@ -1,17 +1,12 @@
 export {
-    manifest,
-    getManifest,
-    updatePageNumber,
-    userAgent,
-    nextButton,
-    prevButton,
-    playButton
+    getManifest, manifest, nextButton, playButton, prevButton, serverConnected,
+    userAgent
 }
 
-import './css/viewer.css'
 import './css/left-panel.css'
 import './css/progress.css'
 import './css/sketch.css'
+import './css/viewer.css'
 
 import {
     createEventTree
@@ -20,42 +15,27 @@ import {
 
 import {
     initPanels,
-    updatePageNumber,
-    userAlert,
-    userDefinedKeys
-} from "./html";
-
-import {
-    soundStop,
-    soundState,
-    soundPlay,
-    soundRecord,
-    soundAdvance,
-    resetSound,
-    soundPaused,
-    endOfSound,
-    SoundState,
-    soundLive,
-    initSoundTimeline
-} from "./sound"
+} from "./html"
 
 import {
     fetchJSON,
     presentationDir,
-    probeServer,
     sendToServer
 } from './files'
 
-import {
-    LiveRecording,
-    Manifest
-} from "./types";
+import { timerStart, userDefinedKeys } from './presenter-tools'
 import {
     toggleSketchpad
-} from "./sketchpad";
-import { createTimeline, currentStep, gotoStep, moveHead, Step, timeline } from './timeline'
+} from "./sketchpad"
+import { canPlaySound, endRecording, playAudio, soundAdvance, soundIcon, soundState, startRecording, stopSound } from './sound'
+import { createTimeline, gotoIndex, gotoState, moveHead, timeline } from './timeline'
+import {
+    Manifest,
+    State,
+    TimelineJSON
+} from "./types"
 
-import { exportPdf } from './client-print'
+
 
 
 let manifest: Manifest;
@@ -77,93 +57,83 @@ function userAgent(): string {
 
 //what happens when the sound play button or the space bar are pressed
 function playButton(): void {
+    const audio = timeline.frames[timeline.current].audio;
+
     switch (soundState) {
-        case SoundState.Play:
-            soundStop();
+        case 'playing':
+            playAudio(audio, 'pause');
             break;
-        case SoundState.Recording:
-        case SoundState.Live:
-            soundStop();
+        case 'none':
+            if (canPlaySound(timeline.current))
+                playAudio(audio, 'play')
             break;
-        case SoundState.None:
-            if (!endOfSound())
-                soundPlay();
+        case 'recording':
+            stopSound();
             break;
     }
+    soundIcon();
 }
 
-//what happens when the next button or right arrow are pressed
-function nextButton(): void {
-    if (timeline.future.length > 0) {
-        switch (soundState) {
-            case SoundState.Play:
-                soundAdvance(1);
-                break;
-            case SoundState.Recording:
-            case SoundState.Live:
-                moveHead(1);
-                if (soundState == SoundState.Live)
-                    soundRecord('live');
-                else
-                    soundRecord('event');
-                break;
-            case SoundState.None:
-                resetSound();
-                moveHead(1);
-        }
-    }
-}
 
 //what happens when the prev button or left arrow are pressed
-function prevButton(): void {
-    if (timeline.past.length > 0) {
-        switch (soundState) {
-            case SoundState.Play:
-                soundAdvance(-1);
-                break;
+async function nextOrPrevButton(direction: -1 | 1): Promise<void> {
+    switch (soundState) {
+        case 'playing':
+        case 'none':
+            if (canPlaySound(timeline.current)) {
+                // if there is sound, then we move by 5 seconds
+                const where = soundAdvance(5 * direction);
+                await gotoIndex(where.frame, 'animated', where.time);
+            }
+            else {
+                await moveHead(direction);
+                if (!canPlaySound(timeline.current))
+                    stopSound();
+            }
+            break;
+        case 'recording':
+            if (direction == 1) {
+                //when going right, we continue recording
+                endRecording();
+                await moveHead(1);
+                await startRecording();
+            }
+            else {
+                //when going left, we stop recording
+                stopSound();
+                await moveHead(-1);
+            }
 
-            case SoundState.Recording:
-                soundStop();
-                break;
-            case SoundState.Live:
-                moveHead(-1);
-                soundRecord('live');
-                break;
-
-            case SoundState.None:
-                if (soundPaused())
-                    resetSound();
-                else
-                    moveHead(-1);
-
-        }
+            break;
     }
+    soundIcon();
 }
 
-//start or stop a live recording
-function liveButton() {
-    if (timeline.type == 'default' && serverConnected()) {
-        //the recorded timelines are read-only
-        if (soundState == SoundState.Live)
-            soundStop()
-        else if (soundState == SoundState.None)
-            soundLive()
-    }
+async function nextButton(): Promise<void> {
+    await nextOrPrevButton(1);
 }
 
-//start or stop the usual type of recording
-function recordButton() {
-    if (timeline.type == 'default' && serverConnected()) {
-        //the recorded timelines are read-only
-        if (soundState == SoundState.Recording) {
-            soundStop()
-        }
-        else {
-            soundStop()
-            soundRecord('event')
-        }
-    }
+async function prevButton(): Promise<void> {
+    await nextOrPrevButton(-1);
 }
+
+
+async function recordButton(): Promise<void> {
+    switch (soundState) {
+        case 'playing':
+            stopSound();
+            break;
+        case 'recording':
+            stopSound();
+            break;
+        case 'none':
+            //this needs to wait, because the media stream is not available immediately
+            await startRecording();
+            break;
+    }
+    soundIcon();
+}
+
 
 
 
@@ -175,13 +145,14 @@ function keyListener(event: KeyboardEvent) {
 
         switch (event.key) {
             case 'ArrowRight':
-            case 'PageDown': //this is for some clickers
+            case 'PageDown':
+                // the next slide option was selected
                 nextButton();
                 break;
 
             case 'ArrowLeft':
             case 'PageUp': //this is for some clickers
-                prevButton();
+                prevButton()
                 break;
 
             case ' ':
@@ -193,12 +164,11 @@ function keyListener(event: KeyboardEvent) {
                 break;
 
             case 'r':
-                recordButton()
+                recordButton();
                 break;
 
-            case 'l':
-                liveButton()
-                break;
+            case 't':
+                timerStart();
 
             default:
                 if (event.key in userDefinedKeys)
@@ -211,16 +181,17 @@ function keyListener(event: KeyboardEvent) {
 
 
 
-//the path is an array of numbers, which indicates the path in the event tree to the current event 
-function getStepFromURL(): Step {
+// the url might have an index of the state to go to
+function getStateFromURL(): State {
     const searchParams = (new URL(window.location.href)).searchParams;
-    //we try to return the step, but several things could go wrong: (a) the step parameter is undefined or not a number; (b) the number is out of bounds
-    try {
-        return currentStep(parseInt(searchParams.get('step')));
-    } catch (e) {
-        //otherwise return the first step
-        return currentStep();
-    }
+    //we try to return the state, but several things could go wrong: (a) the state parameter is undefined or not a number; (b) the number is out of bounds
+
+    const index = parseInt(searchParams.get('step'));
+    if (isNaN(index) || index < 0 || index >= timeline.frames.length)
+        return timeline.frames[0].state
+    else
+        return timeline.frames[index].state;
+
 }
 
 
@@ -271,49 +242,53 @@ function runFromApp(): void {
 
 
 
-function getRecordedSteps(): LiveRecording {
+function getRecordedSteps(): TimelineJSON {
+    // throw 'Not implemented yet';
     const searchParams = (new URL(window.location.href)).searchParams;
     try {
         const i = parseInt(searchParams.get('live'));
-        return manifest.live[i];
+        throw 'Not implemented yet';
+        // return manifest.live[i];
     } catch (e) {
         return undefined;
     }
 }
 
-//startup code
-//it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
-window.onload = function (): void {
 
 
+async function onLoadWindow(): Promise<void> {
     //the opacity is set to 0 for elements of the page, so that it is not display while the styles are loading. Once the document has loaded, we can set the opacity to normal.
     (document.getElementById('loader-text') as HTMLDivElement).remove();
-    (document.getElementById('upper-panel') as HTMLDivElement).style.opacity = '';
-    (document.getElementById('progress-panel') as HTMLDivElement).style.opacity = '';
+    (document.getElementById('upper-panel') as HTMLDivElement).style.visibility = 'visible';
+    (document.getElementById('progress-panel') as HTMLDivElement).style.visibility = 'visible';
 
     checkFeatures();
 
-    getManifest().then(m => {
-        manifest = m;
-        document.title = manifest.presentation;
+    manifest = await getManifest();
 
-        //sets up the event tree, currently this just means defining the parent properties
-        createEventTree();
+    document.title = manifest.presentation;
 
-        //if the url had a live timeline, then get it
-        const recorded = getRecordedSteps();
-        //initialize the steps in the timeline
-        createTimeline(recorded);
-        //add the sound data, especially durations
-        initSoundTimeline(recorded);
+    //sets up the event tree, currently this just means defining the parent properties
+    createEventTree();
 
-        //set up the left and bottom html panels
-        initPanels();
-        //event listener for keys
-        document.addEventListener("keydown", keyListener);
+    //if the url had a live timeline, then get it
+    const recorded = getRecordedSteps();
+    //initialize the steps in the timeline
+    createTimeline(recorded);
 
-        //start the presentation, using the step from the url, or the first step by default 
-        const step = getStepFromURL();
-        gotoStep(step).then(() => { (document.getElementById('svg') as HTMLDivElement).style.opacity = '1' });
-    }).catch((e) => userAlert(e))
+    //set up the left and bottom html panels
+    initPanels();
+    //event listener for keys
+    document.addEventListener("keydown", keyListener);
+
+    //start the presentation, using the step from the url, or the first step by default 
+    const state = getStateFromURL();
+
+    await gotoState(state, 'silent');
+    (document.getElementById('svg') as HTMLDivElement).style.opacity = '1'
+
 }
+
+//startup code
+//it reads the manifest, which contains the root slide, the number of slides, the sounds, and then it loads the first slide
+window.onload = onLoadWindow;

@@ -1,14 +1,22 @@
 /* ***** progress panel ***/
+
 #progress-panel {
     width : 100%;
     position : absolute;
     bottom : 0;
-    height : 20px;
+    height : 24px;
     display : flex;
     align-items: flex-end;
     font-size : 12px;
     cursor: default;
-    padding : 0;
+}
+
+#progress-panel > div {
+    display : flex;
+    align-items: center;
+    justify-content: center;
+    height : 100%;
+    background-color: white;
 }
 
 .tablet #progress-panel .material-icons {
@@ -16,13 +24,14 @@
 }
 
 #progress-line {
-    height: 100%;
     flex-grow: 1;
-    display : flex;
-    align-items: center;
-    justify-content: center;
     cursor : pointer;
 }
+
+#progress-panel > div.hidden {
+    display: none;
+}
+
 #progress-line > div {
     height : 100%;
     background-color: var(--very-light-blue);
@@ -43,9 +52,11 @@ body.has-sound #progress-line .nosound {
     background-color:  red;
 }
 
-body.has-sound #progress-line .nosound.recording {
-    background-color:  red;
-}
+#progress-line .recording > .progress-filler {
+    display : none
+}   
+
+
 
 .progress-filler {
     height: 100%;
@@ -58,10 +69,7 @@ body.has-sound #progress-line .nosound .progress-filler {
 
 
 #progress-controls {
-    /* width : 110px; */
     z-index: 5;
-    display : flex; 
-    align-items: center;
     padding-left: 5px;
     padding-right:5px;
 }
@@ -82,9 +90,6 @@ body.has-sound #progress-line .nosound .progress-filler {
 
 #page-count {
     width : 80px;
-    display : flex;
-    align-items: center;
-    justify-content: center;
 }
 
 #page-count-enumerator {
@@ -124,4 +129,9 @@ body:not(.has-sound) #sound-speed {
 }
 #next-event {
     right: 0%;
+}
+
+#timer {
+    margin-right : 10px;
+    font-size: large;
 }

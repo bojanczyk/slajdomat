@@ -2,13 +2,14 @@
 Handles the comments to slides
 */
 
-import { findZoomEvent } from "./event";
-import { userAlert } from "./html";
-import { currentStep, eventToStep, gotoStep } from "./timeline";
-import { SlideEvent } from "./types";
-import { manifest, userAgent } from "./viewer";
 
-export { initComments, commentSlide }
+import doc from "pdfkit";
+import { userAlert } from "./html";
+import { currentState, decodeState, encodeState, gotoState } from "./timeline";
+import { StateJSON } from "./types";
+import { manifest } from "./viewer";
+
+export { initComments };
 
 
 
@@ -17,7 +18,7 @@ type Comment = {
     comment_text: string,
     date: Date,
     presentation: string,
-    slide: string,
+    state: StateJSON,
     who: string
 }
 
@@ -36,28 +37,22 @@ type CommentServerMessage =
 
 
 let phpScriptURL: string;
-let currentSlide: SlideEvent;
 
-function commentSlide(slide: SlideEvent) {
-    currentSlide = slide;
-}
+
+
 
 async function initComments() {
     try {
         phpScriptURL = manifest.comments.server+'?message=';
-
         const commentContainer = document.querySelector('#comments');
         const message = { type: 'get', presentation: manifest.comments.presentation };
         const getScript = phpScriptURL + encodeURI(JSON.stringify(message));
-
-
 
         //remove all comments
         while (commentContainer.firstChild) {
             commentContainer.removeChild(commentContainer.firstChild);
         }
 
-    
         //load the comments from the database
         const response = await fetch(getScript);
 
@@ -76,9 +71,8 @@ async function initComments() {
             <div> ${formattedDate}  ${(comment.who == '') ? 'by anonymous' : 'by ' + comment.who} </div>`
             commentContainer.appendChild(newDiv);
             newDiv.addEventListener('click', () => {
-                const event = findZoomEvent(comment.slide);
-                const step = eventToStep(event, 'last');
-                gotoStep(step);
+                const state = decodeState(comment.state);
+                gotoState(state);
             })
         }
 
@@ -102,7 +96,7 @@ async function addComment() {
         comment_text: commentField.value,
         who: whoField.value,
         presentation: manifest.comments.presentation,
-        slide: currentSlide.id,
+        state: encodeState(currentState()),
         date : new Date()
     }
 
@@ -118,24 +112,7 @@ async function addComment() {
         console.log(e);
         userAlert('Failed to add comment');
     }       
-    
-    // let putScript = phpScriptURL + '?type=insert';
-    // putScript += '&presentation=' + manifest.comments.presentation;
-    // putScript += '&comment_text=' + encodeURIComponent(commentField.value);
-    // putScript += '&who=' + encodeURIComponent(whoField.value);
-    // putScript += '&slide=' + encodeURIComponent(currentSlide.id);
-
-
-    // try {
-    //     const response = await fetch(putScript);
-    //     userAlert(await response.text());
-    //     initComments();
-    // }
-    // catch (e) {
-    //     console.log(e);
-    //     userAlert('Failed to add comment');
-    // }
 }
 
-
-document.querySelector('#add-comment-button').addEventListener('click', addComment);
+const addCommentButton = document.querySelector('#add-comment-button');
+addCommentButton.addEventListener('click', addComment);

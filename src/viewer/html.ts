@@ -1,29 +1,17 @@
 export {
-    audioPlaying, initPanels, markDisabled, markSeen, openPanelTree,
-    openPanelTreeRec,
-    removeLoading, soundIcon, timelineHTML, timelineSeen, updatePageNumber, updateTimelineDisplay, userAlert, userDefinedKeys
+    initPanels, markDisabled, markSeen, openPanelTree,
+    openPanelTreeRec, progressCache,
+    removeLoading, timelineHTML, timelineSeen, updateTimeLineForCurrent, userAlert, updateTimeCounter, timelineRecording
 };
 
-
-
-
-    import {
-        manifest,
-        nextButton,
-        playButton,
-        prevButton
-    } from './viewer';
-
 import {
-    SoundState,
-    endOfSound,
-    gotoAudio,
-    playbackRateChange,
-    soundState,
-    sounds,
-    stepAudio,
-    totalSoundDuration
-} from './sound';
+    manifest,
+    nextButton,
+    playButton,
+    prevButton
+} from './viewer';
+
+
 
 import {
     initSearch
@@ -34,11 +22,13 @@ import {
 } from "gsap";
 
 
-import { exportPdf } from './client-print';
+import { exportPdf, initPdf } from './client-print';
 import { initComments } from './comments';
 import { currentTool, toggleSketchpad } from './sketchpad';
-import { OverlayStep, Step, ZoomStep, allSteps, currentStep, gotoEvent, gotoStep, timeline, zoomsIn } from './timeline';
-import { SlideEvent, ZoomEvent } from './types';
+import { StateMap, afterEventState, currentState, gotoIndex, gotoState, moveHead, pageNumber, slideStartState, timeline } from './timeline';
+import { PresentationNode, Slide, State } from './types';
+import { canPlaySound, loadSound, soundState } from './sound';
+import { formatTime, initPresenterTools } from './presenter-tools';
 
 
 
@@ -47,94 +37,119 @@ import { SlideEvent, ZoomEvent } from './types';
 
 
 //these dictionaries store, for each slide event, the corresponding div and subtreeDiv in the tree panel. The div is the name of the event, while the subtreeDiv is defined only for child events, and it is the subtree.
-const divCache: Map<SlideEvent, HTMLDivElement> = new Map();
-const subtreeDivCache: Map<SlideEvent, HTMLDivElement> = new Map();
+const treeViewCache: StateMap<HTMLDivElement> = new StateMap();
+const subtreeDivCache: Map<Slide, HTMLDivElement> = new Map();
 //this is a link to the progress item in the progress bar at the bottom
-const progressCache: Map<Step, HTMLDivElement> = new Map();
+let progressCache: HTMLDivElement[];;
 
-//this dictionary tells you if the div, for a child event, is open (the tree is unfolded
-const divOpen: Map<SlideEvent, boolean> = new Map();
 
 
 
 //create the tree list of the slides and event that is in the unfolding side panel on the left
 function createTreeHTML(): void {
 
-    function createTreeHTMLRec(event: SlideEvent) {
-
-        function eventClicked(e: MouseEvent) //what happens when an event is clicked in the control panel
-        {
-            if ((e.target as Element).nodeName == 'I') {
-                //the icon was clicked
-                if (event.type == 'child') // for child events, we fold/unfold the list of child events
-                {
-                    const open = !divOpen.get(event);
-                    divOpen.set(event, open);
-                    openPanelTree(event, open);
-                }
-            } else {
-                //the name of the event was clicked
-                gotoEvent(event);
-            }
-        }
-        divOpen.set(event, false);
-        if (event.parent == undefined) {
-            subtreeDivCache.set(event, document.getElementById('slide-stack') as HTMLDivElement);
-        } else if (event.merged && event.type != 'child') {
-            //merged events get no items in the tree view
-        } else {
-            const parentDiv = subtreeDivCache.get(event.parent);
-            const div = document.createElement("div");
-            divCache.set(event, div);
-            div.classList.add("tree-view-item");
-            div.classList.add("tree-view-item-loading");
-
-            let icon;
+    function createTreeHTMLRec(node: Slide, parentDiv: HTMLDivElement) {
 
 
-            if (event.type == "show")
-                icon = "visibility";
-            if (event.type == "hide")
-                icon = "visibility_off";
-            if (event.type == "child") {
+
+        function createDiv(state: State): HTMLDivElement {
+            let icon: string;
+
+            let name: string
+            if (state.type == 'start') {
+                if (state.slide.parent == undefined)
+                    name = manifest.presentation;
+                else
+                    name = state.slide.name;
                 icon = "chevron_right";
             }
+            else {
+                name = state.event.name;
+                const event = state.event;
+                if (event.type == "show")
+                    icon = "visibility";
+                if (event.type == "hide")
+                    icon = "visibility_off";
+                if (event.type == "child") {
+                    icon = "keyboard_return";
+                }
+            }
 
-            div.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + event.name;
+            const div = document.createElement("div");
+            div.classList.add("tree-view-item");
+            div.classList.add("tree-view-item-loading");
+            div.innerHTML = "<i class=\"material-icons\">" + icon + "</i> " + name;
 
-            div.addEventListener('click', eventClicked);
-            parentDiv.appendChild(div);
+            div.addEventListener('click', (e) => {
+                {
+                    if ((state.type == 'start') && ((e.target as Element).nodeName == 'I')) {
+                        //the icon was clicked for a slide start event
+                        const open = !subtreeOpen(state.slide);
+                        openPanelTree(state.slide, open);
+
+                    } else {
+                        gotoState(state);
+                    }
+                }
+            });
+            return div;
+        }
 
 
-            if (event.type == 'child') {
-                const subdiv = document.createElement("div");
-                subdiv.classList.add("slide-stack");
-                subdiv.classList.add("slide-stack-hidden");
-                parentDiv.appendChild(subdiv);
-                subtreeDivCache.set(event, subdiv);
+        //this is an item in the tree view that contains the name of the slide
+        const startState = slideStartState(node);
+        const div = createDiv(startState);
+        treeViewCache.set(startState, div);
+        parentDiv.appendChild(div);
+
+        //the div in the tree view to store the children of this node
+        const subdiv = document.createElement("div");
+        subdiv.classList.add("slide-stack");
+        subdiv.classList.add("slide-stack-hidden");
+        parentDiv.appendChild(subdiv);
+        subtreeDivCache.set(node, subdiv);
+
+        for (const child of node.children) {
+            if (child.type == 'child')
+                createTreeHTMLRec(child, subdiv);
+
+            if (!child.merged) {
+                const after = afterEventState(child);
+                const childDiv = createDiv(after);
+                treeViewCache.set(after, childDiv);
+                subdiv.appendChild(childDiv);
             }
         }
-
-        //recursively call for all children
-        if (event.type == 'child') {
-            for (const child of event.children)
-                createTreeHTMLRec(child)
-        }
     }
-    createTreeHTMLRec(manifest.tree);
-
+    createTreeHTMLRec(manifest.tree, document.getElementById('slide-stack-container') as HTMLDivElement);
 }
+
+
+// creates the timeline at the bottom of the screen, where each rectangle corresponds to a state, and the width of the rectangle is proportiatial to the duration of the sound (and fixed if there is no sound)
 
 function timelineHTML(): void {
 
-    progressCache.clear();
 
+    //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
+    function timelineClicked(index: number, e: MouseEvent): void {
 
+        const duration = timeline.frames[index].soundDuration;
+        if (duration == undefined)
+            gotoIndex(index, 'animated', 0);
+        else {
+            const a: number = e.offsetX;
+            const b: number = progressCache[index].offsetWidth;
+            gotoIndex(index, 'animated', a * duration / b);
+        }
+    }
 
+    progressCache = [];
 
     const timelineDIV = document.getElementById('progress-line');
     timelineDIV.innerHTML = '';
-    for (const step of allSteps()) {
+
+    for (let i = 0; i < timeline.frames.length; i++) {
+        const event = timeline.frames[i];
         const big = document.createElement('div');
         const small = document.createElement('div');
         small.classList.add('progress-filler');
@@ -142,46 +157,56 @@ function timelineHTML(): void {
         big.appendChild(small);
         timelineDIV.appendChild(big);
         big.addEventListener('click', function (e) {
-            timelineClicked(step, e);
+            timelineClicked(i, e);
         })
 
-        const sound = sounds.get(step);
-
-        if (sound != undefined) {
-            big.classList.remove('nosound');
-            big.style.flexGrow = sound.duration.toString();
+        if (event.soundDuration != undefined) {
+            big.classList.add('sound');
+            big.style.flexGrow = event.soundDuration.toString();
         }
         else {
             big.classList.add('nosound');
-            big.style.flexGrow = '10';
+            if (i == 0)
+                big.style.flexGrow = '0';
+            else
+                big.style.flexGrow = '2';
         }
 
-        progressCache.set(step, big);
-        timelineSeen(step, timeline.past.includes(step));
+        progressCache[i] = big;
+
+        const index = timeline.frames.findIndex((s) => s == event);
+        timelineSeen(i);
     }
 }
 
 
-//the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
-function timelineClicked(step: Step, e: MouseEvent): void {
-
-
-    const a: number = e.offsetX;
-    const b: number = progressCache.get(step).offsetWidth;
-    if (step == currentStep()) {
-        gotoAudio(a / b);
-    } else {
-        gotoStep(step)
+function timelineRecording(frame: number, status: 'recording' | 'not recording'): void {
+    const div = progressCache[frame];
+    if (status == 'not recording')
+        div.classList.remove('recording');
+    else
+    {
+        div.classList.remove('nosound');
+        div.classList.add('recording');
     }
 }
 
 
-function timelineSeen(step: Step, seen: boolean): void {
-    const div = progressCache.get(step);
+
+//colours the timeline rectangle corresponding to an event, depending on whether it has been seen or not
+function timelineSeen(index: number): void {
+    const div = progressCache[index];
     if (div != undefined)
-        if (seen) {
+        if (index <= timeline.current) {
             const firstChild = div.firstChild as HTMLElement;
-            firstChild.style.width = "100%";
+            if (index == timeline.current) {
+                if (timeline.frames[index].soundDuration != undefined)
+                    firstChild.style.width = "0%";
+                else
+                    firstChild.style.width = "100%";
+            }
+            else
+                firstChild.style.width = "100%";
             div.classList.add('seen');
         }
         else {
@@ -192,36 +217,21 @@ function timelineSeen(step: Step, seen: boolean): void {
 }
 
 //update the html (both left panel and progress bar) after a step has been processed in either direction
-function markSeen(step: Step, direction: -1 | 1): void {
-    let div: HTMLElement;
+function markSeen(state: State, direction: 'forward' | 'backward'): void {
+    const treeViewDIV = treeViewCache.get(state);
 
-    if (step instanceof OverlayStep)
-        div = divCache.get(step.overlays[0]);
-    if (step instanceof ZoomStep && zoomsIn(step))
-        div = divCache.get(step.target)
-
-    const timelineDIV = progressCache.get(step);
-    if (direction == 1) {
-
-        if (div != undefined) //final events have no div
-            div.classList.add('tree-view-item-seen');
-
-        timelineSeen(step, true);
-
-
+    if (direction == 'forward') {
+        if (treeViewDIV != undefined)
+            treeViewDIV.classList.add('tree-view-item-seen');
     } else {
-
-        if (div != undefined) //final events have no div
-            div.classList.remove('tree-view-item-seen');
-
-        if (timelineDIV != undefined)
-            timelineSeen(step, false);
+        if (treeViewDIV != undefined)
+            treeViewDIV.classList.remove('tree-view-item-seen');
     }
 }
 
 //mark an event as disabled in the tree view
-function markDisabled(node: SlideEvent): void {
-    const div = divCache.get(node);
+function markDisabled(state: State): void {
+    const div = treeViewCache.get(state);
     if (div != undefined) {
         div.classList.add("disabled-event");
         div.classList.remove("tree-view-item-loading");
@@ -229,131 +239,53 @@ function markDisabled(node: SlideEvent): void {
 }
 
 
+// tells whether a subtree is open or closed in the left panel
+function subtreeOpen(node: Slide): boolean {
+    const div = subtreeDivCache.get(node);
+    if (div != undefined) {
+        return !div.classList.contains('slide-stack-hidden');
+    }
+}
+
 //opens or closes the tree view corresponding to a child event
-function openPanelTree(event: SlideEvent, open: boolean): void {
-    const icon = divCache.get(event).childNodes[0] as HTMLElement;
+function openPanelTree(node: Slide, open: boolean): void {
+    const icon = treeViewCache.get(slideStartState(node)).childNodes[0] as HTMLElement;
     if (open) {
-        subtreeDivCache.get(event).classList.remove('slide-stack-hidden');
+        subtreeDivCache.get(node).classList.remove('slide-stack-hidden');
         icon.innerHTML = 'expand_more';
     } else {
-        subtreeDivCache.get(event).classList.add('slide-stack-hidden');
+        subtreeDivCache.get(node).classList.add('slide-stack-hidden');
         icon.innerHTML = 'chevron_right';
     }
 }
 
 //unfolds the tree in the left panel for this event and its parents
-function openPanelTreeRec(event: SlideEvent): void {
-    if (event.parent == undefined)
-        return;
-    if (event.type == 'child') {
-        openPanelTree(event, true);
+function openPanelTreeRec(slide: Slide): void {
+    openPanelTree(slide, true);
+    if (slide.parent != undefined) {
+        openPanelTreeRec(slide.parent);
     }
-    openPanelTreeRec(event.parent);
 }
 
 
 //remove the 'loading' class from the corresponding elements in the slide panel
-function removeLoading(node: ZoomEvent): void {
-    if (divCache.get(node) != undefined) {
-        divCache.get(node).classList.remove("tree-view-item-loading");
-    }
-    for (const child of node.children)
-        if (child.type == 'show' || child.type == 'hide') {
-            if (divCache.get(child) != undefined)
-                divCache.get(child).classList.remove("tree-view-item-loading");
-        }
-}
+function removeLoading(node: Slide): void {
 
 
-//inputs number of seconds and formats it in mm:ss format
-function formatTime(time: number): string {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time) % 60;
-    if (seconds < 10)
-        return minutes + ':0' + seconds
-    else
-        return minutes + ':' + seconds;
-}
+    const nodeState = slideStartState(node);
 
-//this function is called periodically when the audio is playing, and it updates the position of the slider
-function audioPlaying(audio: HTMLAudioElement): void {
-
-    try {
-        const curAudio = stepAudio(currentStep());
-        if (audio == curAudio) {
-            const currentTime = audio.currentTime;
-            const duration = audio.duration;
-            const curTime = currentTime + sounds.get(currentStep()).previousDuration;
-            document.getElementById('time-elapsed').innerHTML = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
-            (progressCache.get(currentStep()).firstChild as HTMLElement).style.width = (100 * currentTime / duration) + '%'
-        }
-    }
-    catch (e) {
-        console.log('tried to play illegally')
+    if (treeViewCache.get(nodeState) != undefined) {
+        treeViewCache.get(nodeState).classList.remove("tree-view-item-loading");
     }
 
-}
+    for (const child of node.children) {
 
-// the timeline uses two kinds of display, depending on the whether the sound is playing, or not
-function updateTimelineDisplay(): void {
-    if (soundState == SoundState.Play) {
-        document.getElementById('progress-panel').classList.add('playing');
-    } else {
-        document.getElementById('progress-panel').classList.remove('playing');
+        const childState = afterEventState(child);
+        if (treeViewCache.get(childState) != undefined)
+            treeViewCache.get(childState).classList.remove("tree-view-item-loading");
     }
 }
 
-//choose the right button for playing sound
-function soundIcon(): void {
-    const playButton = document.getElementById("play-button");
-
-    if (endOfSound())
-        playButton.style.opacity = '0';
-    else
-        playButton.style.opacity = '1';
-
-    if (soundState != SoundState.None) {
-        //we need to make space for the sound buttons, in case this is the first sound that is added
-        document.body.classList.add('has-sound');
-    }
-
-    switch (soundState) {
-        case SoundState.Play:
-            playButton.style.color = 'black'
-            playButton.innerHTML = "pause"
-            break;
-        case SoundState.None:
-            {
-                playButton.style.color = 'black'
-                const sound = sounds.get(currentStep());
-                if (sound == undefined)
-                    playButton.innerHTML = "play_disabled";
-                else {
-                    if (sound.audio != undefined)
-                        playButton.innerHTML = "play_arrow"
-                    else
-                        playButton.innerHTML = 'cached';
-                }
-
-                for (const step of allSteps()) {
-                    progressCache.get(step).classList.remove('recording');
-                }
-                break;
-            }
-        case SoundState.Recording:
-            playButton.style.color = 'black'
-            playButton.innerHTML = "mic"
-            progressCache.get(currentStep()).classList.add('recording');
-            break;
-        case SoundState.Live:
-            playButton.style.color = 'red'
-            playButton.innerHTML = "mic_none"
-
-            break;
-    }
-
-    updateTimelineDisplay();
-}
 
 
 //toggles the side panel on the left with the list of slides
@@ -382,8 +314,7 @@ function togglePanel(): void {
         showPanel(true);
 }
 
-let mostRecentlyPressed = undefined as string;
-const userDefinedKeys: { [key: string]: () => void } = {};
+
 
 //switch a tab in the left panel. 
 function switchLeftPanelTab(tab: string) {
@@ -399,30 +330,12 @@ function switchLeftPanelTab(tab: string) {
 
 }
 
-//display the pdf links if the files exist
-async function pdfLinks() {
-    if (manifest.pdfFile != undefined) {
-        const theLink = document.getElementById('link-to-pdf');
-        theLink.classList.remove('hidden');
-    }
-
-}
 
 //add event listeners for the left panel. 
 function initLeftPanel(): void {
 
-    pdfLinks();
-    function listUserDefinedKeys() {
-        let list = '';
-        document.getElementById('list-of-key-bindings').innerHTML = '';
-        for (let key in userDefinedKeys) {
-            if (userDefinedKeys[key] == prevButton)
-                list = list + key + ': previous slide <br>';
-            if (userDefinedKeys[key] == nextButton)
-                list = list + key + ': next slide <br>';
-        }
-        document.getElementById('list-of-key-bindings').innerHTML = list;
-    }
+    initPdf();
+    initPresenterTools();
 
     //switch tabs in the left panel
     document.getElementById('tab-heads').addEventListener('click', event => {
@@ -437,53 +350,13 @@ function initLeftPanel(): void {
         toggleSketchpad();
     });
 
-    //scans most recently pressed key to display in the non-standard next/previous key selection from presenter tab
-    document.addEventListener("keydown", setMostRecentlyPressed);
 
 
 
-    for (const button of document.querySelectorAll('span')) {
-
-        switch (button.id) {
-            case 'new-prev-key':
-                button.addEventListener('click', event => {
-                    if (mostRecentlyPressed != undefined)
-                        userDefinedKeys[mostRecentlyPressed] = prevButton;
-                    listUserDefinedKeys();
-                })
-                break;
-            case 'new-next-key':
-                button.addEventListener('click', event => {
-                    const target = event.target as HTMLElement;
-                    if (mostRecentlyPressed != undefined)
-                        userDefinedKeys[mostRecentlyPressed] = nextButton;
-                    listUserDefinedKeys();
-                })
-                break;
-            case 'pdf-print-button':
-                button.addEventListener('click', event => {
-                    exportPdf()
-                })
-                break;
-            case 'link-to-pdf':
-                button.addEventListener('click', event => {
-                    window.open(manifest.pdfFile, 'open');
-                })
-                break;
-        }
-    }
 
 
 }
 
-function setMostRecentlyPressed(event: KeyboardEvent): void {
-    for (const button of document.querySelectorAll('.key-binding'))
-        button.classList.remove('disabled');
-
-    mostRecentlyPressed = event.key
-    for (const span of document.querySelectorAll('.most-recently-pressed-key'))
-        span.innerHTML = mostRecentlyPressed;
-}
 
 //initialize the left panel and the timeline, adding event listeners to the buttons. The actual content of these will be added later
 function initPanels(): void {
@@ -493,24 +366,18 @@ function initPanels(): void {
     document.getElementById('prev-event').addEventListener('click', prevButton);
     document.getElementById('next-event').addEventListener('click', nextButton);
     document.getElementById('play-button').addEventListener('click', playButton);
-    document.getElementById('sound-speed').addEventListener('click',
-        playbackRateChange);
-
 
     createTreeHTML();
-    //creates the timeline html at the bottom of the screen
     timelineHTML();
 
     initSearch();
     initComments();
 
     //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.soundDict).length > 0) {
+    if (Object.keys(manifest.defaultTimeLine).length > 0) {
         document.body.classList.add('has-sound');
     }
-    soundIcon();
     initLeftPanel();
-
 }
 
 
@@ -533,10 +400,6 @@ function shortDisplay(panel: HTMLElement): void {
     });
 }
 
-// //displays the help
-// function helpPanel() : void {
-//     shortDisplay(document.getElementById("help-panel"));
-// }
 
 //displays an alert for the user at the bottom of the screen
 function userAlert(text: string): void {
@@ -544,37 +407,65 @@ function userAlert(text: string): void {
     shortDisplay(document.getElementById("text-alert-box"));
 }
 
-//update the page number in the corner, and put the step number in the url
-function updatePageNumber(): void {
 
-    function updateURL() {
-        const searchParams = (new URL(window.location.href)).searchParams;
-        let paramString = '?';
-        for (const param of searchParams.keys())
-            if (param != 'step')
-                paramString += `${param}=${searchParams.get(param)}&`
 
-        if (searchParams.keys())
-            history.pushState({}, null, paramString + 'step=' + timeline.past.length.toString());
+async function updateTimeCounter() {
+
+    const audio = await loadSound(timeline.current);
+    if (audio != undefined) {
+        const currentTime = audio.currentTime;
+        const duration = audio.duration;
+        const curTime = currentTime + timeline.frames[timeline.current].previousDuration;
+        const lastStep = timeline.frames[timeline.frames.length - 1];
+        let totalSoundDuration = lastStep.previousDuration;
+        if (lastStep.soundDuration != undefined)
+            totalSoundDuration += lastStep.soundDuration;
+
+        const timeString = formatTime(curTime) + '/' + formatTime(totalSoundDuration);
+        document.getElementById('time-elapsed').innerHTML = timeString
+        const div = progressCache[timeline.current].firstChild as HTMLDivElement;
+        div.style.width = (100 * currentTime / duration) + '%'
+    }
+}
+
+function updatePageNumber() {
+    document.getElementById("page-count-enumerator").innerHTML = pageNumber(currentState()).toString();
+    //the last page number is that of the last state 
+    document.getElementById("page-count-denominator").innerHTML = " / " +
+        pageNumber(timeline.frames[timeline.frames.length - 1].state).toString();
+
+}
+
+//  number in the corner, and put the step number in the url
+function updateTimeLineForCurrent(): void {
+    const url = new URL(window.location.href);
+    const searchParams = url.searchParams;
+
+    // Set the 'step' parameter
+    searchParams.set('step', timeline.current.toString());
+    url.search = searchParams.toString();
+    window.history.replaceState({}, '', url.toString());
+
+
+
+    if (canPlaySound(timeline.current)) {
+        document.getElementById('progress-panel').classList.add('playing');
+        updateTimeCounter();
+    }
+    else {
+        updatePageNumber();
+        document.getElementById('progress-panel').classList.remove('playing');
 
     }
 
-    updateURL();
-
-    document.getElementById("page-count-enumerator").innerHTML = currentStep().pageNumber.toString();
-
-    document.getElementById("page-count-denominator").innerHTML = " / " +
-        timeline.lastStep.pageNumber.toString();
-
-
     // the "previous" arrow should be invisible at the first event of the first slide
     // analogously for the "next" arrow
-    if (timeline.past.length == 0)
+    if (timeline.current == 0)
         document.getElementById("prev-event").style.visibility = "hidden";
     else
         document.getElementById("prev-event").style.visibility = "visible";
 
-    if (timeline.future.length == 0)
+    if (timeline.current == timeline.frames.length - 1)
         document.getElementById("next-event").style.visibility = "hidden";
     else
         document.getElementById("next-event").style.visibility = "visible";

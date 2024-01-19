@@ -1,5 +1,5 @@
 import {
-  SlideEvent
+  PresentationNode
 } from "../viewer/types"
 
 import {} from '@figma/plugin-typings'
@@ -18,7 +18,7 @@ export {
 type Database = {
   name: string,
   id: string,
-  events: SlideEvent[]
+  events: PresentationNode[]
 }
 
 

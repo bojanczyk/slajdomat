@@ -37,8 +37,8 @@ import {
 } from '../viewer/transform'
 import {
     OverlayEvent,
-    SlideEvent,
-    ZoomEvent
+    PresentationNode,
+    Slide
 } from '../viewer/types'
 import { stat } from 'original-fs'
 
@@ -213,51 +213,12 @@ function newEventId(): string {
 
 
 
-function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: Rect) : void {
-    const targetSlide: FrameNode = findSlide(targetSlideId);
-
-    const redColor = {
-        type: 'SOLID',
-        color: {
-            r: 1,
-            g: 0,
-            b: 0
-        }
-    } as Paint;
-
-    // red semi-transparent rectangle, which will be later filled with the thumbnail
-    const rectNode = figma.createRectangle();
-    rectNode.resize(where.width, where.width);
-    rectNode.x = where.x;
-    rectNode.y = where.y;
-    rectNode.fills = [redColor];
-    rectNode.opacity = 0.5;
-    rectNode.setPluginData('thumbnail', 'yes');
-    state.currentSlide.appendChild(rectNode);
-
-    // a red frame, which will stay even when the thumbnail appears
-    const frameNode = figma.createRectangle();
-    frameNode.resize(where.width, where.width);
-    frameNode.x = where.x;
-    frameNode.y = where.y;
-    frameNode.fills = [];
-    frameNode.strokes = [redColor];
-    state.currentSlide.appendChild(frameNode);
-
-
-
-    // Create a group with the nodes
-    const groupNode = figma.group([rectNode,frameNode], state.currentSlide);
-    groupNode.setPluginData("childLink", targetSlideId);
-    groupNode.expanded = false;
-}
-
 
 //Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
 function createChildEvent(id: string): void {
 
     const slide: FrameNode = findSlide(id);
-    const newEvent: ZoomEvent =
+    const newEvent: Slide =
     {
         type: "child",
         id: id,
@@ -269,7 +230,7 @@ function createChildEvent(id: string): void {
     }
     state.database.events.push(newEvent);
 
-    const newplace = freshRect(slide.width/2, slide.height/2, 100,  100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
+    const newplace = freshRect(slide.width / 2, slide.height / 2, 100, 100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
     createThumbnail(state.currentSlide, id, newplace);
 }
 
@@ -655,7 +616,7 @@ function findSlide(id: string): FrameNode {
 
 
 //Gives the object in the slide that corresponds to the event. For a show/hide event this is the node that is shown/hidden. For a child event, this is the link to the child.
-function findEventObject(event: SlideEvent, slide: FrameNode): SceneNode {
+function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
     if (event.type == 'show' || event.type == 'hide')
         for (const child of slide.children)
             if (event.id == overlayId(child))
@@ -711,6 +672,62 @@ function parentSlide(slide: FrameNode): FrameNode {
 }
 
 
+function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: Rect): void {
+    const targetSlide: FrameNode = findSlide(targetSlideId);
+
+    const redColor = {
+        type: 'SOLID',
+        color: {
+            r: 1,
+            g: 0,
+            b: 0
+        }
+    } as Paint;
+
+    // red semi-transparent rectangle, which will be later filled with the thumbnail
+    const rectNode = figma.createRectangle();
+    rectNode.resize(where.width, where.width);
+    rectNode.x = where.x;
+    rectNode.y = where.y;
+    updateThumbnail(rectNode, targetSlide);
+    rectNode.opacity = 0.5;
+    rectNode.setPluginData('thumbnail', 'yes');
+    state.currentSlide.appendChild(rectNode);
+
+    // a red frame, which will stay even when the thumbnail appears
+    const frameNode = figma.createRectangle();
+    frameNode.resize(where.width, where.width);
+    frameNode.x = where.x;
+    frameNode.y = where.y;
+    frameNode.fills = [];
+    frameNode.strokes = [redColor];
+    state.currentSlide.appendChild(frameNode);
+
+
+
+    // Create a group with the nodes
+    const groupNode = figma.group([rectNode, frameNode], state.currentSlide);
+    groupNode.setPluginData("childLink", targetSlideId);
+    groupNode.expanded = false;
+
+    figma.currentPage.selection = [groupNode];
+}
+
+async function updateThumbnail(rect: RectangleNode, slide: FrameNode) {
+    const image = figma.createImage(await slide.exportAsync({
+        format: 'PNG'
+    }));
+    rect.fills = [
+        {
+            type: 'IMAGE',
+            imageHash: image.hash,
+            scaleMode: 'FILL'
+        }
+    ]
+}
+
+
+
 //update the thumbnails for slide children
 async function updateThumbnails() {
     const nodes = state.currentSlide.findAll((node: SceneNode) => node.getPluginData("childLink") != '');
@@ -720,7 +737,7 @@ async function updateThumbnails() {
 
         //if the child link was created in an old version of Slajdomat, then it is simply a rectangle. In this case it needs to be upgraded to a new version, where it is a group containing two rectangles.
         if (child.type == 'RECTANGLE') {
-            const where = { width : child.width, height : child.height, x : child.x, y : child.y};
+            const where = { width: child.width, height: child.height, x: child.x, y: child.y };
             child.remove();
             createThumbnail(state.currentSlide, slideId(slide), where);
         }
@@ -729,293 +746,282 @@ async function updateThumbnails() {
 
         let rect: RectangleNode;
         //finds the rectangle where the thumbnail should go; this is indicated by plugin data
-        if (child.type == 'GROUP') { 
-            for (const grandchild of child.children) 
-                if (grandchild.getPluginData('thumbnail')) 
-                {
+        if (child.type == 'GROUP') {
+            for (const grandchild of child.children)
+                if (grandchild.getPluginData('thumbnail')) {
                     rect = grandchild as RectangleNode;
                 }
         }
 
         //if such a rectangle has been found, then its fill should be replaced with the thumbnail
         if (rect != null) {
-            const image = figma.createImage(await slide.exportAsync({
-                format: 'PNG'
-            }));
-            rect.fills = [
-                {
-                    type: 'IMAGE',
-                    imageHash: image.hash,
-                    scaleMode: 'FILL'
-                }
-            ]
+            updateThumbnail(rect, slide);
         }
-
     }
 }
 
 
 
-//set the current slide of the plugin
-function setCurrentSlide(slide: FrameNode): void {
+    //set the current slide of the plugin
+    function setCurrentSlide(slide: FrameNode): void {
 
-    if (slide != null) {
-        loadCurrentData(slide);
-        const isRoot = getRoot() == state.currentSlide;
-        const msg: PluginCodeToUI = {
-            type: 'slideChange',
-            docName: figma.root.name,
-            slide: state.currentSlide.name,
-            isRoot: isRoot,
-            slideCount: allSlides().length,
-        }
-
-        sendToUI(msg);
-        sendEventList();
-        updateThumbnails();
-
-    } else {
-        sendToUI({
-            type: 'noSlide'
-        })
-    }
-}
-
-//go to a slide and show it on the screen
-function gotoSlide(slide: FrameNode): void {
-    figma.viewport.scrollAndZoomIntoView([slide]);
-    setCurrentSlide(slide);
-}
-
-
-//returns the slide with the currently selected object
-function slideWithSelection(): FrameNode {
-    const sel = figma.currentPage.selection;
-    if (sel.length > 0) {
-        let node = sel[0];
-        while (!isSlideNode(node as FrameNode) && node != null)
-            node = node.parent as SceneNode;
-        return node as FrameNode;
-    } else
-        return null;
-}
-
-//finds the root from previous sessions
-function getRoot(): FrameNode {
-    const rootSlide = findSlide(figma.root.getPluginData('rootSlide'));
-    if (rootSlide == null) {
-        setRoot();
-    }
-    return rootSlide;
-
-}
-
-//change the root to the current slide
-function setRoot(): void {
-    figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
-}
-
-
-
-//event handler for when the document has changed. We use this to re-proportion the red rectangles for the child link
-function docChange(changes: DocumentChangeEvent): void {
-    for (const x of changes.documentChanges) {
-        if ((x.type == 'PROPERTY_CHANGE')) {
-            const change = x.node as SceneNode;
-            if ((!change.removed) && (change.getPluginData('childLink') != '')) {
-                const rect = change as RectangleNode;
-                rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width);
+        if (slide != null) {
+            loadCurrentData(slide);
+            const isRoot = getRoot() == state.currentSlide;
+            const msg: PluginCodeToUI = {
+                type: 'slideChange',
+                docName: figma.root.name,
+                slide: state.currentSlide.name,
+                isRoot: isRoot,
+                slideCount: allSlides().length,
             }
 
+            sendToUI(msg);
+            sendEventList();
+            updateThumbnails();
 
+        } else {
+            sendToUI({
+                type: 'noSlide'
+            })
         }
     }
 
-}
-
-//event handler for when the selection has changed
-function selChange(): void {
-
-    //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
-
-    const slide = slideWithSelection();
-
-
-    //we change the current slide if it satisfies certain conditions: or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
-    if
-        //it has been removed; or
-        ((state.currentSlide != null && state.currentSlide.removed) ||
-        //the selection has moved to some other non-null slide; or 
-        (slide != state.currentSlide && slide != null) ||
-        //the name of the slide has changed
-        (state.currentSlide != null && state.currentSlide == slide && state.currentSlide.name != slide.name))
+    //go to a slide and show it on the screen
+    function gotoSlide(slide: FrameNode): void {
+        figma.viewport.scrollAndZoomIntoView([slide]);
         setCurrentSlide(slide);
-    else if (state.currentSlide != undefined && state.database.name != state.currentSlide.name) {
-        //if the name of the current slide was changed, then we also send this to the ui
-        setCurrentSlide(state.currentSlide);
-    }
-    else if (state.currentSlide != null)
-        sendEventList();
-
-    const sel = figma.currentPage.selection;
-
-
-
-
-    const msg: PluginCodeToUI = {
-        type: 'selChange',
-        selected: false, // is there at least one object that can be used for show/hide
-        latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
-        canInsert: false, // is the caret in a text field where characters can be inserted
-        currentFont: null as FontName
-    };
-
-    for (const item of figma.currentPage.selection) {
-        if (isShowHideNode(item))
-            msg.selected = true;
-    }
-
-    // this part of the code is for the math features of latexit and inserting characters
-
-    if (sel.length == 1) {
-        if (sel[0].type == "TEXT") //the selected object can be latexed
-            msg.latexState = LatexState.Latex;
-        if (matematykData(sel[0]) != null) //the selected object can be de-latexed
-            msg.latexState = LatexState.Delatex
-    }
-    if (figma.currentPage.selectedTextRange != null) {
-        const r = figma.currentPage.selectedTextRange.end;
-        if (r > 0) {
-            msg.currentFont = (sel[0] as TextNode).getRangeFontName(r - 1, r) as FontName
-        }
-        msg.canInsert = true;
     }
 
 
-    //send the information about the updated selection
-    sendToUI(msg)
-}
+    //returns the slide with the currently selected object
+    function slideWithSelection(): FrameNode {
+        const sel = figma.currentPage.selection;
+        if (sel.length > 0) {
+            let node = sel[0];
+            while (!isSlideNode(node as FrameNode) && node != null)
+                node = node.parent as SceneNode;
+            return node as FrameNode;
+        } else
+            return null;
+    }
 
-
-//handle messages that come from the ui
-function onMessage(msg: PluginUIToCode) {
-
-    switch (msg.type) {
-
-        case 'notify':
-            //write a user notification
-            figma.notify(msg.text);
-            break
-
-        case 'createEvent':
-            //create a new event for the current slide
-            //this covers show/hide/child events
-            createEvent(msg);
-            break;
-
-        case 'settings':
-            //get settings from the interface
-            getLatexSettings(msg.pluginSettings);
-            break;
-
-        case 'removeEvent':
-            //remove an event
-            removeEvent(msg.index);
-            break;
-
-        case 'mergeEvent':
-            //merge an event with the previous one
-            mergeEvent(msg.index);
-            break;
-
-        case 'moveEvent':
-            //swap the order of two events
-            reorderEvents(msg.index, msg.target);
-            deleteHoverFrames();
-            break;
-
-        case 'makeFirst':
-            //make a first slide
-            setCurrentSlide(createNewSlide(msg.width, msg.height, 'new slide'));
-            figma.viewport.scrollAndZoomIntoView([state.currentSlide]);
-            break;
-
-        case 'saveFile':
-            //export the files to svg files
-            exportSlides();
-            break;
-
-        case 'changeRoot':
+    //finds the root from previous sessions
+    function getRoot(): FrameNode {
+        const rootSlide = findSlide(figma.root.getPluginData('rootSlide'));
+        if (rootSlide == null) {
             setRoot();
-            break;
+        }
+        return rootSlide;
 
-        case 'mouseEnterPlugin':
-            //I'm not sure if this is necessary, but just in case I refresh the event list when the mouse enters the plugin.
-            if (state.currentSlide != null)
-                sendEventList();
-            break;
+    }
 
-        case 'hoverEvent':
-            //highlight an event when the mouse hovers over it. For show/hide event we change the selection to the concerned object, for child events we do this for the link.
-            hoverEvent(msg.index);
-            break;
-
-        case 'requestDropDown':
-            //request a list of all slides for the current slide
-            sendDropDownList();
-            break;
-
-        case 'mouseLeave':
-            break;
-
-        case 'clickEvent':
-            //if an event is clicked, then the selection stays permanent
-            clickEvent(msg.index)
-            break;
-
-        case 'gotoParent':
-            //the parent button is clicked
-            gotoSlide(parentSlide(state.currentSlide));
-            break;
-
-        case 'addWord':
-            //functions for the matematyk plugin ******
-            matematykWord(msg.text);
-            break;
-
-        case 'latexit':
-            //the user requests turning text into latex
-            latexitOne();
-            break;
-
-        case 'latexitTwo':
-            //the second stage of latexit, is necessary because only the ui can communicate with the web
-            latexitTwo(msg.text);
-            break;
-
-
-        default:
-            throw "uncovered message type sent to code: "
-
+    //change the root to the current slide
+    function setRoot(): void {
+        figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
     }
 
 
 
+    //event handler for when the document has changed. We use this to re-proportion the red rectangles for the child link
+    function docChange(changes: DocumentChangeEvent): void {
+        for (const x of changes.documentChanges) {
+            if ((x.type == 'PROPERTY_CHANGE')) {
+                const change = x.node as SceneNode;
+                if ((!change.removed) && (change.getPluginData('childLink') != '')) {
+                    const rect = change as RectangleNode;
+                    rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width);
+                }
+
+
+            }
+        }
+
+    }
+
+    //event handler for when the selection has changed
+    function selChange(): void {
+
+        //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
+
+        const slide = slideWithSelection();
+
+
+        //we change the current slide if it satisfies certain conditions: or the selection has moved to some other non-null slide (the selection is in a null slide if it is outside all slides) 
+        if
+            //it has been removed; or
+            ((state.currentSlide != null && state.currentSlide.removed) ||
+            //the selection has moved to some other non-null slide; or 
+            (slide != state.currentSlide && slide != null) ||
+            //the name of the slide has changed
+            (state.currentSlide != null && state.currentSlide == slide && state.currentSlide.name != slide.name))
+            setCurrentSlide(slide);
+        else if (state.currentSlide != undefined && state.database.name != state.currentSlide.name) {
+            //if the name of the current slide was changed, then we also send this to the ui
+            setCurrentSlide(state.currentSlide);
+        }
+        else if (state.currentSlide != null)
+            sendEventList();
+
+        const sel = figma.currentPage.selection;
 
 
 
-}
 
-figma.on('documentchange', docChange);
-figma.on("selectionchange", selChange);
-figma.on('close', closePlugin);
-figma.showUI(__html__, {
-    width: 230,
-    height: 500
-});
-figma.ui.onmessage = onMessage;
+        const msg: PluginCodeToUI = {
+            type: 'selChange',
+            selected: false, // is there at least one object that can be used for show/hide
+            latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
+            canInsert: false, // is the caret in a text field where characters can be inserted
+            currentFont: null as FontName
+        };
+
+        for (const item of figma.currentPage.selection) {
+            if (isShowHideNode(item))
+                msg.selected = true;
+        }
+
+        // this part of the code is for the math features of latexit and inserting characters
+
+        if (sel.length == 1) {
+            if (sel[0].type == "TEXT") //the selected object can be latexed
+                msg.latexState = LatexState.Latex;
+            if (matematykData(sel[0]) != null) //the selected object can be de-latexed
+                msg.latexState = LatexState.Delatex
+        }
+        if (figma.currentPage.selectedTextRange != null) {
+            const r = figma.currentPage.selectedTextRange.end;
+            if (r > 0) {
+                msg.currentFont = (sel[0] as TextNode).getRangeFontName(r - 1, r) as FontName
+            }
+            msg.canInsert = true;
+        }
 
 
-setCurrentSlide(slideWithSelection());
-initPlugin();
+        //send the information about the updated selection
+        sendToUI(msg)
+    }
+
+
+    //handle messages that come from the ui
+    function onMessage(msg: PluginUIToCode) {
+
+        switch (msg.type) {
+
+            case 'notify':
+                //write a user notification
+                figma.notify(msg.text);
+                break
+
+            case 'createEvent':
+                //create a new event for the current slide
+                //this covers show/hide/child events
+                createEvent(msg);
+                break;
+
+            case 'settings':
+                //get settings from the interface
+                getLatexSettings(msg.pluginSettings);
+                break;
+
+            case 'removeEvent':
+                //remove an event
+                removeEvent(msg.index);
+                break;
+
+            case 'mergeEvent':
+                //merge an event with the previous one
+                mergeEvent(msg.index);
+                break;
+
+            case 'moveEvent':
+                //swap the order of two events
+                reorderEvents(msg.index, msg.target);
+                deleteHoverFrames();
+                break;
+
+            case 'makeFirst':
+                //make a first slide
+                setCurrentSlide(createNewSlide(msg.width, msg.height, 'new slide'));
+                figma.viewport.scrollAndZoomIntoView([state.currentSlide]);
+                break;
+
+            case 'saveFile':
+                //export the files to svg files
+                exportSlides();
+                break;
+
+            case 'changeRoot':
+                setRoot();
+                break;
+
+            case 'mouseEnterPlugin':
+                //I'm not sure if this is necessary, but just in case I refresh the event list when the mouse enters the plugin.
+                if (state.currentSlide != null)
+                    sendEventList();
+                break;
+
+            case 'hoverEvent':
+                //highlight an event when the mouse hovers over it. For show/hide event we change the selection to the concerned object, for child events we do this for the link.
+                hoverEvent(msg.index);
+                break;
+
+            case 'requestDropDown':
+                //request a list of all slides for the current slide
+                sendDropDownList();
+                break;
+
+            case 'mouseLeave':
+                break;
+
+            case 'clickEvent':
+                //if an event is clicked, then the selection stays permanent
+                clickEvent(msg.index)
+                break;
+
+            case 'gotoParent':
+                //the parent button is clicked
+                gotoSlide(parentSlide(state.currentSlide));
+                break;
+
+            case 'addWord':
+                //functions for the matematyk plugin ******
+                matematykWord(msg.text);
+                break;
+
+            case 'latexit':
+                //the user requests turning text into latex
+                latexitOne();
+                break;
+
+            case 'latexitTwo':
+                //the second stage of latexit, is necessary because only the ui can communicate with the web
+                latexitTwo(msg.text);
+                break;
+
+
+            default:
+                throw "uncovered message type sent to code: "
+
+        }
+
+
+
+
+
+
+    }
+
+    figma.on('documentchange', docChange);
+    figma.on("selectionchange", selChange);
+    figma.on('close', closePlugin);
+    figma.showUI(__html__, {
+        width: 230,
+        height: 500
+    });
+    figma.ui.onmessage = onMessage;
+
+
+    setCurrentSlide(slideWithSelection());
+    initPlugin();
 // repairOldFormat();

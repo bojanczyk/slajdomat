@@ -1,13 +1,40 @@
-export { exportPdf }
+export { exportPdf, initPdf };
 
 
-import { allSteps, currentStep, gotoStep, Step, zoomsIn, ZoomStep } from './timeline';
-import { MessageToServerPdf } from './types';
+
 import { sendToServer } from './files';
+import { currentState, gotoIndex, statesInPresentation, timeline } from './timeline';
+import { MessageToServerPdf, State } from './types';
 import { manifest } from './viewer';
 
 
 // send the slides to be converted to pdf. the conversion is done by the app, since the libraries that do this take approximately 3M, thus increasing the size of the webpage from 1M to 4M.
+
+
+//display the pdf links if the files exist
+function initPdf() {
+
+  for (const button of document.querySelectorAll('span')) {
+
+      switch (button.id) {
+          case 'pdf-print-button':
+              button.addEventListener('click', event => {
+                  exportPdf()
+              })
+              break;
+          case 'link-to-pdf':
+              button.addEventListener('click', event => {
+                  window.open(manifest.pdfFile, 'open');
+              })
+              break;
+      }
+  }
+  if (manifest.pdfFile != undefined) {
+      const theLink = document.getElementById('link-to-pdf');
+      theLink.classList.remove('hidden');
+  }
+
+}
 
 
 function reduceSvg(svg: SVGElement & SVGSVGElement): void {
@@ -46,11 +73,7 @@ async function exportPdf(): Promise<void> {
   const height = viewBox.height * scale;
 
 
-  const savedStep = currentStep();
-
-
-  let all = allSteps();
-
+  const savedState = timeline.current
 
   const retval: MessageToServerPdf = {
     type: 'toPdf',
@@ -63,45 +86,49 @@ async function exportPdf(): Promise<void> {
   }
 
   //which steps should make it to the pdf
-  function useStep(step: Step) {
+  function useIndex(index: number) {
     return true;
     //we can later imrove this logic so that only some events are exported, such as the following (which does not work, but appeals to the right methods)
     //  return step instanceof ZoomStep && !zoomsIn(step);
   }
 
   //count how many steps will be used
-  for (const step of all)
-    if (useStep(step))
-      retval.maxindex++;
+  const statesToPdf: number[] = [];
+  for (let i = 0; i < timeline.frames.length; i++) {
+    if (useIndex(i)) {
+      statesToPdf.push(i);
+    }
+  }
 
-
+  retval.maxindex = statesToPdf.length;
   const status = document.querySelector('#pdf-export-status');
 
   try {
-    for (const step of all)
-      if (useStep(step)) {
-        await gotoStep(step, 'silent');
-        const clonedSVG = svgElement.cloneNode(true) as HTMLElement & SVGSVGElement;
+
+    for (const i of statesToPdf) {
+      await gotoIndex(i, 'silent',0);
+      const clonedSVG = svgElement.cloneNode(true) as HTMLElement & SVGSVGElement;
 
 
-        reduceSvg(clonedSVG);
-        retval.svg = new XMLSerializer().serializeToString(clonedSVG);
-        retval.index++;
-        const response = await sendToServer(retval);
-        if (response.status == 'pdf created') {
-          status.innerHTML = 'Exporting slide ' + retval.index + '/' + retval.maxindex;
-        }
-        else
-          if (response.status == 'error') {
-            throw (response.explanation);
-          }
-          else throw 'unexpected response from server';
+      reduceSvg(clonedSVG);
+      retval.svg = new XMLSerializer().serializeToString(clonedSVG);
+      retval.index++;
+      const response = await sendToServer(retval);
+      if (response.status == 'pdf created') {
+        status.innerHTML = 'Exporting slide ' + retval.index + '/' + retval.maxindex;
       }
+      else
+        if (response.status == 'error') {
+          throw (response.explanation);
+        }
+        else throw 'unexpected response from server';
+    }
     status.innerHTML = 'Successfully exported pdf.';
 
     //show a little animation that draws attention to the pdf icon
     const icon = document.querySelector('#link-to-pdf');
     icon.classList.add('growAndShrink');
+    icon.classList.remove('hidden');
     console.log('adding new');
     setTimeout(() => {
       icon.classList.remove('growAndShrink')
@@ -111,12 +138,7 @@ async function exportPdf(): Promise<void> {
   catch (e) {
     status.innerHTML = 'Failed to export:' + e
   }
-  gotoStep(savedStep, 'silent');
-
-
-
-
-
+  gotoIndex(savedState, 'silent',0);
 }
 
 // //this is for debugging purposes

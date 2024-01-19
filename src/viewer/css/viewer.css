@@ -50,7 +50,7 @@ body {
     height: 40px;
     display: flex;
     align-items: center;
-    z-index: 3;
+    z-index: 8;
     display : none; 
 }
 
@@ -98,3 +98,8 @@ path:not([fill]) {
     display: none;
 }
 
+
+
+.hidden {
+    display: none;
+}

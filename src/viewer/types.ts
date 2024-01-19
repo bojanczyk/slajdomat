@@ -4,23 +4,15 @@ import { Database } from "../plugin/plugin-types"
 
 
 export {
-    SlideEvent,
-    OverlayEvent,
-    ZoomEvent,
     Manifest,
-    MessageToServer,
-    MessageToServerSound,
-    MessageToServerSlide,
-    MessageToServerLive,
-    MessageToServerPdf,
-    LiveRecording,
-    ServerResponse,
-    EventDescription,
-    StepDescription
+    MessageToServer, MessageToServerLive,
+    MessageToServerPdf, MessageToServerSlide, MessageToServerSound, OverlayEvent, ServerResponse, Slide, PresentationNode, State,
+    StateJSON, SoundDict,
+    Frame, TimelineJSON
 }
 
 //the central type, which describes an event of the presentation
-type SlideEvent = OverlayEvent | ZoomEvent
+type PresentationNode = OverlayEvent | Slide
 
 interface GenericEvent {
     //for overlays, the id describes the object that is being shown, hidden etc., for child events this is the ide of the target slide
@@ -36,7 +28,7 @@ interface GenericEvent {
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
     eventId: string,
     //the parent of the event. This is only written on the viewer side, because it gets lost in the conversion to json
-    parent?: ZoomEvent
+    parent?: Slide
 
 }
 interface ShowHideEvent extends GenericEvent {
@@ -49,12 +41,63 @@ interface AnimateEvent extends GenericEvent {
 
 type OverlayEvent = ShowHideEvent | AnimateEvent
 
-interface ZoomEvent extends GenericEvent {
+interface Slide extends GenericEvent {
     type: 'child',
-    children: SlideEvent[],
+    children: PresentationNode[],
 }
 
 
+
+
+//a state of the presentation is either just after entering a new slide (start), or just after executing some child event (afterEvent) 
+
+type State = {
+    type: 'start',
+    slide: Slide
+} | {
+    type: 'afterEvent',
+    event: PresentationNode
+}
+
+// a timeline is a list of states, each with a duration and a sound file
+type Frame = {
+    state : State,
+    soundFile : string,
+    soundDuration : number,
+    audio : HTMLAudioElement,
+    previousDuration : number
+}
+
+
+// a json represetnation of a state
+type StateJSON =
+    {
+        type: 'start',
+        slideId: string,
+    } | {
+        type: 'afterEvent',
+        slideId: string,
+        eventId: string
+    }
+
+type TimelineJSON = {
+    state : StateJSON,
+    soundFile : string,
+    soundDuration : number
+}[]        
+
+// a json representation of a live recording
+type LiveRecordingJSON = {
+    name: string,
+    date: string,
+    states: { state: StateJSON, duration: number, audio: string }[],
+}
+
+type SoundDict = {
+    key: StateJSON,
+    duration: number,
+    fileName: string
+}[]
 
 //this is the type of the file with the slide information
 interface Manifest {
@@ -63,13 +106,8 @@ interface Manifest {
     slideDict: {
         [id: string]: string
     },
-    soundDict: {
-        [slide: string]: {
-            [eventId: string]: number
-        }
-    },
-    tree: ZoomEvent,
-    live?: LiveRecording[],
+    defaultTimeLine: TimelineJSON,
+    tree: Slide,
     pdfFile?: string,
     comments?:
     {
@@ -78,27 +116,23 @@ interface Manifest {
     }
 }
 
-interface LiveRecording {
-    date: string,
-    dir: string,
-    steps: { step: StepDescription, duration: number }[]
-}
 
-type StepDescription = { type: 'zoom', page: number, source: string, target: string } | { type: 'overlays', page: number, slide: string, overlays: string[], direction: 1 | -1 } | { type: 'last', page: number }
 
-type EventDescription = { type: 'event', slideId: string, eventId: string }
+// ************* communication with server ***************
 
+//the message sent by the plugin to the server to record a new sound
 type MessageToServerSound = {
     type: 'wav',
     file: number[],
     presentation: string,
-    forWhat: EventDescription | { type: 'step', description: StepDescription }
+    forWhat: StateJSON
+    // forWhat: EventDescription | { type: 'step', description: StepDescription }
 }
 
 type MessageToServerSlide = {
     type: 'slides',
     presentation: string,
-    tree: ZoomEvent,
+    tree: Slide,
     slideList: {
         database: Database,
         svg: string,
@@ -119,6 +153,8 @@ type MessageToServerPdf = {
     index: number,
     maxindex: number
 }
+
+
 
 type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive | MessageToServerPdf
     |

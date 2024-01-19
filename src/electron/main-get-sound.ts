@@ -2,13 +2,13 @@
 this code takes care of receiving sound from the viewer, and saving it to disk
 */
 
-export {onGetWav, createLive}
+export { onGetWav, createLive }
 
-import { LiveRecording, Manifest, MessageToServerLive, MessageToServerSound, ServerResponse } from "../viewer/types";
+import { Manifest, MessageToServerLive, MessageToServerSound, ServerResponse, StateJSON } from "../viewer/types";
 import { dirList, presentationDir, readManifest, slideDir, writeManifest } from "./main-files";
 import { slajdomatSettings } from "./main-settings";
 import { sendStatus } from "./main";
-import { freshName } from "../common/helper";
+import { freshName, sanitize } from "../common/helper";
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,6 +16,19 @@ import * as child from 'child_process';
 
 
 
+
+
+
+function sameStateJSON(state1: StateJSON, state2: StateJSON): boolean {
+    if (state1 == undefined || state2 == undefined)
+        return false;
+    if (state1.type != state2.type)
+        return false;
+    if (state1.type == 'start' && state2.type == 'start')
+        return state1.slideId == state2.slideId;
+    else if (state1.type == 'afterEvent' && state2.type == 'afterEvent')
+        return state1.eventId == state2.eventId && state1.slideId == state2.slideId;
+}
 
 
 //we get a single sound, in the wav format
@@ -27,20 +40,28 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
         const manifest = readManifest(msg.presentation);
         const buffer = new Uint8Array(msg.file)
-        let fileName: string;
-        let live: LiveRecording;
-
-        if (msg.forWhat.type != 'event') {
-            live = manifest.live[manifest.live.length - 1];
-            fileName = `${presentationDir(msg.presentation)}/${live.dir}/${live.steps.length}`;
-            soundDescription = ` current step in the live recording`;
+        const absolutePath = slideDir(manifest, msg.forWhat.slideId);
+        
+        let shortName: string;
+        if (msg.forWhat.type == 'afterEvent')
+        {
+            shortName = 'after_'+sanitize(msg.forWhat.eventId);
+            soundDescription = 'after event ' + msg.forWhat.eventId;
         }
-        else {
-            fileName = path.join(slideDir(manifest, msg.forWhat.slideId), msg.forWhat.eventId);
-            soundDescription = `for event ${msg.forWhat.eventId} in slide ${manifest.slideDict[msg.forWhat.slideId]}`;
+        else
+        {
+            soundDescription = 'start of slide ' + msg.forWhat.slideId;
+            shortName = 'start';
         }
 
-        fs.writeFileSync(fileName + '.wav', Buffer.from(buffer));
+        const absoluteFileName = path.join(absolutePath, shortName);
+        const localFileName = path.relative(presentationDir(msg.presentation), absoluteFileName);
+        
+
+
+
+
+        fs.writeFileSync(absoluteFileName + '.wav', Buffer.from(buffer));
 
 
         let ffmpeg = slajdomatSettings.ffmpeg;
@@ -55,37 +76,44 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         try {
-            child.execSync(`${slajdomatSettings.ffmpeg} -y -i  ${fileName}.wav ${fileName}.mp3`);
+            const ffmpegString = `${slajdomatSettings.ffmpeg} -y -i  "${absoluteFileName}.wav" "${absoluteFileName}.mp3"`;
+            child.execSync(ffmpegString);
         }
-        catch (e) { throw 'Failed to run ffmpeg' }
+        catch (e) { throw 'Failed to run ffmpeg for ' + absoluteFileName }
 
 
 
-        fs.unlinkSync(fileName + '.wav');
+        fs.unlinkSync(absoluteFileName + '.wav');
 
 
         let duration: number = undefined;
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${fileName}.mp3`);
+            const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${absoluteFileName}.mp3"`);
             duration = parseFloat(probeString.toString());
         } catch (e) { throw 'Failed to run ffprobe' }
 
 
 
-        if (msg.forWhat.type != 'event') {
-            //if we are in live mode, then we push the sound onto the list of live steps
-            live.steps.push({
-                step: msg.forWhat.description,
-                duration: duration
-            })
-        } else {
-            //otherwise, we file the sound in the sound dictionary. 
-            if (!(msg.forWhat.slideId in manifest.soundDict)) {
-                manifest.soundDict[msg.forWhat.slideId] = {};
-            }
-            manifest.soundDict[msg.forWhat.slideId][msg.forWhat.eventId] = duration;
+
+        // find the index of msg.forWhat in the sound list
+        console.log('manifest.defaultTimeLine', manifest.defaultTimeLine);
+        console.log('msg.forWhat', msg.forWhat);
+        let index = manifest.defaultTimeLine.findIndex((sound) => {return sameStateJSON(sound.state, msg.forWhat)});
+        console.log('index', index);
+
+        if (index > -1) {
+            manifest.defaultTimeLine.splice(index, 1);
         }
+
+
+        manifest.defaultTimeLine.push({
+            state: msg.forWhat,
+            soundDuration: duration,
+            soundFile:  localFileName + '.mp3'
+        });
+
+
 
         writeManifest(manifest);
         sendStatus(`Recorded ${duration.toFixed(2)}s for ${soundDescription}`);
@@ -107,8 +135,12 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
 
+
 //start a live recording. The result is adding a new array of live steps to the manifest.
 function createLive(msg: MessageToServerLive): ServerResponse {
+    throw 'not implemented';
+}
+    /*
     try {
         sendStatus('going live')
         const manifest: Manifest = readManifest(msg.presentation);
@@ -145,3 +177,4 @@ function createLive(msg: MessageToServerLive): ServerResponse {
 
 
 }
+*/

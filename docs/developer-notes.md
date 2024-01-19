@@ -8,6 +8,8 @@ zoom menu unfolds not just on arrow
 
 
 ### Bugs
+search keywords are saved for last and not first slide event
+css is bad for search results, the text overflows the white background
 
 ### Viewer app
 - maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided

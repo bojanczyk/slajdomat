@@ -1,4 +1,4 @@
-import { SlideEvent } from "../viewer/types";
+import { PresentationNode } from "../viewer/types";
 import { Database, LatexPluginSettings, LatexState } from "./plugin-types";
 
 export {PluginUIToCode, PluginCodeToUI};
@@ -68,7 +68,7 @@ type PluginCodeToUI = {
     database: Database;
     svg: Uint8Array;
   } [],
-  tree: SlideEvent
+  tree: PresentationNode
 } | {
   type: 'selChange',
   selected: boolean,
@@ -91,7 +91,7 @@ type PluginCodeToUI = {
   url: string
 } | {
   type: 'eventList',
-  events: SlideEvent[]
+  events: PresentationNode[]
 } | {
   type: 'dropDownContents',
   slides: {

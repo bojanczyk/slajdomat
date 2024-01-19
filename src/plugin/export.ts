@@ -5,7 +5,7 @@ import {
 } from './plugin-types'
 
 import {
-    SlideEvent, ZoomEvent
+    PresentationNode, Slide
 } from '../viewer/types'
 
 import {
@@ -31,7 +31,7 @@ function deDuplicate(list : string[]) : string[] {
 }
 
 //complies a list of search keywords for the current slide
-function compileKeywords(event: ZoomEvent, frame: FrameNode) {
+function compileKeywords(event: Slide, frame: FrameNode) {
     
     
     const done = [] as SceneNode[]; 
@@ -71,7 +71,7 @@ function exportSlides(): void {
     const stack: FrameNode[] = [];
     
     //Saves a single slide, and then calls itself for the children of that slide. The result of saving is a new item on slideList.
-    async function saveRec(slide: FrameNode, eventId : string): Promise<SlideEvent> {
+    async function saveRec(slide: FrameNode, eventId : string): Promise<PresentationNode> {
         if (stack.includes(slide)) {
             let cycle = "The slides contain a cycle: \n";
             for (const n of stack)
@@ -113,7 +113,7 @@ function exportSlides(): void {
                 change.node.name = change.savedName;
             }
             
-            const retval : ZoomEvent  = {
+            const retval : Slide  = {
                 type: 'child',
                 name: state.database.name,
                 id: state.database.id,

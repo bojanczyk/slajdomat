@@ -1,21 +1,21 @@
 
-export { addToQueue, svgMap, localRect, transforms }
-import { isOverlay, zoomSlide } from './event';
-import { fileName } from './files';
-import { markDisabled, removeLoading, userAlert } from './html';
-import { allSteps, futureSlide, OverlayStep } from './timeline';
-import { applyTransform, getBoundRect, getTransform, idTransform, Transform, transformToString } from './transform';
-import {
-    SlideEvent, ZoomEvent
-} from './types'
-import { updatePageNumber } from './viewer';
+export { addToQueue, localRect, svgMap, transforms };
+    import { isOverlay, runOverlay } from './event';
+    import { fileName } from './files';
+    import { markDisabled, removeLoading, userAlert } from './html';
+    import { futureSlide, slideStartState } from './timeline';
+    import { Transform, applyTransform, getBoundRect, getTransform, idTransform, transformToString } from './transform';
+    import {
+        PresentationNode, Slide
+    } from './types';
+
 
 
 const loadStruct = {
     //the queue of slides waiting to be loaded. We assume that for each slide x in the queue, either the parent of x is in the queue, or already loaded
-    waiting: new Set() as Set<ZoomEvent>,
+    waiting: new Set() as Set<Slide>,
     //the queue of slides that have already started downloading their svg
-    loading: new Set() as Set<ZoomEvent>,
+    loading: new Set() as Set<Slide>,
     //the functions to be called once no more slides are in the waiting and loading queues
     onceEmpty: [] as (() => void)[],
     //the functions to be called if there is an error in loading the slides
@@ -23,14 +23,14 @@ const loadStruct = {
 
 }
 
-const transforms: Map<SlideEvent, Transform> = new Map();
-const svgMap: Map<SlideEvent, SVGElement> = new Map();
-const svgdefs: Map<SlideEvent, SVGDefsElement> = new Map();
+const transforms: Map<PresentationNode, Transform> = new Map();
+const svgMap: Map<PresentationNode, SVGElement> = new Map();
+const svgdefs: Map<PresentationNode, SVGDefsElement> = new Map();
 
-const localRect: Map<SlideEvent, Rect> = new Map();
+const localRect: Map<PresentationNode, Rect> = new Map();
 
 //add all slides on the list of loading queue, including all ancestors of these slides. Also, add the callback function to the list of functions to execute once the queue is empty
-function addToQueue(slides: SlideEvent[]): Promise<void> {
+function addToQueue(slides: PresentationNode[]): Promise<void> {
 
 
     return new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ function addToQueue(slides: SlideEvent[]): Promise<void> {
         loadStruct.onError.push(reject);
         for (const slide of slides) {
             if (slide.type == 'child') {
-                let ancestor: SlideEvent = slide;
+                let ancestor: PresentationNode = slide;
                 while (ancestor != undefined && svgMap.get(ancestor) == undefined) {
                     if (!loadStruct.waiting.has(ancestor) && !loadStruct.loading.has(ancestor))
                         loadStruct.waiting.add(slide);
@@ -52,7 +52,7 @@ function addToQueue(slides: SlideEvent[]): Promise<void> {
 }
 
 function processQueue() {
-    const newWaiting = new Set() as Set<ZoomEvent>
+    const newWaiting = new Set() as Set<Slide>
     for (const slide of loadStruct.waiting) {
         //we start loading those slides which are either the root, or have a loaded parent
         if (slide.parent == undefined || svgMap.get(slide.parent) != undefined) {
@@ -94,7 +94,7 @@ function queueError() {
 
 
 //function that is called once the svg for a slide finishes loading. The function extracts the svg from the loaded object, attaches the svg to the event and its overlays, and sets the initial visibility of overlays accordingly. Finally, the svg of the slide is attached to the main svg, using a separate function.
-function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
+function finishedLoading(slide: Slide, object: HTMLObjectElement) {
 
     try {
 
@@ -129,7 +129,7 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
         // we also need to fix a bug related to SVG <a href=...> nodes:
         // the export function of Figma unfortunately detaches those nodes 
-        // from their clicable content (usually a <g> node that is the left sibling of the <a> node...)
+        // from their clickable content (usually a <g> node that is the left sibling of the <a> node...)
         // To avoid messing with the document structure, we simply reposition the content of the <a> node
         // following the bounding box of the corresponding <g> node
         for (const a of svg.querySelectorAll('a')) {
@@ -170,17 +170,17 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
         //set initial visibility of overlays, which is done differently depending on whether the slide is in the past or in the future
         if (!futureSlide(slide)) {
-            for (const step of allSteps()) {
-                if (step instanceof OverlayStep &&
-                    step.event().parent == slide)
-                    step.run('silent');
+            runOverlay(slide, 'forward', 'silent');
+            for (const event of slide.children) {
+                if (isOverlay(event))
+                    runOverlay(event, 'forward', 'silent');
             }
         }
         else {
-            for (const step of allSteps().reverse()) {
-                if (step instanceof OverlayStep &&
-                    step.event().parent == slide)
-                    step.reverse().run('silent');
+            runOverlay(slide, 'backward', 'silent');
+            for (const event of slide.children.slice().reverse()) {
+                if (isOverlay(event))
+                    runOverlay(event, 'backward', 'silent');
             }
         }
 
@@ -192,7 +192,7 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
     } catch (exception) {
         queueError();
         // this means that the svg failed to load correctly
-        markDisabled(slide);
+        markDisabled(slideStartState(slide));
         userAlert("Failed to load svg for " + slide.name);
         console.log(exception);
     }
@@ -207,7 +207,7 @@ function finishedLoading(slide: ZoomEvent, object: HTMLObjectElement) {
 
 
 //each slide has its definitions, but they use the same id's, e.g. 'image0' is used in every slide that has an image. As a result all images would point to the last occurrence of image0 in the document. Probably there is a namespace way to fix this, but since I do not understand namespaces, I simply prepend the slide id to every id in the definitions. 
-function cleanDefs(svg: SVGElement, slide: ZoomEvent): void {
+function cleanDefs(svg: SVGElement, slide: Slide): void {
     for (const c of svg.childNodes) {
         let child = c as SVGElement;
         child.id = slide.id + child.id;
@@ -234,7 +234,7 @@ function cleanDefs(svg: SVGElement, slide: ZoomEvent): void {
 
 //This code looks at rectangles that store pictures, or have patterns, and modifies their code so that it displays correctly. These are hacks that are used to overcome incompatibilities between Figma's export and the way that browsers display images inside svg's.
 
-function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
+function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
 
 
     // We replace every rect filled with an image pattern by the original image definition
@@ -345,7 +345,7 @@ function cleanRect(r: SVGRectElement, slide: ZoomEvent, defs: SVGDefsElement) {
 
 
 //attaches the svg for a node to the main svg of the presentation. The node's svg is attached as a direct child of the main svg (not as a descendant in the tree structure), with a suitably computed transformation.
-function attachSVG(node: SlideEvent) {
+function attachSVG(node: PresentationNode) {
 
     const svg = svgMap.get(node);
     localRect.set(node, getBoundRect(svg));
@@ -390,10 +390,5 @@ function attachSVG(node: SlideEvent) {
     if (svgdefs.get(node) != undefined)
         document.getElementById("svg").appendChild(svgdefs.get(node));
 
-    //after loading the root of the event tree, we zoom to the right place immediately, without animation
-    if (node.parent == undefined) {
-        zoomSlide(node, 'silent');
-        updatePageNumber()
-    }
 
 }

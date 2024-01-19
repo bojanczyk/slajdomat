@@ -7,13 +7,13 @@ export {
 
 
 import Fuse from 'fuse.js'
-import { gotoEvent } from './timeline'
-import { SlideEvent } from './types'
+import { PresentationNode } from './types'
 import { manifest } from './viewer'
+import { afterEventState, gotoState } from './timeline'
 
 
 type SearchKeyword = {
-    slide: SlideEvent,
+    slide: PresentationNode,
     text: string
 }
 let search: Fuse<SearchKeyword>
@@ -23,7 +23,7 @@ function initSearch(): void {
 
     const allStrings: SearchKeyword[] = [];
 
-    function addStrings(slide: SlideEvent) {
+    function addStrings(slide: PresentationNode) {
         for (const keyword of slide.keywords)
             allStrings.push({ slide: slide, text: keyword });
         if (slide.type == 'child')
@@ -63,7 +63,7 @@ function searchType(): void {
         oneResult.classList.add('one-result');
         oneResult.innerHTML = `<div class='search-result-slide'> ${name}</div> <div class='search-result-text'>${result.item.text}</div>`
         oneResult.addEventListener('click', () => {
-            gotoEvent(event);
+            gotoState(afterEventState(event));
         })
         allResults.appendChild(oneResult)
 
