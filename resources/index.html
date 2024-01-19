@@ -13,10 +13,6 @@
 </head>
 
 <body>
-
-	<div id='loader-text'>
-		Loading slides...
-	</div>
 	<div id='upper-panel' style='visibility: hidden;'>
 		<div id="sketch-panel" class="noselect tool-panel">
 			<i id="sketch-red" class="material-icons selected">edit</i>
@@ -120,14 +116,6 @@
 		<!-- the panel that contains the svg with the slides -->
 		<svg id="svg" fill="none"></svg>
 
-
-
-
-		<!-- a pop-up text for alerts such as "file not found" -->
-		<div id="text-alert-box">
-			<div id="text-alert"> </div>
-			<div id="text-alert-background"></div>
-		</div>
 	</div>
 
 
@@ -150,12 +138,14 @@
 		<div id='page-count'>
 			<span id='time-elapsed'></span>
 			<span id="page-count-enumerator"></span>
-			<span id="page-count-denominator"></span>
+			<span id="page-count-denominator">loading...</span>
 		</div>
 	</div>
 
 
-
+	<div id="alert-box"  class="visible"> 
+		<div> Loading </div>
+	</div>
 
 	<script type="module" src="viewer.js"></script>
 
