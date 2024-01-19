@@ -263,7 +263,6 @@ function getRecordedSteps(): TimelineJSON {
 
 async function onLoadWindow(): Promise<void> {
     //the opacity is set to 0 for elements of the page, so that it is not display while the styles are loading. Once the document has loaded, we can set the opacity to normal.
-    (document.getElementById('loader-text') as HTMLDivElement).remove();
     (document.getElementById('upper-panel') as HTMLDivElement).style.visibility = 'visible';
     (document.getElementById('progress-panel') as HTMLDivElement).style.visibility = 'visible';
 

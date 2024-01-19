@@ -29,7 +29,6 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "@electron-forge/plugin-webpack": "^7.2.0",
     "@figma/plugin-typings": "^1.82.0",
-    "@types/gsap": "^3.0.0",
     "@types/multer": "^1.4.11",
     "@types/pdfkit": "^0.13.3",
     "@types/webfontloader": "^1.6.38",
