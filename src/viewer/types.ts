@@ -1,4 +1,4 @@
-import { Database } from "../plugin/plugin-types"
+
 
 
 
@@ -8,38 +8,58 @@ export {
     MessageToServer, MessageToServerLive,
     MessageToServerPdf, MessageToServerSlide, MessageToServerSound, OverlayEvent, ServerResponse, Slide, PresentationNode, State,
     StateJSON, SoundDict,
-    Frame, TimelineJSON
+    Frame, TimelineJSON,
+    AnimationParams, Database
 }
 
 //the central type, which describes an event of the presentation
 type PresentationNode = OverlayEvent | Slide
 
 interface GenericEvent {
-    //for overlays, the id describes the object that is being shown, hidden etc., for child events this is the ide of the target slide
+    //for overlays, the id describes the object that is being shown, hidden etc., for slide events this is the ide of the target slide. 
     id: string,
+    
     //a human readable name, taken from figma
     name: string,
+    
     //is the event merged with the previous event. Merged events should either both be overlays, or both zooms
     merged: boolean,
+    
     //disabled is used in the plugin, for events where the corresponding object is temporarily unavailable
-    disabled?: boolean,
+    enabled: 'disabled' | 'enabled',
+    
     //keywords for searching slides
     keywords: string[],
+
     //an id of the event itself, which should be unique inside the slide. The point of this id is so that we can associate sounds to an event.
     eventId: string,
-    //the parent of the event. This is only written on the viewer side, because it gets lost in the conversion to json
+
+    //the parent of the event. This is defined only on the viewer side, because it gets lost in the conversion to json
     parent?: Slide
 
 }
+
+//an event that shows or hides an overlay
 interface ShowHideEvent extends GenericEvent {
     type: 'show' | 'hide'
 }
 
-interface AnimateEvent extends GenericEvent {
-    type: 'animate', source: number, target: number
+type AnimationParams = {
+    opacity? : number,
+    x? : number,
+    y? : number
 }
 
-type OverlayEvent = ShowHideEvent | AnimateEvent
+//an event that animates an overlay, by moving it to a new position
+//the coordinates are relative to the containing slide
+interface AnimateEvent extends GenericEvent {
+    type: 'animate', 
+    params : AnimationParams
+}
+
+
+
+type OverlayEvent =  AnimateEvent | ShowHideEvent
 
 interface Slide extends GenericEvent {
     type: 'child',
@@ -47,10 +67,16 @@ interface Slide extends GenericEvent {
 }
 
 
+//the structure which describes a slide inside the plugin
+type Database = {
+    name: string,
+    id: string,
+    events: PresentationNode[]
+  }
+
 
 
 //a state of the presentation is either just after entering a new slide (start), or just after executing some child event (afterEvent) 
-
 type State = {
     type: 'start',
     slide: Slide

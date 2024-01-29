@@ -1,17 +1,24 @@
-Slajdomat supports comments on slides. These are stored in an sql database. To configure comments, you need to have access to some sql database. This means that you will have four things: a server name for the database, a username in it, a password, and a database name inside that database. 
+Slajdomat supports comments on slides. These are stored in a database, which is updated by a php script on your web server. To support comments in your slides, do the following.
 
-Download the script [Slajdomat Comments PHP Script](https://github.com/bojanczyk/slajdomat/blob/master/src/commentserver/slajdomat-comments.php)
+### Step 1
 
-At the beginning of this script, place your four instead of the ones written in the downloaded script:
-```bash
-<?php
-// these are only examples
-$servername = "database.mimuw.edu.pl";
-$username = "bojanczyk";
-$password = "a password";
-$dbname = "bojan";
-```
-Place this script in the root of your presentation directory. Since this script contains a password, it might be dangerous to use git to synchronize this script with your web page. 
+Copy the directory src/comments to your server. The file comments.php in that directory is a php script, so it will only work on a web server, and calling it on localhost will not work. 
 
-In the settings in the app, turn on comments. 
+### Step 2
 
+In the settings of the Slajdomat app, indicate the path leading to comments.php. This can be a relative or absolute path. For example, if the directory comments is in your presentations folder, then the path should be 
+     
+     comments/comments.php
+
+If the directory comments is a sibling of your presentations folder, then the path should be 
+
+    ../comments/comments.php
+
+Or it could be an absolute url, such as 
+
+    https://my.server.com/bigSlajdomatFan/comments.php
+
+
+
+### Permissions
+Make sure that the two files comments.php and comments.json have appropriate permissions. The php file should be executable and readable by whatever user you have in your web server (in my case, I had to make it readable by all and executable by its own user), and that the json file can be written to by the php. 

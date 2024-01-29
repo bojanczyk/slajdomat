@@ -4,6 +4,7 @@ export {
 };
 
     import {
+        AnimationParams,
         PresentationNode, Slide
     } from './types';
 
@@ -21,7 +22,7 @@ import {
     gsap
 } from "gsap";
 
-import { localRect, svgMap, transforms } from './loadSVG';
+import { getAnimationParams, localRect, svgMap, transforms } from './loadSVG';
 
  
 
@@ -31,7 +32,7 @@ import { localRect, svgMap, transforms } from './loadSVG';
 
 
 function isOverlay(event: PresentationNode): boolean {
-    return (event.type == 'show' || event.type == 'hide');
+    return (event.type == 'show' || event.type == 'hide' || event.type == 'animate' );
 }
 
 
@@ -61,46 +62,50 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
     }
 }
 
+
+
 //execute an overlay event (for the moment, these are hide or show)
 function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward', silent: string): void {
 
-    function animate(svg : SVGElement, opacity : number) {
-        if (svg != undefined) {
-            if (silent == 'animated') {
-                gsap.to(svg, {
-                    duration: 0.3,
-                    opacity: opacity
-                });
-            }
-            else {
-                svg.style.opacity = opacity.toString();
-            }
-        }
-    }
 
-    let opacity;
+    let animationParams : AnimationParams = {};
+    const svg = svgMap.get(overlay);
+
     switch (overlay.type) {
         case 'show':
         case 'hide':
             if ((overlay.type == "show" && direction == 'forward') || (overlay.type == "hide" && direction == 'backward'))
-                opacity = 1;
+                animationParams.opacity = 1;
 
             else
-                opacity = 0;
-
-            animate(svgMap.get(overlay),opacity);
-
+                animationParams.opacity = 0;
             break;
+
+        case 'animate':
+            if (direction == 'forward') 
+                animationParams = getAnimationParams(overlay, 'after')
+            else
+                animationParams = getAnimationParams(overlay, 'before');
+            console.log(animationParams);
+            break;
+
         case 'child':
             if (direction == 'forward') 
-                opacity = 1;
+                animationParams.opacity = 1;
             else    
-                opacity = 0;
-
-            animate(svgMap.get(overlay),opacity);
+                animationParams.opacity = 0;          
             break;
     }
 
+
+    if (svg != undefined) {
+        let duration = { duration : 0};
+        if (silent == 'animated') {
+            duration.duration = 0.3;
+        }
+        let target = { ...duration, ...animationParams };
+        gsap.to(svg, target);
+    }
 
 }
 

@@ -11,3 +11,4 @@ Both the plugin and the electron app have a frontend/backend structure (imposed 
 
 
 (todo: this guide should have descriptions of each of the five parts, their main functions, and the communication between them.)
+

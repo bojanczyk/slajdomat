@@ -2,50 +2,46 @@
 
 This file contains notes to the developer that may be useful in maintaning the app. This is separate from developer documentation, which should be created at some point.
 
-## Todo
-Things to implement in the future
-zoom menu unfolds not just on arrow
-
-
-### Bugs
-search keywords are saved for last and not first slide event
-css is bad for search results, the text overflows the white background
-
-### Viewer app
-- maybe sound can be handled on the app side, e.g. using https://recordrtc.org , so that ffmpeg can be avoided
-
-### Plugin 
-- check when a new live is created spuriously (not sure what that means anymore)
-
-
-### Extra features of the system
-- move event
-
-
-
-
-
-### Parameters
-If you run the app with command line parameters, then you can have a non-standard directory for the viewer files
-Do it like this in macos: open Slajdomat --args ./directory_with_files
-
-
 
 
 ## The toolchain
 
-Generally speaking, the toolchain in web development is a mess with little documentation, and I am an amateur as well, so the toolchain here is a mess as well.
+Generally speaking, the toolchain in web development is a mess with little documentation, and I am an amateur as well, so the toolchain here is a mess.
+
 
 The source code is in typescript. The types from typescript are useful to avoid mistakes once the project is large. The program is constructed by a chain of three tools. 
 
 - The first tool in the chain is the typescript transpiler, which generates javascript code from typescript.  The tsconfig.json file contains some typescript options, including options about the module system which are hard to understand (require vs import, the latter one is used here).
 - The second tool in the chain is webpack, which makes the javascipt files smaller, and combines multiple files into single ones. Small files are useful for the generated presentations, while a single file is required for the figma plugin (and therefore webpack is useful, since it is much easier to spread out the figma plugin code throughout several files, including some files with code shared by other parts of the program).  Unfortunately, webpack is very flaky and unpleasant to use, with multiple cryptic configuration files.
-- The third tool is electron, which is used for the app. This takes the javascript and hides in some subfolder of a copy of chrome so that it can pretend to be an app. It is built by tools such as "electron forge" which are rather flaky as well.
+- The third tool is electron, which is used for the app. This takes the javascript and hides in some subfolder of a copy of chrome so that it can pretend to be an app. It is built by a tool called "electron forge" which is, again, surprisingly unreliable.
 
 
-There are options for npm to automatically recompile the software upon software changes using "npm run watch", but this has upredicatable results for me (i.e. often nothing happens), especially for the app, so I often simply do "npm run make" before running the app. A part of the toolchain that is more dependable is typescript, it can be run in Visual Studio Code by running  a watch process called "tsc: watch - tsconfig.json". The tsc tool gives good error messages.
+## Development environment
 
-Debugging the electron app is another mystery for me.
+Here is a description of my development environment. As an editor, I use vscode. It has excellent support for typescript, and you can have copilot in it, which is also very useful for web development.
+
+### Working on plugin and viewer
+When working on the plugin and viewer, I run 
+
+    npm run watch
+
+This checks for changes in the sources, and recompiles automatically. After recompiling, it invokes an extra script, called make-plugin-ui.sh, which which copies the viewer files to a directory called test-slides, and the plugin files to a directory called figma-plugin. 
+
+If you are working on the figma plugin, you can chose the manifest in figma to be the one in your figma-plugin directory, and it will be recompiled and reloaded each time you make changes.
+
+If you are working on the viewer, you can set your presentation directory to be the same directory that contains test-slides (and also package.json). Then you replace the contents of the test-slides directory with some previously created slajdomat presentation. This way, once you open that presentation in Slajdomat, its viewer will be automatically recompiled each time you edit the source codes. 
+
+### Working on the electron
+
+When working on the electron app, I use two options. One is 
+
+    npm run start
+
+This runs the electron app, and recompiles it while running. This is a good way to fool around with the html/css stiles without restarting the app each time. I have no idea what happens with the more advanced program logic after it is recompiled when running. I also do not know exactly what happens when "npm run start" and "npm run watch" are run at the same time, but I do it anyway. 
+
+The other option, which I use to debug the actual program logic, is to run the electron app from the vscode debugger. 
+
+
 
 
 ## Notes on hacks used 
@@ -62,3 +58,23 @@ At least, that is how it works on intel macs. On an arm mac, if an app is not co
     codesign --force --deep -s - Slajdomat.app
 
 This will elimiate the "damaged" message, and allow the user to run the app once they have agreed to use it from an unidentified developer. 
+
+
+## Todo
+Things to implement in the future
+zoom menu unfolds not just on arrow
+
+
+### Bugs
+search keywords are saved for last and not first slide event
+css is bad for search results, the text overflows the white background
+
+### Viewer app
+- it would be nice to avoid the use of ffmpeg. I will try to use a js implementation of lame, or something similar. Gabriele suggested  https://recordrtc.org 
+
+
+
+### Extra features of the system
+- move event
+
+

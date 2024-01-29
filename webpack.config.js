@@ -18,7 +18,6 @@ module.exports = (env, argv) => ({
     ui: './src/plugin/ui.ts', // UI side of figma plugin
     code: './src/plugin/code.ts', // Figma side of the figma plugin
     viewer: './src/viewer/viewer.ts', // The viewer code
-    comments: './src/commentserver/comment-server.ts' // the server for comments
   },
 
   target: 'node',

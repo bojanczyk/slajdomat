@@ -1,11 +1,9 @@
 export { exportSlides }
 
-import {
-    Database,
-} from './plugin-types'
+
 
 import {
-    PresentationNode, Slide
+    PresentationNode, Slide, Database
 } from '../viewer/types'
 
 import {
@@ -117,6 +115,7 @@ function exportSlides(): void {
                 type: 'child',
                 name: state.database.name,
                 id: state.database.id,
+                enabled: 'enabled', 
                 merged: false,
                 children: [],
                 keywords: [],
@@ -128,7 +127,7 @@ function exportSlides(): void {
                 svg: svg
             });
             for (const event of state.database.events) {
-                if (!event.disabled) {
+                if (event.enabled == 'enabled') {
                     if (event.type == "child") {
                         const child = await saveRec(findSlide(event.id), event.eventId);
                         child.merged = event.merged;

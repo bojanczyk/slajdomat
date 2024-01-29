@@ -3,7 +3,6 @@ export {
 }
 
 import {
-  Database,
   LatexState,
   LatexPluginSettings,
   WindowMode
@@ -18,7 +17,7 @@ import {
 
 
 import {
-  PresentationNode
+  PresentationNode, Database
 } from '../viewer/types'
 import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
@@ -275,10 +274,10 @@ function eventHover(index: number): void {
     return;
   }
   else
-  postMessage({
-    type: 'hoverEvent',
-    index: index
-  })
+    postMessage({
+      type: 'hoverEvent',
+      index: index
+    })
 }
 
 //the button to merge events was clicked, we want to merge index with its predecessor (or de-merge)
@@ -310,14 +309,26 @@ function eventList(events: PresentationNode[]): void {
       eventRemoveClick(index)
     })
 
-    if (event.disabled)
+    if (event.enabled == 'disabled')
       retval.classList.add("disabled");
-    if (event.type == "show")
-      (retval.childNodes[0] as HTMLElement).innerHTML = "visibility";
-    if (event.type == "hide")
-      (retval.childNodes[0] as HTMLElement).innerHTML = "visibility_off";
-    if (event.type == "child")
-      (retval.childNodes[0] as HTMLElement).innerHTML = "zoom_out_map";
+
+    switch (event.type) {
+      case "show":
+        (retval.childNodes[0] as HTMLElement).innerHTML = "visibility";
+        break;
+      case "hide":
+        (retval.childNodes[0] as HTMLElement).innerHTML = "visibility_off";
+        break;
+      case "animate":
+        (retval.childNodes[0] as HTMLElement).innerHTML = "animation";
+        break;
+      case "child":
+        (retval.childNodes[0] as HTMLElement).innerHTML = "zoom_out_map";
+        break;
+      default:
+        throw "unexpected event type"
+    }
+
     (retval.childNodes[1] as HTMLElement).innerHTML = event.name;
     return retval;
   }
@@ -380,7 +391,7 @@ function selChange(msg: {
 
 
   const eventDropdowns = [
-    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide'
+    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide', 'dropdown-show-animate'
   ]
 
   for (const i of eventDropdowns) {
@@ -576,11 +587,7 @@ function createChildLink(id: string): void {
 
 // what is done when the toolbar for show/hide events has been clicked. id is the id of the clicked dom element
 function showEventsClicked(id: string): void {
-  let subtype = 'show';
-  // if (id.startsWith('dropdown-show-'))
-  // 		subtype =  id.slice('dropdown-show-'.length);
-  if (id == 'dropdown-show-hide')
-    subtype = 'hide';
+  const subtype = id.slice('dropdown-show-'.length) as 'show' | 'hide' | 'animate' | 'child';
   postMessage({
     type: 'createEvent',
     subtype: subtype,

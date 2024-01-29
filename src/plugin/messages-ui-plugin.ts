@@ -1,5 +1,5 @@
-import { PresentationNode } from "../viewer/types";
-import { Database, LatexPluginSettings, LatexState } from "./plugin-types";
+import { Database, PresentationNode } from "../viewer/types";
+import { LatexPluginSettings, LatexState } from "./plugin-types";
 
 export {PluginUIToCode, PluginCodeToUI};
 
@@ -9,7 +9,7 @@ export {PluginUIToCode, PluginCodeToUI};
 //from ui to backend
 type PluginUIToCode = {
   type: 'createEvent',
-  subtype: string,
+  subtype: 'show' | 'hide' | 'animate' | 'child',
   id: string,
   name: string
 } | {

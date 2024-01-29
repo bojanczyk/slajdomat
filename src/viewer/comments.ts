@@ -53,6 +53,8 @@ async function initComments() {
             commentContainer.removeChild(commentContainer.firstChild);
         }
 
+        console.log(getScript);
+
         //load the comments from the database
         const response = await fetch(getScript);
 

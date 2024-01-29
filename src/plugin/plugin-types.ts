@@ -7,19 +7,11 @@ import {} from '@figma/plugin-typings'
 export {
   LatexPluginSettings,
   WindowMode,
-  Database,
   LatexState,
   LatexitData,
 }
 
 
-
-//the structure which describes a slide
-type Database = {
-  name: string,
-  id: string,
-  events: PresentationNode[]
-}
 
 
 //these are the settings for the latex parte of the plugin, i.e. "matematyk", that are stored in the global plugin data

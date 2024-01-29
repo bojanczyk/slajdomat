@@ -1,13 +1,15 @@
 
-export { addToQueue, localRect, svgMap, transforms };
-    import { isOverlay, runOverlay } from './event';
-    import { fileName } from './files';
-    import { markDisabled, removeLoading, userAlert } from './html';
-    import { futureSlide, slideStartState } from './timeline';
-    import { Transform, applyTransform, getBoundRect, getTransform, idTransform, transformToString } from './transform';
-    import {
-        PresentationNode, Slide
-    } from './types';
+export { addToQueue, localRect, svgMap, transforms, getAnimationParams };
+import { isOverlay, runOverlay } from './event';
+import { fileName } from './files';
+import { markDisabled, removeLoading, userAlert } from './html';
+import { futureSlide, slideStartState } from './timeline';
+import { Transform, applyTransform, getBoundRect, getTransform, idTransform, transformToString } from './transform';
+import {
+    AnimationParams,
+    OverlayEvent,
+    PresentationNode, Slide
+} from './types';
 
 
 
@@ -26,8 +28,19 @@ const loadStruct = {
 const transforms: Map<PresentationNode, Transform> = new Map();
 const svgMap: Map<PresentationNode, SVGElement> = new Map();
 const svgdefs: Map<PresentationNode, SVGDefsElement> = new Map();
+const beforeParams: Map<OverlayEvent, AnimationParams> = new Map();
+const afterParams: Map<OverlayEvent, AnimationParams> = new Map();
+
 
 const localRect: Map<PresentationNode, Rect> = new Map();
+
+// return the animation parameters of an svg element, before or after an event
+function getAnimationParams(event: OverlayEvent, when: 'before' | 'after') {
+    if (when == 'before')
+        return beforeParams.get(event);
+    else
+        return afterParams.get(event);
+}
 
 //add all slides on the list of loading queue, including all ancestors of these slides. Also, add the callback function to the list of functions to execute once the queue is empty
 function addToQueue(slides: PresentationNode[]): Promise<void> {
@@ -146,9 +159,13 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
 
         // we continue by attaching the svg to the slide
         svgMap.set(slide, svg);
-        const svgChildren = svg.children as unknown as SVGElement[];
+        const svgChildren = svg.children as unknown as (SVGElement & SVGGraphicsElement)[];
 
         //in the following code, I loop several times over svgChildren, which is sub-optimal but makes the code more readable.
+
+
+
+
 
         //attach each overlay event to its corresponding svg element (for child events we the svg element is the slide itself, so the placeholder will be recomputed)
         for (const event of slide.children) {
@@ -166,6 +183,39 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
                 if (event.type == 'child' && event.id == svgChild.id)
                     svgChild.style.opacity = '0';
 
+
+
+        //for each overlay event, we compute the parameters of the corresponding svg element that will be used before and after the event 
+        for (const svgChild of svgChildren) {
+            // these are the overlay events that concern this svg element
+            const events = slide.children.filter((event) => event.id == svgChild.id && isOverlay(event)) as OverlayEvent[];
+        
+            const bbox = svgChild.getBBox() as SVGRect;
+            let params = { x: bbox.x, y: bbox.y, opacity : 1 } as AnimationParams;
+            if (events.length > 0)  
+            {
+                if (events[0].type == 'show')
+                    params.opacity = 0;
+
+                for (const event of events) {
+                    //  we clone the parameters, because we will modify them later
+                    beforeParams.set(event, {...params});
+                    switch (event.type) {
+                        case 'animate':
+                            params.x = event.params.x;
+                            params.y = event.params.y;
+                            break;
+                        case 'show':
+                            params.opacity = 1;
+                            break;
+                        case 'hide':    
+                            params.opacity = 0;
+                            break;
+                    }
+                    afterParams.set(event, {...params});
+                }
+            }
+        }
 
 
         //set initial visibility of overlays, which is done differently depending on whether the slide is in the past or in the future
@@ -310,19 +360,19 @@ function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
                     else if (r.hasAttribute('transform')) {
                         //in the examples that I have, the value of the transform attribute will be something like matrix(-1 0 0 1 757 41), where -1 indicates horizontal reflection, 1 indicates vertical non-reflection, and x=757 and  y=41
 
-                        function composeMatrices(m1 : number[], m2 : number[]) {
+                        function composeMatrices(m1: number[], m2: number[]) {
                             return [
-                            m2[0] * m1[0] + m2[2] * m1[1],
-                            m2[1] * m1[0] + m2[3] * m1[1],
-                            m2[0] * m1[2] + m2[2] * m1[3],
-                            m2[1] * m1[2] + m2[3] * m1[3],
-                            m2[0] * m1[4] + m2[2] * m1[5] + m2[4],
-                            m2[1] * m1[4] + m2[3] * m1[5] + m2[5]
+                                m2[0] * m1[0] + m2[2] * m1[1],
+                                m2[1] * m1[0] + m2[3] * m1[1],
+                                m2[0] * m1[2] + m2[2] * m1[3],
+                                m2[1] * m1[2] + m2[3] * m1[3],
+                                m2[0] * m1[4] + m2[2] * m1[5] + m2[4],
+                                m2[1] * m1[4] + m2[3] * m1[5] + m2[5]
                             ]
-                          }
-                        const firstMatrix = [scaleX, 0, 0, scaleY, 0 ,0];
+                        }
+                        const firstMatrix = [scaleX, 0, 0, scaleY, 0, 0];
                         const secondMatrix = r.getAttribute('transform').slice(7, -1).split(' ').map(parseFloat);
-                        transformMatrix = composeMatrices(firstMatrix,secondMatrix);
+                        transformMatrix = composeMatrices(firstMatrix, secondMatrix);
                     }
                     else throw ('unknown type of rect with image')
 
