@@ -197,13 +197,22 @@ function setAnimationParams(node: SceneNode, params: AnimationParams): void {
     // node.opacity = params.opacity;
 }
 
-function clickAnimateBar(eventId: string, side: 'before' | 'after') {
+function getAnimationParams(node: SceneNode): AnimationParams {
+    return {
+        x: node.x,
+        y: node.y,
+        // opacity: node.opacity
+    }
+}
+// this function is clicked when the user clicks on the animate bar
+// the 
+function clickAnimateBar(newIndex: number) {
 
     //find the most recent animate event for the given node, before the given event
-    function findAnimateEvent (node : SceneNode, before : number) : AnimateEvent {
-        let retval : AnimateEvent = undefined;
+    function findAnimateEvent(node: SceneNode, before: number): AnimateEvent {
+        let retval: AnimateEvent = undefined;
         const id = overlayId(node);
-        for (let i = 0; i < before; i++) {  
+        for (let i = 0; i < before; i++) {
             const event = state.database.events[i];
             if (event.type == 'animate' && event.id == id)
                 retval = event;
@@ -211,50 +220,40 @@ function clickAnimateBar(eventId: string, side: 'before' | 'after') {
         return retval;
     }
 
-    console.log('clickAnimateBar', eventId, side);
-    const event = state.database.events.find(x => x.eventId == eventId);
-    if (event == undefined)
-        throw 'event not found';
-    let index = state.database.events.indexOf(event);
-    if (index == -1)
-        throw 'event not found';
-    if (side == 'after')
-        index++;
+    console.log('clickAnimateBar', newIndex);
 
 
-
-    //for every node in the current slide
+    //for every node in the current slide, if that node has at least one animation event, then we update the coordinates depending on how the current index compares to the old index
     for (const node of state.currentSlide.children) {
         const oldAnimate = findAnimateEvent(node, state.database.selected);
-        const newAnimate = findAnimateEvent(node, index);
+        const newAnimate = findAnimateEvent(node, newIndex);
         if (oldAnimate != newAnimate) {
-            
-        }
-        let params: AnimationParams;
+            console.log('animate', node.name, oldAnimate, newAnimate);
 
-        let paramsJSON = node.getPluginData('beforeAnimations');
-        if (paramsJSON != '')
-        {   
-            console.log('paramsJSON', paramsJSON);
-            params = JSON.parse(paramsJSON);
+            //we save the current parameters to the old animate event
+            const currentParams = {
+                x: node.x,
+                y: node.y,
+            }
+            if (oldAnimate != undefined) {
+                oldAnimate.params = currentParams;
+            }
+            else
+                node.setPluginData('beforeAnimations', JSON.stringify(currentParams));
+
+            //we load the new parameters from the new animate event
+            let newParams: AnimationParams;
+            if (newAnimate != undefined)
+                newParams = newAnimate.params;
+            else
+                newParams = JSON.parse(node.getPluginData('beforeAnimations'));
+
+            node.x = newParams.x;
+            node.y = newParams.y;
         }
 
-
-        for (let i = 0; i < index; i++) {
-            const event = state.database.events[i];
-            if (event.type == 'animate' && event.id == id)
-                params = event.params;
-        }
-
-        if (params != undefined) {
-            setAnimationParams(node, params);
-        }
     }
-
-    state.database.selected = index;
-
-
-
+    state.database.selected = newIndex;
     saveCurrentData();
     sendEventList();
 }
@@ -292,27 +291,6 @@ function newEventId(): string {
 
 
 
-//Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
-function createChildEvent(id: string): void {
-
-    const slide: FrameNode = findSlide(id);
-    const newEvent: Slide =
-    {
-        type: "child",
-        id: id,
-        name: slide.name,
-        enabled: 'enabled',
-        merged: false,
-        children: [],
-        keywords: [],
-        eventId: newEventId()
-    }
-    state.database.events.push(newEvent);
-
-    const newplace = freshRect(slide.width / 2, slide.height / 2, 100, 100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
-    const thumbnail = createThumbnail(state.currentSlide, id, newplace);
-    figma.currentPage.selection = [thumbnail];
-}
 
 //give the list of all texts used in descendants
 //this function is used in goodName below, and also to export keywords
@@ -354,14 +332,134 @@ function goodName(node: SceneNode): string {
     return retval
 }
 
+//Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
+function createChildEvent(id: string): void {
+
+    const slide: FrameNode = findSlide(id);
+    const newEvent: Slide =
+    {
+        type: "child",
+        id: id,
+        name: slide.name,
+        enabled: 'enabled',
+        merged: false,
+        children: [],
+        keywords: [],
+        eventId: newEventId()
+    }
+    state.database.events.push(newEvent);
+
+    const newplace = freshRect(slide.width / 2, slide.height / 2, 100, 100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
+    const thumbnail = createThumbnail(state.currentSlide, id, newplace);
+    figma.currentPage.selection = [thumbnail];
+}
+
+
+//creates an overlay event in the current slide
+function createOverlayEvent(type: 'show' | 'hide' | 'animate'): void {
+    // we are creating an overlay event
+
+    //returns a list of the selected items, but sorted in an order that is more convenient for the user
+    function sortSelection(): SceneNode[] {
+        let sorted: SceneNode[] = [];
+
+        //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
+        const xarray = [] as number[];
+        const yarray = [] as number[];
+
+        for (const item of figma.currentPage.selection) {
+            if (isShowHideNode(item)) {
+                xarray.push(item.x);
+                yarray.push(item.y);
+                sorted.push(item);
+            }
+        }
+        //dx is the maximal difference between x coordinates, likewise for dy
+        const dx = Math.max(...xarray) - Math.min(...xarray);
+        const dy = Math.max(...yarray) - Math.min(...yarray);
+
+        //the events are sorted by x or y depending on which of dx, dy is bigger
+        const sortIndex = (a: SceneNode) => {
+            if (dx > dy)
+                return a.x
+            else
+                return a.y
+        };
+        //the order of events is so that it progresses in the down-right direction
+
+        return sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
+    }
+
+
+    for (const item of sortSelection()) {
+
+        if (item.type === 'GROUP' && item.name.startsWith('Group')) {
+            //improve the name
+            item.name = goodName(item);
+        }
+
+
+
+        switch (type) {
+            case 'show':
+            case 'hide':
+                let newEvent: OverlayEvent =
+                {
+                    type: type,
+                    id: overlayId(item),
+                    enabled: 'enabled',
+                    name: item.name,
+                    merged: false,
+                    keywords: [],
+                    eventId: newEventId()
+                }
+                state.database.events.push(newEvent);
+                break;
+
+            case 'animate':
+
+                const params: AnimationParams = {
+                    x: item.x,
+                    y: item.y
+                }
+
+                let newAnimateEvent: AnimateEvent =
+                {
+                    type: 'animate',
+                    id: overlayId(item),
+                    enabled: 'enabled',
+                    name: item.name,
+                    merged: false,
+                    keywords: [],
+                    eventId: newEventId(),
+                    params: params
+                }
+
+                if (item.getPluginData('beforeAnimations') == '' ) {
+                    item.setPluginData('beforeAnimations', JSON.stringify(params));
+                }
+
+                state.database.events.push(newAnimateEvent);
+                break;
+        }
+
+
+
+
+        // const newDatabase = JSON.parse(JSON.stringify(state.database));
+        // console.log(newDatabase);
+        // state.database = newDatabase;
+
+
+    }
+}
 
 
 // create new event 
-//msg.subtype says what kind it is, values are 'child', 'show', 'hide', etc.
 //msg.id is used for the 'child' event
 function createEvent(eventInfo: {
     type: 'createEvent',
-    subtype: string,
+    subtype: 'child' | 'show' | 'hide' | 'animate',
     id: string,
     name: string
 }): void {
@@ -374,143 +472,14 @@ function createEvent(eventInfo: {
         createChildEvent(eventInfo.id);
     }
     else {
-        // we are creating an overlay event
 
-        //returns a list of the selected items, but sorted in an order that is more convenient for the user
-        function sortSelection(): SceneNode[] {
-            let sorted: SceneNode[] = [];
-
-            //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
-            const xarray = [] as number[];
-            const yarray = [] as number[];
-
-            for (const item of figma.currentPage.selection) {
-                if (isShowHideNode(item)) {
-                    xarray.push(item.x);
-                    yarray.push(item.y);
-                    sorted.push(item);
-                }
-            }
-            //dx is the maximal difference between x coordinates, likewise for dy
-            const dx = Math.max(...xarray) - Math.min(...xarray);
-            const dy = Math.max(...yarray) - Math.min(...yarray);
-
-            //the events are sorted by x or y depending on which of dx, dy is bigger
-            const sortIndex = (a: SceneNode) => {
-                if (dx > dy)
-                    return a.x
-                else
-                    return a.y
-            };
-            //the order of events is so that it progresses in the down-right direction
-
-            return sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
-        }
-
-
-        for (const item of sortSelection()) {
-
-            if (item.type === 'GROUP' && item.name.startsWith('Group')) {
-                //improve the name
-                item.name = goodName(item);
-            }
-
-
-
-            switch (eventInfo.subtype) {
-                case 'show':
-                case 'hide':
-                    let newEvent: OverlayEvent =
-                    {
-                        type: eventInfo.subtype,
-                        id: overlayId(item),
-                        enabled: 'enabled',
-                        name: item.name,
-                        merged: false,
-                        keywords: [],
-                        eventId: newEventId()
-                    }
-                    state.database.events.push(newEvent);
-                    break;
-
-                case 'animate':
-
-                    const params: AnimationParams = {
-                        x: item.x,
-                        y: item.y
-                    }
-
-                    let newAnimateEvent: AnimateEvent =
-                    {
-                        type: 'animate',
-                        id: overlayId(item),
-                        enabled: 'enabled',
-                        name: item.name,
-                        merged: false,
-                        keywords: [],
-                        eventId: newEventId(),
-                        params: params
-                    }
-
-                    if (item.getPluginData('beforeAnimations') == undefined) {
-                        item.setPluginData('beforeAnimations', JSON.stringify(params));
-                    }
-
-                    state.database.events.push(newAnimateEvent);
-                    break;
-            }
-
-
-
-
-            // const newDatabase = JSON.parse(JSON.stringify(state.database));
-            // console.log(newDatabase);
-            // state.database = newDatabase;
-
-
-        }
-
+        //we are creating an overlay event
+        createOverlayEvent(eventInfo.subtype);
     }
     saveCurrentData();
     sendEventList();
-
 }
 
-/*
-
-let testDatabase: Database = {
-    name: 'test',
-    id: 'test',
-    events: [
-        {
-            type: 'show',
-            id: 'test',
-            enabled: 'enabled',
-            name: 'test',
-            merged: false,
-            keywords: [],
-            eventId: 'test'
-        }
-    ]
-}
-
-let testAnimateEvent: AnimateEvent =
-{
-    type: 'animate',
-    id: 'testid',
-    enabled: 'enabled',
-    name: 'testname',
-    merged: false,
-    keywords: [],
-    eventId: 'testeventid',
-    params: {
-        x: 100,
-        y: 100,
-        opacity: 1
-    }
-}
-testDatabase.events.push(testAnimateEvent);
-console.log(testDatabase); */
 
 
 
@@ -1080,7 +1049,7 @@ function onMessage(msg: PluginUIToCode) {
             break
 
         case 'clickAnimateBar':
-            clickAnimateBar(msg.eventId, msg.side);
+            clickAnimateBar(msg.index);
             break;
 
         case 'createEvent':

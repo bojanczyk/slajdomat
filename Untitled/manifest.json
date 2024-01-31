@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "presentation": "Untitled",
+  "slideDict": {
+    "new_slide": "new_slide",
+    "dziecko": "dziecko"
+  },
+  "tree": {
+    "type": "child",
+    "name": "new slide",
+    "id": "new_slide",
+    "enabled": "enabled",
+    "merged": false,
+    "children": [
+      {
+        "type": "show",
+        "id": "Rectangle_1",
+        "name": "Rectangle 1",
+        "merged": false,
+        "keywords": [
+          "Rectangle 1"
+        ],
+        "eventId": "1",
+        "disabled": false,
+        "enabled": "enabled"
+      },
+      {
+        "type": "child",
+        "name": "dziecko",
+        "id": "dziecko",
+        "enabled": "enabled",
+        "merged": false,
+        "children": [
+          {
+            "type": "show",
+            "id": "Druga_rzecz",
+            "enabled": "enabled",
+            "name": "Druga rzecz",
+            "merged": false,
+            "keywords": [
+              "Druga rzecz"
+            ],
+            "eventId": "40",
+            "disabled": false
+          },
+          {
+            "type": "show",
+            "id": "Co_percentC5%9B_takiego",
+            "enabled": "enabled",
+            "name": "Coś takiego",
+            "merged": false,
+            "keywords": [
+              "Coś takiego"
+            ],
+            "eventId": "71"
+          },
+          {
+            "type": "animate",
+            "id": "Druga_rzecz",
+            "enabled": "enabled",
+            "name": "Druga rzecz",
+            "merged": false,
+            "keywords": [
+              "Druga rzecz"
+            ],
+            "eventId": "75",
+            "params": {
+              "x": 1287,
+              "y": 513
+            }
+          },
+          {
+            "type": "show",
+            "id": "Druga_rzecz",
+            "enabled": "enabled",
+            "name": "Druga rzecz",
+            "merged": false,
+            "keywords": [
+              "Druga rzecz"
+            ],
+            "eventId": "74"
+          },
+          {
+            "type": "animate",
+            "id": "Co_percentC5%9B_takiego",
+            "enabled": "enabled",
+            "name": "Coś takiego",
+            "merged": false,
+            "keywords": [
+              "Coś takiego"
+            ],
+            "eventId": "76",
+            "params": {
+              "x": 650,
+              "y": 181
+            }
+          }
+        ],
+        "keywords": [
+          "dziecko"
+        ],
+        "eventId": "2"
+      }
+    ],
+    "keywords": [
+      "new slide"
+    ],
+    "eventId": "root"
+  },
+  "defaultTimeLine": []
+}

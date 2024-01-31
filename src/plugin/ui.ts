@@ -316,10 +316,10 @@ function eventList(events: PresentationNode[], selected : number): void {
       const y = e.clientY - rect.top;
       const height = rect.bottom - rect.top;
       const fraction = y / height;
+
       postMessage({
         type: 'clickAnimateBar',
-        eventId: event.eventId,
-        side: (fraction < 0.5) ? 'before' : 'after'
+        index: (fraction < 0.5) ? index : index + 1
       })
     })
 

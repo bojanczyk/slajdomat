@@ -17,8 +17,7 @@ type PluginUIToCode = {
   pluginSettings: LatexPluginSettings
 } | {
   type: 'clickAnimateBar',
-  eventId : string,
-  side : 'before' | 'after'
+  index : number
 } | {
   type: 'saveFile'
 } | {
