@@ -63,6 +63,7 @@ button:disabled {
 
 .list-item i {
 padding-right : 8px;
+padding-left : 8px;
 }
 
 .list-label{
@@ -78,15 +79,24 @@ padding-right : 8px;
 
 
 .list-item {
-  padding-top : 6px;
-  padding-bottom: 6px;
   display : flex;
   align-items : center;
+  height : 30px;
 }
 
-#event-list .list-item {
-   padding-left : 10px;
+.animate-bar {
+  width: 10px;
+  height: 100%;
 }
+
+.animate-bar:not(.future) {
+  background-color: var(--niebieski);
+}
+
+.animate-bar.future {
+  background-color: lightblue;
+}
+
 
 .dropdown-content > .list-item {
   padding-left : 0px;

@@ -35,6 +35,8 @@ import {
     Rect
 } from '../viewer/transform'
 import {
+    AnimateEvent,
+    AnimationParams,
     Database,
     OverlayEvent,
     PresentationNode,
@@ -43,6 +45,7 @@ import {
 import { stat } from 'original-fs'
 
 import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin'
+import { Data } from 'electron'
 
 
 
@@ -144,6 +147,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
     const database: Database = {
         name: newSlide.name,
         id: id,
+        selected: undefined,
         events: []
     }
     newSlide.setPluginData("database", JSON.stringify(database));
@@ -184,6 +188,79 @@ function sendDropDownList() {
 }
 
 
+function setAnimationParams(node: SceneNode, params: AnimationParams): void {
+    if (params.x !== undefined)
+        node.x = params.x;
+    if (params.y !== undefined)
+        node.y = params.y;
+    // if (params.opacity !== undefined && !(node instanceof SliceNode))
+    // node.opacity = params.opacity;
+}
+
+function clickAnimateBar(eventId: string, side: 'before' | 'after') {
+
+    //find the most recent animate event for the given node, before the given event
+    function findAnimateEvent (node : SceneNode, before : number) : AnimateEvent {
+        let retval : AnimateEvent = undefined;
+        const id = overlayId(node);
+        for (let i = 0; i < before; i++) {  
+            const event = state.database.events[i];
+            if (event.type == 'animate' && event.id == id)
+                retval = event;
+        }
+        return retval;
+    }
+
+    console.log('clickAnimateBar', eventId, side);
+    const event = state.database.events.find(x => x.eventId == eventId);
+    if (event == undefined)
+        throw 'event not found';
+    let index = state.database.events.indexOf(event);
+    if (index == -1)
+        throw 'event not found';
+    if (side == 'after')
+        index++;
+
+
+
+    //for every node in the current slide
+    for (const node of state.currentSlide.children) {
+        const oldAnimate = findAnimateEvent(node, state.database.selected);
+        const newAnimate = findAnimateEvent(node, index);
+        if (oldAnimate != newAnimate) {
+            
+        }
+        let params: AnimationParams;
+
+        let paramsJSON = node.getPluginData('beforeAnimations');
+        if (paramsJSON != '')
+        {   
+            console.log('paramsJSON', paramsJSON);
+            params = JSON.parse(paramsJSON);
+        }
+
+
+        for (let i = 0; i < index; i++) {
+            const event = state.database.events[i];
+            if (event.type == 'animate' && event.id == id)
+                params = event.params;
+        }
+
+        if (params != undefined) {
+            setAnimationParams(node, params);
+        }
+    }
+
+    state.database.selected = index;
+
+
+
+    saveCurrentData();
+    sendEventList();
+}
+
+
+
 //send the event list of the current slide
 function sendEventList() {
     //the slide might be removed
@@ -191,7 +268,8 @@ function sendEventList() {
         cleanDatabase();
         sendToUI({
             type: 'eventList',
-            events: state.database.events
+            events: state.database.events,
+            selected: state.database.selected
         });
     }
 }
@@ -223,7 +301,7 @@ function createChildEvent(id: string): void {
         type: "child",
         id: id,
         name: slide.name,
-        enabled : 'enabled',
+        enabled: 'enabled',
         merged: false,
         children: [],
         keywords: [],
@@ -287,10 +365,16 @@ function createEvent(eventInfo: {
     id: string,
     name: string
 }): void {
-
-
-
-    if (eventInfo.subtype == 'show' || eventInfo.subtype == 'hide' || eventInfo.subtype == 'animate') {
+    if (eventInfo.subtype == 'child') {
+        // we are creating a child event
+        if (eventInfo.id == null) {
+            const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
+            eventInfo.id = slideId(newSlide)
+        }
+        createChildEvent(eventInfo.id);
+    }
+    else {
+        // we are creating an overlay event
 
         //returns a list of the selected items, but sorted in an order that is more convenient for the user
         function sortSelection(): SceneNode[] {
@@ -331,12 +415,12 @@ function createEvent(eventInfo: {
                 item.name = goodName(item);
             }
 
-            let newEvent: OverlayEvent;
+
 
             switch (eventInfo.subtype) {
                 case 'show':
                 case 'hide':
-                    newEvent =
+                    let newEvent: OverlayEvent =
                     {
                         type: eventInfo.subtype,
                         id: overlayId(item),
@@ -346,60 +430,89 @@ function createEvent(eventInfo: {
                         keywords: [],
                         eventId: newEventId()
                     }
+                    state.database.events.push(newEvent);
                     break;
 
                 case 'animate':
-                    newEvent =
+
+                    const params: AnimationParams = {
+                        x: item.x,
+                        y: item.y
+                    }
+
+                    let newAnimateEvent: AnimateEvent =
                     {
-                        type: eventInfo.subtype,
+                        type: 'animate',
                         id: overlayId(item),
                         enabled: 'enabled',
                         name: item.name,
                         merged: false,
                         keywords: [],
                         eventId: newEventId(),
-                        params: {
-                            x: item.x,
-                            y: item.y,
-                            opacity: 1
-                        }
+                        params: params
                     }
-                    console.log(newEvent);
-                    console.log('disabled',newEvent.enabled);
+
+                    if (item.getPluginData('beforeAnimations') == undefined) {
+                        item.setPluginData('beforeAnimations', JSON.stringify(params));
+                    }
+
+                    state.database.events.push(newAnimateEvent);
                     break;
             }
-            console.log('1', newEvent);
 
 
-            const newDatabase: Database = {
-                name: state.database.name,
-                id: state.database.id,
-                events: []
-            }
 
-            newDatabase.events.push({...newEvent});
-            console.log('now baza', newEvent, newDatabase.events);
-            console.log('rowne', newEvent == newDatabase.events[newDatabase.events.length - 1]);
-            console.log('nowy', newDatabase.events[newDatabase.events.length - 1]);
-            state.database.events.push({...newEvent});
-            console.log('2', state.database.events[state.database.events.length - 1]);
-            console.log('3', newEvent);
+
+            // const newDatabase = JSON.parse(JSON.stringify(state.database));
+            // console.log(newDatabase);
+            // state.database = newDatabase;
+
 
         }
 
     }
-    console.log('4', state.database.events);
-    if (eventInfo.subtype == 'child') {
-        if (eventInfo.id == null) {
-            const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
-            eventInfo.id = slideId(newSlide)
-        }
-        createChildEvent(eventInfo.id);
-    }
-
     saveCurrentData();
     sendEventList();
+
 }
+
+/*
+
+let testDatabase: Database = {
+    name: 'test',
+    id: 'test',
+    events: [
+        {
+            type: 'show',
+            id: 'test',
+            enabled: 'enabled',
+            name: 'test',
+            merged: false,
+            keywords: [],
+            eventId: 'test'
+        }
+    ]
+}
+
+let testAnimateEvent: AnimateEvent =
+{
+    type: 'animate',
+    id: 'testid',
+    enabled: 'enabled',
+    name: 'testname',
+    merged: false,
+    keywords: [],
+    eventId: 'testeventid',
+    params: {
+        x: 100,
+        y: 100,
+        opacity: 1
+    }
+}
+testDatabase.events.push(testAnimateEvent);
+console.log(testDatabase); */
+
+
 
 //remove an event from the current event list
 function removeEvent(index: number): void {
@@ -477,10 +590,12 @@ function hoverEvent(index: number): void {
     }
     else {
 
+
         //otherwise, the index says which event is hovered over. It will be surrounded by a frame
         const event = state.database.events[index];
         const link = findEventObject(event, state.currentSlide);
         if (link != null) {
+
 
             const hoverFrame = figma.createRectangle();
 
@@ -499,6 +614,8 @@ function hoverEvent(index: number): void {
             hoverFrame.opacity = 0.5;
             state.currentSlide.appendChild(hoverFrame);
             hoverFrames.push(hoverFrame);
+
+
         }
 
 
@@ -604,13 +721,6 @@ function overlayId(node: SceneNode): string {
 // save the plugin data, for the current slide, to the file
 function saveCurrentData(): void {
     state.database.name = state.currentSlide.name;
-
-    console.log('saving');
-    console.log(state.database.events);
-    console.log(state.database);
-    for (const event of state.database.events) {
-        console.log(event);
-    }
     state.currentSlide.setPluginData("database", JSON.stringify(state.database));
 }
 
@@ -672,16 +782,17 @@ function findSlide(id: string): FrameNode {
 
 //Gives the object in the slide that corresponds to the event. For a show/hide event this is the node that is shown/hidden. For a child event, this is the link to the child.
 function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
-    if (event.type == 'show' || event.type == 'hide')
-        for (const child of slide.children)
-            if (event.id == overlayId(child))
-                return child as SceneNode;
-
     if (event.type == 'child') {
         //find the object in the current slide, which represents a link to a child slide. This object is indicated by plugin data. Currently, it is a semi-transparent red rectangle.
         const nodes = slide.findAll((node: SceneNode) => node.getPluginData("childLink") == event.id);
         if (nodes.length > 0)
             return nodes[0] as SceneNode
+    }
+    else {
+        // for overlay events, we search if the corresponding object exists in the current slide
+        for (const child of slide.children)
+            if (event.id == overlayId(child))
+                return child as SceneNode;
     }
     return null;
 }
@@ -705,7 +816,7 @@ function cleanDatabase(): void {
                     event.enabled = 'enabled';
                 }
             }
-            if (event.type == "show" || event.type == "hide") {
+            if (event.type == "show" || event.type == "hide" || event.type == "animate") {
                 event.name = node.name;
                 event.enabled = 'enabled';
             }
@@ -968,6 +1079,10 @@ function onMessage(msg: PluginUIToCode) {
             figma.notify(msg.text);
             break
 
+        case 'clickAnimateBar':
+            clickAnimateBar(msg.eventId, msg.side);
+            break;
+
         case 'createEvent':
             //create a new event for the current slide
             //this covers show/hide/child events
@@ -1079,4 +1194,5 @@ figma.ui.onmessage = onMessage;
 
 setCurrentSlide(slideWithSelection());
 initPlugin();
+
 // repairOldFormat();

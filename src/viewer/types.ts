@@ -9,7 +9,7 @@ export {
     MessageToServerPdf, MessageToServerSlide, MessageToServerSound, OverlayEvent, ServerResponse, Slide, PresentationNode, State,
     StateJSON, SoundDict,
     Frame, TimelineJSON,
-    AnimationParams, Database
+    AnimationParams, Database, AnimateEvent
 }
 
 //the central type, which describes an event of the presentation
@@ -71,6 +71,7 @@ interface Slide extends GenericEvent {
 type Database = {
     name: string,
     id: string,
+    selected : number,  //this is the index of the currently selected event, which is undefined if no event is selected
     events: PresentationNode[]
   }
 

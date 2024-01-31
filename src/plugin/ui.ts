@@ -289,23 +289,47 @@ function mergeEventClick(index: number): void {
 }
 
 //get the list of events for the current slide
-function eventList(events: PresentationNode[]): void {
+function eventList(events: PresentationNode[], selected : number): void {
 
   //make a list item for the list of events 
   function makeEvent(event: PresentationNode, index: number): HTMLDivElement {
+    
     const retval = document.createElement('div');
     retval.classList.add('list-item');
-    retval.innerHTML = '<i class="material-icons"></i><div class="list-label"> </div><div class="list-buttons"><i class="material-icons">delete_outline</i></div>';
+    retval.innerHTML = '<div class="animate-bar"></div><i class="material-icons"></i><div class="list-label"> </div><div class="list-buttons"><i class="material-icons">delete_outline</i></div>';
+
+
     retval.addEventListener('mouseenter', () => {
       eventHover(index)
     })
     retval.addEventListener('mouseleave', () => {
       eventHover(-1)
     })
-    retval.childNodes[0].addEventListener('click', () => {
+
+    const animateBar = retval.querySelector('.animate-bar') as HTMLElement;
+    if (selected == undefined || i >= selected)
+      animateBar.classList.add('future');
+
+    animateBar.addEventListener('click', (e) => {
+      // check if the click is in the upper or lower half of the item
+      const rect = retval.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const height = rect.bottom - rect.top;
+      const fraction = y / height;
+      postMessage({
+        type: 'clickAnimateBar',
+        eventId: event.eventId,
+        side: (fraction < 0.5) ? 'before' : 'after'
+      })
+    })
+
+    const iconNode = retval.querySelector('i') as HTMLElement;
+    iconNode.addEventListener('click', () => {
       eventIconClick(index)
     })
-    retval.childNodes[2].childNodes[0].addEventListener('click', () => {
+
+    const deleteButton = retval.querySelector('.list-buttons').childNodes[0] as HTMLElement;
+    deleteButton.addEventListener('click', () => {
       eventRemoveClick(index)
     })
 
@@ -314,22 +338,23 @@ function eventList(events: PresentationNode[]): void {
 
     switch (event.type) {
       case "show":
-        (retval.childNodes[0] as HTMLElement).innerHTML = "visibility";
+        iconNode.innerHTML = "visibility";
         break;
       case "hide":
-        (retval.childNodes[0] as HTMLElement).innerHTML = "visibility_off";
+        iconNode.innerHTML = "visibility_off";
         break;
       case "animate":
-        (retval.childNodes[0] as HTMLElement).innerHTML = "animation";
+        iconNode.innerHTML = "animation";
         break;
       case "child":
-        (retval.childNodes[0] as HTMLElement).innerHTML = "zoom_out_map";
+        iconNode.innerHTML = "zoom_out_map";
         break;
       default:
         throw "unexpected event type"
     }
 
-    (retval.childNodes[1] as HTMLElement).innerHTML = event.name;
+    const labelNode = retval.querySelector('.list-label') as HTMLElement;
+    labelNode.innerHTML = event.name;
     return retval;
   }
 
@@ -718,7 +743,7 @@ onmessage =
 
       //get the list of events for the current slide
       case 'eventList':
-        eventList(msg.events);
+        eventList(msg.events, msg.selected);
         break;
 
       //sends the svg files to the server. Apparently this cannot be done on the plugin side, since it requires internet connectivity.

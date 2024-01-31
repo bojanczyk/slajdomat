@@ -16,6 +16,10 @@ type PluginUIToCode = {
   type: 'settings',
   pluginSettings: LatexPluginSettings
 } | {
+  type: 'clickAnimateBar',
+  eventId : string,
+  side : 'before' | 'after'
+} | {
   type: 'saveFile'
 } | {
   type: 'changeRoot'
@@ -91,7 +95,8 @@ type PluginCodeToUI = {
   url: string
 } | {
   type: 'eventList',
-  events: PresentationNode[]
+  events: PresentationNode[],
+  selected: number
 } | {
   type: 'dropDownContents',
   slides: {
