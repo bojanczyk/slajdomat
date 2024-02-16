@@ -55,15 +55,19 @@ button:disabled {
   opacity : 0
 }
 
+.list-buttons .material-icons:hover:not(.no-click) {
+  cursor: pointer
+}
+
+
 .list-item:hover div .material-icons {
   opacity : 1;
   color : black;
-  cursor  : pointer;
 }
+
 
 .list-item i {
 padding-right : 8px;
-padding-left : 8px;
 }
 
 .list-label{
@@ -71,7 +75,7 @@ padding-left : 8px;
   display : inline-block;
   color : var(--grafitowy);
   text-overflow: ellipsis;
-  max-width: 150px;
+  flex-grow: 1;
   white-space : nowrap;
   overflow : hidden;
   flex : 1;
@@ -87,6 +91,8 @@ padding-left : 8px;
 .animate-bar {
   width: 10px;
   height: 100%;
+  margin-right: 8px;
+  cursor: pointer;
 }
 
 .animate-bar:not(.future) {
@@ -248,9 +254,7 @@ background-color : var(--select-color);
   display: none;
 }
 
-.spacer {
-  flex : 1;
-}
+
 
 .sigma-button {
   margin-left : 5px;
@@ -492,13 +496,38 @@ the second line is just to avoid an error message */
   background-color: var(--niebieski);
 }
 
-.between-events{
-  background-color : whitesmoke;
-  width : 100%;
-  display : flex;
-  justify-content : center;
-  min-height : 3px;
+
+.spacer {
+  display: flex;
+  flex-direction:row;
+   height : 4px;
 }
+
+
+.spacer > :nth-child(2)
+{
+  display: flex;
+  justify-content: center;  
+  align-items: center; 
+ flex-grow: 1;
+}
+
+.spacer.merged {
+  background-color : white;
+}
+
+.spacer:not(.merged) {
+  background-color : lightcyan
+}
+
+.spacer:not(:hover) i {
+  opacity: 0;
+}
+
+.spacer i {
+  cursor: pointer;
+}
+
 
 .between-events.merged {
   background-color : white;
@@ -509,7 +538,7 @@ the second line is just to avoid an error message */
 }
 
 .between-events i {
-  margin : -7px;
+  /* margin : -7px; */
 }
 
 .between-events.can-merge:hover i {

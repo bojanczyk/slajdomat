@@ -7,7 +7,7 @@ export {
 
 
 import Fuse from 'fuse.js'
-import { PresentationNode } from './types'
+import { PresentationNode } from '../common/types'
 import { manifest } from './viewer'
 import { afterEventState, gotoState } from './timeline'
 

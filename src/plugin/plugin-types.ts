@@ -1,6 +1,6 @@
 import {
   PresentationNode
-} from "../viewer/types"
+} from "../common/types"
 
 import {} from '@figma/plugin-typings'
 

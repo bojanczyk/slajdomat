@@ -1,38 +1,19 @@
 export {
     initPanels, markDisabled, markSeen, openPanelTree,
     openPanelTreeRec, progressCache,
-    removeLoading, timelineHTML, timelineSeen, updateTimeLineForCurrent, userAlert, updateTimeCounter, timelineRecording, 
+    removeLoading, timelineHTML, timelineRecording, timelineSeen, updateTimeCounter, updateTimeLineForCurrent, userAlert
 };
 
-import {
-    manifest,
-    nextButton,
-    playButton,
-    prevButton
-} from './viewer';
-
-
-
-import {
-    initSearch
-} from './search';
-
-import {
-    gsap
-} from "gsap";
-
-
-import { exportPdf, initPdf } from './client-print';
+import { gsap } from "gsap";
+import { Slide, State } from '../common/types';
+import { initPdf } from './client-print';
 import { initComments } from './comments';
-import { currentTool, toggleSketchpad } from './sketchpad';
-import { StateMap, afterEventState, currentState, gotoIndex, gotoState, moveHead, pageNumber, slideStartState, timeline } from './timeline';
-import { PresentationNode, Slide, State } from './types';
-import { canPlaySound, loadSound, soundState } from './sound';
 import { formatTime, initPresenterTools } from './presenter-tools';
-
-
-
-
+import { initSearch } from './search';
+import { currentTool, toggleSketchpad } from './sketchpad';
+import { canPlaySound, loadSound } from './sound';
+import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, slideStartState, timeline } from './timeline';
+import { manifest, nextButton, playButton, prevButton } from './viewer';
 
 
 
@@ -66,12 +47,19 @@ function createTreeHTML(): void {
             else {
                 name = state.event.name;
                 const event = state.event;
-                if (event.type == "show")
-                    icon = "visibility";
-                if (event.type == "hide")
-                    icon = "visibility_off";
-                if (event.type == "child") {
-                    icon = "keyboard_return";
+                switch (event.type) {
+                    case "show":
+                        icon = "visibility";
+                        break;
+                    case "hide":
+                        icon = "visibility_off";
+                        break;
+                    case "child":
+                        icon = "keyboard_return";
+                        break;
+                    case 'animate':
+                        icon = "animation";
+                        break;
                 }
             }
 
@@ -184,8 +172,7 @@ function timelineRecording(frame: number, status: 'recording' | 'not recording')
     const div = progressCache[frame];
     if (status == 'not recording')
         div.classList.remove('recording');
-    else
-    {
+    else {
         div.classList.remove('nosound');
         div.classList.add('recording');
     }

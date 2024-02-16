@@ -1,5 +1,5 @@
 
-export { addToQueue, localRect, svgMap, transforms, getAnimationParams };
+export { addToQueue, localRect, svgMap, transforms, beforeParams, afterParams, loadStruct, queueError, finishedLoading, processQueue, attachSVG, cleanDefs, cleanRect};
 import { isOverlay, runOverlay } from './event';
 import { fileName } from './files';
 import { markDisabled, removeLoading, userAlert } from './html';
@@ -9,7 +9,8 @@ import {
     AnimationParams,
     OverlayEvent,
     PresentationNode, Slide
-} from './types';
+} from '../common/types';
+import { currentParams } from '../common/animate-params';
 
 
 
@@ -34,13 +35,7 @@ const afterParams: Map<OverlayEvent, AnimationParams> = new Map();
 
 const localRect: Map<PresentationNode, Rect> = new Map();
 
-// return the animation parameters of an svg element, before or after an event
-function getAnimationParams(event: OverlayEvent, when: 'before' | 'after') {
-    if (when == 'before')
-        return beforeParams.get(event);
-    else
-        return afterParams.get(event);
-}
+
 
 //add all slides on the list of loading queue, including all ancestors of these slides. Also, add the callback function to the list of functions to execute once the queue is empty
 function addToQueue(slides: PresentationNode[]): Promise<void> {
@@ -139,7 +134,6 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
             cleanRect(r, slide, defs);
 
 
-
         // we also need to fix a bug related to SVG <a href=...> nodes:
         // the export function of Figma unfortunately detaches those nodes 
         // from their clickable content (usually a <g> node that is the left sibling of the <a> node...)
@@ -164,9 +158,6 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
         //in the following code, I loop several times over svgChildren, which is sub-optimal but makes the code more readable.
 
 
-
-
-
         //attach each overlay event to its corresponding svg element (for child events we the svg element is the slide itself, so the placeholder will be recomputed)
         for (const event of slide.children) {
             if (isOverlay(event))
@@ -185,35 +176,14 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
 
 
 
-        //for each overlay event, we compute the parameters of the corresponding svg element that will be used before and after the event 
-        for (const svgChild of svgChildren) {
-            // these are the overlay events that concern this svg element
-            const events = slide.children.filter((event) => event.id == svgChild.id && isOverlay(event)) as OverlayEvent[];
-        
-            const bbox = svgChild.getBBox() as SVGRect;
-            let params = { x: bbox.x, y: bbox.y, opacity : 1 } as AnimationParams;
-            if (events.length > 0)  
-            {
-                if (events[0].type == 'show')
-                    params.opacity = 0;
-
-                for (const event of events) {
-                    //  we clone the parameters, because we will modify them later
-                    beforeParams.set(event, {...params});
-                    switch (event.type) {
-                        case 'animate':
-                            params.x = event.params.x;
-                            params.y = event.params.y;
-                            break;
-                        case 'show':
-                            params.opacity = 1;
-                            break;
-                        case 'hide':    
-                            params.opacity = 0;
-                            break;
-                    }
-                    afterParams.set(event, {...params});
-                }
+        for (let i = 0; i < slide.children.length; i++) {
+            const event = slide.children[i];
+            if (event.type != 'child') {
+                const id = event.id;
+                const before = currentParams(id, i, slide.children, slide.originalParams, 0);
+                beforeParams.set(event, before);
+                const after = currentParams(id, i + 1, slide.children, slide.originalParams, 0);
+                afterParams.set(event, after);
             }
         }
 

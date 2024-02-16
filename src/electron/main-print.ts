@@ -13,7 +13,7 @@ import svgToPdf from 'svg-to-pdfkit'
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { MessageToServerPdf, ServerResponse } from "../viewer/types";
+import { MessageToServerPdf, ServerResponse } from "../common/messages-viewer-server";
 import { sendStatus } from './main';
 import { readManifest, writeManifest, presentationDir } from './main-files';
 import { sanitize } from '../common/helper';
@@ -63,45 +63,3 @@ async function exportPdf(msg: MessageToServerPdf): Promise<ServerResponse> {
 
 }
 
-
-
-/*
-// variant two
-import { jsPDFOptions, jsPDF } from 'jspdf';
-import 'svg2pdf.js'
-import { Svg2pdfOptions } from 'svg2pdf.js';
-
-    // // variant two 
-
-    // const format: jsPDFOptions = {
-    //     orientation: msg.width > msg.gheight ? "landscape" : "portrait",
-    //     unit: 'pt',
-    //     format: [msg.width, msg.height],
-    //     compress: true
-    // };
-
-    // const options : Svg2pdfOptions = {width : msg.width, height : msg.height};
-
-
-    // for (const svgContent of msg.svgs) {
-    //     const pdf = new jsPDF(format);
-    //     await pdf.svg(svgContent, options);
-    //         // pdfList.push(pdf);
-    // }
-    // let index = 0;
-    // for (const step of allSteps())
-    // // if (step instanceof ZoomStep && !zoomsIn(step)) 
-    // {
-    //     index++;
-    //     if (index < 50) {
-    //         await gotoStep(step, 'silent');
-    //         retval.svgs.push(new XMLSerializer().serializeToString(svgElement));
-    //         // const pdf = new jsPDF(format);
-    //         // await pdf.svg(svgElement, options);
-    //         // pdfList.push(pdf);
-    //     }
-    // }
-
-    // console.log(msg);
-
-    */

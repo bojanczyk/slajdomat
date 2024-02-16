@@ -33,7 +33,7 @@ import {
     Manifest,
     State,
     TimelineJSON
-} from "./types"
+} from "../common/types"
 
 
 

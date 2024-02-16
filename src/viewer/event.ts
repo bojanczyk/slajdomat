@@ -3,28 +3,11 @@ export {
     runOverlay, zoomSlide
 };
 
-    import {
-        AnimationParams,
-        PresentationNode, Slide
-    } from './types';
-
-
-import {
-    manifest
-} from './viewer';
-
-import {
-    applyTransform,
-    Rect,
-} from './transform';
-
-import {
-    gsap
-} from "gsap";
-
-import { getAnimationParams, localRect, svgMap, transforms } from './loadSVG';
-
- 
+import { AnimationParams, PresentationNode, Slide } from '../common/types';
+import { gsap } from "gsap";
+import { afterParams, beforeParams, localRect, svgMap, transforms } from './loadSVG';
+import { applyTransform, Rect, } from './transform';
+import { manifest } from './viewer';
 
 
 
@@ -32,7 +15,7 @@ import { getAnimationParams, localRect, svgMap, transforms } from './loadSVG';
 
 
 function isOverlay(event: PresentationNode): boolean {
-    return (event.type == 'show' || event.type == 'hide' || event.type == 'animate' );
+    return (event.type == 'show' || event.type == 'hide' || event.type == 'animate');
 }
 
 
@@ -53,7 +36,7 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
     else {
 
         // use gsap to animate a change in the viewBox
-          gsap.to(svgDom, {
+        gsap.to(svgDom, {
             duration: 1.5,
             attr: {
                 viewBox: textRect(viewBox)
@@ -65,47 +48,42 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
 
 
 //execute an overlay event (for the moment, these are hide or show)
-function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward', silent: string): void {
+function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward', silent: 'silent' | 'animated'): void {
 
 
-    let animationParams : AnimationParams = {};
+    let animationParams: AnimationParams;
+    let duration: number;
+
     const svg = svgMap.get(overlay);
+    if (svg == undefined)
+        return;
 
     switch (overlay.type) {
         case 'show':
         case 'hide':
-            if ((overlay.type == "show" && direction == 'forward') || (overlay.type == "hide" && direction == 'backward'))
-                animationParams.opacity = 1;
-
-            else
-                animationParams.opacity = 0;
-            break;
-
         case 'animate':
-            if (direction == 'forward') 
-                animationParams = getAnimationParams(overlay, 'after')
+            if (direction == 'forward')
+                animationParams = afterParams.get(overlay);
             else
-                animationParams = getAnimationParams(overlay, 'before');
-            console.log(animationParams);
+                animationParams = beforeParams.get(overlay);
+            duration = 1;
             break;
 
         case 'child':
-            if (direction == 'forward') 
-                animationParams.opacity = 1;
-            else    
-                animationParams.opacity = 0;          
+            duration = 0.3;
+            if (direction == 'forward')
+                animationParams = { opacity: 1 };
+            else
+                animationParams = { opacity: 0 };
             break;
     }
 
+    if (silent == 'silent') 
+        duration = 0;
 
-    if (svg != undefined) {
-        let duration = { duration : 0};
-        if (silent == 'animated') {
-            duration.duration = 0.3;
-        }
-        let target = { ...duration, ...animationParams };
-        gsap.to(svg, target);
-    }
+    let target = { ...{ duration: duration }, ...animationParams };
+    gsap.to(svg, target);
+
 
 }
 

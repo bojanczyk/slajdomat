@@ -18,7 +18,7 @@ import {
 
 import {
   PresentationNode, Database
-} from '../viewer/types'
+} from '../common/types'
 import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
 
@@ -289,20 +289,21 @@ function mergeEventClick(index: number): void {
 }
 
 //get the list of events for the current slide
-function eventList(events: PresentationNode[], selected : number): void {
+function eventList(events: PresentationNode[], selected: number): void {
 
   //make a list item for the list of events 
   function makeEvent(event: PresentationNode, index: number): HTMLDivElement {
-    
+
     const retval = document.createElement('div');
     retval.classList.add('list-item');
     retval.innerHTML = '<div class="animate-bar"></div><i class="material-icons"></i><div class="list-label"> </div><div class="list-buttons"><i class="material-icons">delete_outline</i></div>';
 
+    const label = retval.querySelector('.list-label') as HTMLElement;
 
-    retval.addEventListener('mouseenter', () => {
+    label.addEventListener('mouseenter', () => {
       eventHover(index)
     })
-    retval.addEventListener('mouseleave', () => {
+    label.addEventListener('mouseleave', () => {
       eventHover(-1)
     })
 
@@ -361,19 +362,34 @@ function eventList(events: PresentationNode[], selected : number): void {
   //make an item that separates two events
   function makeSpacer(event: PresentationNode, index: number, canMerge: boolean): HTMLDivElement {
     const div = document.createElement('div');
-    div.classList.add('between-events');
-    if (canMerge)
-      div.classList.add('can-merge');
-    let icon = 'link';
-    if (event.merged) {
-      div.classList.add('merged');
-      icon = 'link_off'
-    }
-    div.innerHTML = '<i class="material-icons">' + icon + '</i>'
-    div.childNodes[0].addEventListener('click', () => {
-      mergeEventClick(index)
-    });
 
+    div.classList.add('spacer');
+    div.innerHTML = '<div class="animate-bar"></div><div></div>'
+    const animateBar = div.childNodes[0] as HTMLElement;
+    const separator = div.childNodes[1] as HTMLElement;
+    if (index > selected)
+      animateBar.classList.add('future');
+
+    if (canMerge) {
+      const mergeIcon = document.createElement('i');
+      mergeIcon.classList.add('material-icons');
+      if (event.merged)
+        mergeIcon.innerHTML = 'link_off'
+      else
+        mergeIcon.innerHTML = 'link';
+      separator.appendChild(mergeIcon);
+      mergeIcon.addEventListener('click', () => { mergeEventClick(index) })
+    }
+
+    if (event.merged)
+      div.classList.add('merged');
+
+    animateBar.addEventListener('click', (e) => {
+      postMessage({
+        type: 'clickAnimateBar',
+        index: index
+      })
+    })
     return div;
   }
 
@@ -413,8 +429,6 @@ function selChange(msg: {
   canInsert: boolean,
   currentFont: FontName
 }): void {
-
-
   const eventDropdowns = [
     'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide', 'dropdown-show-animate'
   ]
@@ -496,10 +510,20 @@ for (const toolbarButton of toolbarButtons) {
     }
 
 
+    var dropdownTitleClicked = false;
 
-    if (target.classList.contains('hover-down-arrow')) {
-      //the little drop-down arrow was clicked, which means that the visibility of the dropdown should be toggled
+    // we  open the dropdown menus when the little arrow is clicked, or otherwise if the title of the zoom menu is clicked
+    if (target.classList.contains('hover-down-arrow'))
+      // little arrow was clicked
+      dropdownTitleClicked = true;
+    if (target.classList.contains('event-toolbar-title')) {
+      const parent = target.parentNode as HTMLElement;
+      if (parent.id == 'event-toolbar-zoom')
+      // the title of the zoom menu was clicked
+        dropdownTitleClicked = true;
+    }
 
+    if (dropdownTitleClicked) {
       if (toolbarButton.classList.contains('unfolded'))
         foldMenu(toolbarButton);
       else {
@@ -612,7 +636,7 @@ function createChildLink(id: string): void {
 
 // what is done when the toolbar for show/hide events has been clicked. id is the id of the clicked dom element
 function showEventsClicked(id: string): void {
-  const subtype = id.slice('dropdown-show-'.length) as 'show' | 'hide' | 'animate' | 'child';
+  const subtype = id.slice('dropdown-show-'.length) as 'show' | 'hide' | 'animate';
   postMessage({
     type: 'createEvent',
     subtype: subtype,

@@ -4,7 +4,8 @@ export { exportPdf, initPdf };
 
 import { sendToServer } from './files';
 import { currentState, gotoIndex, statesInPresentation, timeline } from './timeline';
-import { MessageToServerPdf, State } from './types';
+import { MessageToServerPdf} from '../common/messages-viewer-server';
+import { State} from '../common/types';
 import { manifest } from './viewer';
 
 
@@ -129,7 +130,6 @@ async function exportPdf(): Promise<void> {
     const icon = document.querySelector('#link-to-pdf');
     icon.classList.add('growAndShrink');
     icon.classList.remove('hidden');
-    console.log('adding new');
     setTimeout(() => {
       icon.classList.remove('growAndShrink')
     }, 3000);

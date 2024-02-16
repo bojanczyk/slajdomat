@@ -13,7 +13,7 @@ export {
 import { app } from "electron";
 import * as fs from 'fs';
 import * as path from 'path';
-import { Manifest } from "../viewer/types";
+import { Manifest } from "../common/types";
 import { sendMessageToRenderer, sendStatus } from "./main";
 import { restartServer } from "./main-server";
 

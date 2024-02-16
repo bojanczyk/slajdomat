@@ -5,47 +5,21 @@
 import { } from '@figma/plugin-typings'
 
 export {
-    allSlides, allTexts, findEventObject, findSlide, getDatabase, getRoot, loadCurrentData, pluginSettings, saveCurrentData, sendSettings, sendToUI, state, deleteHoverFrames
+    allSlides, deleteHoverFrames, findEventObject, findOverlayNodeById, findSlide, getDatabase, getRoot, loadCurrentData, saveCurrentData, selChange, sendToUI, slideId, state
 }
 
 
-import {
-    LatexPluginSettings,
-    LatexState
-} from './plugin-types'
-
-
-import {
-    upgradeVersion
-} from './plugin-version'
-
-import {
-    exportSlides
-} from './export'
-
-import {
-    latexitOne,
-    latexitTwo,
-    matematykData,
-    matematykWord
-} from './matematyk'
-
-import { freshName, sanitize, freshRect } from '../common/helper'
-import {
-    Rect
-} from '../viewer/transform'
-import {
-    AnimateEvent,
-    AnimationParams,
-    Database,
-    OverlayEvent,
-    PresentationNode,
-    Slide
-} from '../viewer/types'
-import { stat } from 'original-fs'
-
-import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin'
-import { Data } from 'electron'
+import { Database, PresentationNode } from '../common/types'
+import { createChildEvent, createNewSlide } from './code-child-events'
+import { findSlide, overlayId, slideId } from './code-name-management'
+import { canBeOverlayTarget, createOverlayEvent } from './code-overlay-events'
+import { getLatexSettings, initSettings } from './code-settings'
+import { updateThumbnails } from './code-thumbnails'
+import { loadAnimationParams, saveAnimationParams } from './code-timeline'
+import { exportSlides } from './export'
+import { latexitOne, latexitTwo, matematykData, matematykWord } from './matematyk'
+import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
+import { LatexState } from './plugin-types'
 
 
 
@@ -60,101 +34,11 @@ const state = {
 }
 
 
-//the plugin settings
-let pluginSettings: LatexPluginSettings;
-
-
-
 function sendToUI(msg: PluginCodeToUI): void {
     figma.ui.postMessage(msg)
 }
 
-//********* settings *********/
-//get the settings from the ui
-function getLatexSettings(settings: LatexPluginSettings): void {
-    pluginSettings = settings;
-    figma.clientStorage.setAsync('slajdomat', JSON.stringify(settings));
-    sendSettings();
-}
 
-//send the settings to the ui
-function sendSettings(): void {
-    sendToUI({
-        type: 'settings',
-        settings: pluginSettings
-    });
-}
-
-//initialize the settings for the plugin
-function initPlugin() {
-
-
-    upgradeVersion();
-    figma.clientStorage.getAsync('slajdomat').then(
-        x => {
-            //the default plugin settings
-            const defaultSettings = {
-                words: ['∀', '∃', '∧', '∨', '∈'],
-                active: false,
-                mathFont: {
-                    family: 'STIXGeneral',
-                    style: 'Regular'
-                },
-                mathFontSize: 1,
-                serverURL: 'http://localhost:3001',
-                latexitURL: 'https://latex.codecogs.com/svg.latex?'
-            }
-
-            try {
-                pluginSettings = {
-                    ...defaultSettings,
-                    ...JSON.parse(x)
-                };
-            } catch (e) {
-                pluginSettings = defaultSettings;
-            }
-            sendSettings();
-            selChange();
-        }
-    )
-}
-
-
-
-//Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
-function createNewSlide(width: number, height: number, name: string): FrameNode {
-
-    let basex, basey = 0;
-
-    try {
-        basex = state.currentSlide.x;
-        basey = state.currentSlide.y;
-    } catch (e) {
-        //the slide might not be defined, or defined and removed
-        basex = 0;
-        basey = 0;
-    }
-
-
-
-    const place = freshRect(basex, basey, width, height, allSlides(), undefined);
-    const newSlide = figma.createFrame();
-    newSlide.name = name;
-    newSlide.x = place.x;
-    newSlide.y = place.y
-    newSlide.resize(width, height);
-    const id = freshName(sanitize(newSlide.name), avoidList(undefined));
-    const database: Database = {
-        name: newSlide.name,
-        id: id,
-        selected: undefined,
-        events: []
-    }
-    newSlide.setPluginData("database", JSON.stringify(database));
-
-
-    return newSlide;
-}
 
 
 //send the  list which says what are the possible candidates for child slides. 
@@ -188,77 +72,6 @@ function sendDropDownList() {
 }
 
 
-function setAnimationParams(node: SceneNode, params: AnimationParams): void {
-    if (params.x !== undefined)
-        node.x = params.x;
-    if (params.y !== undefined)
-        node.y = params.y;
-    // if (params.opacity !== undefined && !(node instanceof SliceNode))
-    // node.opacity = params.opacity;
-}
-
-function getAnimationParams(node: SceneNode): AnimationParams {
-    return {
-        x: node.x,
-        y: node.y,
-        // opacity: node.opacity
-    }
-}
-// this function is clicked when the user clicks on the animate bar
-// the 
-function clickAnimateBar(newIndex: number) {
-
-    //find the most recent animate event for the given node, before the given event
-    function findAnimateEvent(node: SceneNode, before: number): AnimateEvent {
-        let retval: AnimateEvent = undefined;
-        const id = overlayId(node);
-        for (let i = 0; i < before; i++) {
-            const event = state.database.events[i];
-            if (event.type == 'animate' && event.id == id)
-                retval = event;
-        }
-        return retval;
-    }
-
-    console.log('clickAnimateBar', newIndex);
-
-
-    //for every node in the current slide, if that node has at least one animation event, then we update the coordinates depending on how the current index compares to the old index
-    for (const node of state.currentSlide.children) {
-        const oldAnimate = findAnimateEvent(node, state.database.selected);
-        const newAnimate = findAnimateEvent(node, newIndex);
-        if (oldAnimate != newAnimate) {
-            console.log('animate', node.name, oldAnimate, newAnimate);
-
-            //we save the current parameters to the old animate event
-            const currentParams = {
-                x: node.x,
-                y: node.y,
-            }
-            if (oldAnimate != undefined) {
-                oldAnimate.params = currentParams;
-            }
-            else
-                node.setPluginData('beforeAnimations', JSON.stringify(currentParams));
-
-            //we load the new parameters from the new animate event
-            let newParams: AnimationParams;
-            if (newAnimate != undefined)
-                newParams = newAnimate.params;
-            else
-                newParams = JSON.parse(node.getPluginData('beforeAnimations'));
-
-            node.x = newParams.x;
-            node.y = newParams.y;
-        }
-
-    }
-    state.database.selected = newIndex;
-    saveCurrentData();
-    sendEventList();
-}
-
-
 
 //send the event list of the current slide
 function sendEventList() {
@@ -273,187 +86,6 @@ function sendEventList() {
     }
 }
 
-//returns a unique id for an event, inside the current slide
-function newEventId(): string {
-
-    //the id is a number (stored as a string). In order to achieve uniqueness, we store the maximal id used so far inside the attribute eventId.
-    let retval: number;
-    const maxId = state.currentSlide.getPluginData('eventId');
-    if (maxId == '')
-        retval = 1;
-    else
-        retval = parseInt(maxId) + 1;
-    state.currentSlide.setPluginData('eventId', retval.toString());
-    return retval.toString();
-}
-
-
-
-
-
-
-//give the list of all texts used in descendants
-//this function is used in goodName below, and also to export keywords
-function allTexts(n: SceneNode, avoid: SceneNode[] = []): string[] {
-
-    if (avoid.includes(n))
-        return [];
-
-    if (n.type == 'TEXT') {
-        return [n.name];
-    }
-    if (n.type == 'GROUP' || n.type == 'FRAME') {
-        let retval: string[] = [];
-        for (const child of n.children) {
-            retval = retval.concat(allTexts(child as SceneNode, avoid))
-        }
-        return retval;
-    }
-    //otherwise there are no strings
-    return [];
-}
-
-
-
-//Creates a descriptive string name for a node. It will be called if the node is a group node with a name like "Group 2". The current implementation returns the contents the longest text node in the descendants. 
-function goodName(node: SceneNode): string {
-    const texts = allTexts(node);
-
-    //if there is no text, do not change the name
-    if (texts.length == 0)
-        return node.name;
-
-    //otherwise, return the longest text    
-    let retval = texts[0];
-    for (const text of texts) {
-        if (text.length > retval.length)
-            retval = text;
-    }
-    return retval
-}
-
-//Creates a child event in the current slide, together with a child link (as described in the previous function) that represents the child. 
-function createChildEvent(id: string): void {
-
-    const slide: FrameNode = findSlide(id);
-    const newEvent: Slide =
-    {
-        type: "child",
-        id: id,
-        name: slide.name,
-        enabled: 'enabled',
-        merged: false,
-        children: [],
-        keywords: [],
-        eventId: newEventId()
-    }
-    state.database.events.push(newEvent);
-
-    const newplace = freshRect(slide.width / 2, slide.height / 2, 100, 100 * slide.height / slide.width, state.currentSlide.children as FrameNode[], state.currentSlide);
-    const thumbnail = createThumbnail(state.currentSlide, id, newplace);
-    figma.currentPage.selection = [thumbnail];
-}
-
-
-//creates an overlay event in the current slide
-function createOverlayEvent(type: 'show' | 'hide' | 'animate'): void {
-    // we are creating an overlay event
-
-    //returns a list of the selected items, but sorted in an order that is more convenient for the user
-    function sortSelection(): SceneNode[] {
-        let sorted: SceneNode[] = [];
-
-        //we look at the set of x values and y values of the selected objects, to determine if this set is more vertical or more horizontal, so that we can determine the sorting order
-        const xarray = [] as number[];
-        const yarray = [] as number[];
-
-        for (const item of figma.currentPage.selection) {
-            if (isShowHideNode(item)) {
-                xarray.push(item.x);
-                yarray.push(item.y);
-                sorted.push(item);
-            }
-        }
-        //dx is the maximal difference between x coordinates, likewise for dy
-        const dx = Math.max(...xarray) - Math.min(...xarray);
-        const dy = Math.max(...yarray) - Math.min(...yarray);
-
-        //the events are sorted by x or y depending on which of dx, dy is bigger
-        const sortIndex = (a: SceneNode) => {
-            if (dx > dy)
-                return a.x
-            else
-                return a.y
-        };
-        //the order of events is so that it progresses in the down-right direction
-
-        return sorted.sort((a, b) => sortIndex(a) - sortIndex(b));
-    }
-
-
-    for (const item of sortSelection()) {
-
-        if (item.type === 'GROUP' && item.name.startsWith('Group')) {
-            //improve the name
-            item.name = goodName(item);
-        }
-
-
-
-        switch (type) {
-            case 'show':
-            case 'hide':
-                let newEvent: OverlayEvent =
-                {
-                    type: type,
-                    id: overlayId(item),
-                    enabled: 'enabled',
-                    name: item.name,
-                    merged: false,
-                    keywords: [],
-                    eventId: newEventId()
-                }
-                state.database.events.push(newEvent);
-                break;
-
-            case 'animate':
-
-                const params: AnimationParams = {
-                    x: item.x,
-                    y: item.y
-                }
-
-                let newAnimateEvent: AnimateEvent =
-                {
-                    type: 'animate',
-                    id: overlayId(item),
-                    enabled: 'enabled',
-                    name: item.name,
-                    merged: false,
-                    keywords: [],
-                    eventId: newEventId(),
-                    params: params
-                }
-
-                if (item.getPluginData('beforeAnimations') == '' ) {
-                    item.setPluginData('beforeAnimations', JSON.stringify(params));
-                }
-
-                state.database.events.push(newAnimateEvent);
-                break;
-        }
-
-
-
-
-        // const newDatabase = JSON.parse(JSON.stringify(state.database));
-        // console.log(newDatabase);
-        // state.database = newDatabase;
-
-
-    }
-}
-
 
 // create new event 
 //msg.id is used for the 'child' event
@@ -463,36 +95,61 @@ function createEvent(eventInfo: {
     id: string,
     name: string
 }): void {
+
+
+    saveAnimationParams();
+    
+
+    let createdEvents: PresentationNode[];
+
     if (eventInfo.subtype == 'child') {
         // we are creating a child event
         if (eventInfo.id == null) {
             const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
             eventInfo.id = slideId(newSlide)
         }
-        createChildEvent(eventInfo.id);
+        createdEvents = createChildEvent(eventInfo.id);
     }
     else {
 
         //we are creating an overlay event
-        createOverlayEvent(eventInfo.subtype);
+        createdEvents = createOverlayEvent(eventInfo.subtype);
     }
+
+
+
+    // insert the new event into the database, at position selected
+    for (const newEvent of createdEvents) {
+        state.database.events.splice(state.database.selected, 0, newEvent);
+        state.database.selected++;
+    }
+
+
+
     saveCurrentData();
+    console.log('before load animation params', JSON.stringify(state.database));
+    loadAnimationParams();
+    console.log('after load animation params', JSON.stringify(state.database));
     sendEventList();
 }
 
 
-
-
 //remove an event from the current event list
 function removeEvent(index: number): void {
+    saveAnimationParams();
     const event = state.database.events[index];
     if (event.type == "child") {
         const rect = findEventObject(event, state.currentSlide);
         if (rect != null)
             rect.remove();
     }
+
+    if (state.database.selected > index)
+        state.database.selected--;
+
     state.database.events.splice(index, 1);
     saveCurrentData();
+    loadAnimationParams();
     sendEventList();
 }
 
@@ -508,6 +165,7 @@ function mergeEvent(index: number): void {
 //change order of event list so that source becomes target. The source and target are counted among merged blocks of events
 function reorderEvents(sourceBlock: number, targetBlock: number): void {
 
+    saveAnimationParams();
     //the source is a block, and so is the target
     const blockStarts: number[] = [];
     let i: number;
@@ -532,12 +190,25 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     while (block.length > 0) {
         state.database.events.splice(realTarget, 0, block.pop());
     }
-
+    
     saveCurrentData();
+    loadAnimationParams();
     sendEventList();
 
 }
 
+
+// this function is clicked when the user clicks on the animate bar
+function clickAnimateBar(newIndex: number) {
+    if (newIndex == state.database.selected)
+        return;
+    deleteHoverFrames();
+    saveAnimationParams();
+    state.database.selected = newIndex;
+    saveCurrentData();
+    loadAnimationParams();
+    sendEventList();
+}
 
 
 
@@ -565,32 +236,29 @@ function hoverEvent(index: number): void {
         const link = findEventObject(event, state.currentSlide);
         if (link != null) {
 
-
+            const margin = 20;
+            // create a hover frame
             const hoverFrame = figma.createRectangle();
-
-            hoverFrame.resize(link.width, link.height);
-            hoverFrame.x = link.x
-            hoverFrame.y = link.y
+            hoverFrame.resize(link.width + 2 * margin, link.height + 2 * margin);
+            hoverFrame.x = link.x - margin
+            hoverFrame.y = link.y - margin;
             hoverFrame.fills = [{
                 type: 'SOLID',
                 color: {
-                    r: 0,
-                    g: 0,
-                    b: 1
+                    r: 173 / 255,
+                    g: 216 / 255,
+                    b: 230 / 255
                 }
             }];
-            hoverFrame.name = 'temporary hover frame';
+            hoverFrame.name = 'slajdomat selection';
             hoverFrame.opacity = 0.5;
-            state.currentSlide.appendChild(hoverFrame);
+            // make the hoverframe be behind everything
+            state.currentSlide.insertChild(0, hoverFrame);
             hoverFrames.push(hoverFrame);
 
-
         }
-
-
     }
 }
-
 
 //code that is run when the plugin is closed
 function closePlugin(): void {
@@ -606,93 +274,11 @@ function clickEvent(index: number): void {
     }
 }
 
-// I use my own id's, instead of those of figma, so that copy and paste between presentations works
-//the id for a slide is stored in its database
-function slideId(slide: FrameNode): string {
-    const database = getDatabase(slide);
-    if (database != undefined)
-        return database.id;
-    else
-        return undefined;
-}
-
-//list of id's to avoid when creating a new id in a slide
-/*If the argument is defined, then we are generating an id for an event inside slideWithEvent. If it is undefined then we are generating an id for slide. The conflicts to be avoided are: 1. two id's in the same slide; 2. an event id with a slide id anywhere; 3. two slide id's. */
-
-function avoidList(slideWithEvent: FrameNode): string[] {
-
-    const avoid: string[] = [];
-
-    //we definitely want to avoid conflicts with all slide id's
-    for (const slide of allSlides())
-        avoid.push(slideId(slide));
-
-    //we want to avoid avoid conflicts with event id's in the list slides, which is either a singleton [slideWithEvent] if we are generating an id for an event inside slideEvent, or otherwise all slides.
-    let slides: FrameNode[] = [];
-    if (slideWithEvent != undefined)
-        slides.push(slideWithEvent);
-    else
-        slides = allSlides();
-
-    for (const slide of slides)
-        for (const child of slide.children)
-            avoid.push(child.getPluginData('id'));
-
-
-    return avoid;
-}
-
-
-//returns an id for an overlay, creating a new one if necessary, and fixing the old one if necessary
-function overlayId(node: SceneNode): string {
-
-    let retval = node.getPluginData('id');
-
-    const slide = node.parent as FrameNode;
-    if (!isSlideNode(slide))
-        throw 'asked for overlay id of a node that is not a child of a slide';
-
-    if (retval != '') {
-        //check if the proposed id is already present in the current slide. This can happen if a node is copied by the user, then the plugin data is also copied, which includes the id, thus leading to duplicate id's 
-
-        //tells us if node x is older than node y
-        function olderNode(x: SceneNode, y: SceneNode): boolean {
-            //figma id's store a number, such as 12:35, where 12 identifies the frame, and 35 identifies the child. In this case, the value of 12 is fixed, so we compare the value of 35, which grows as the objects get newer. 
-
-            if (x.id.length == y.id.length)
-                return (x.id < y.id);
-            else
-                return (x.id.length < y.id.length)
-        }
-
-
-        for (const other of slide.children) {
-            if ((olderNode(other, node)) && (other.getPluginData('id') == retval)) {
-                retval = '';
-            }
-        }
-
-    }
-
-
-    if (retval == '') {
-        //generate a new id, because the id is empty. It could be empty because of the above deduplication code.
-
-        retval = freshName(sanitize(node.name), avoidList(slide));
-        //save the name in the node
-        node.setPluginData('id', retval);
-    }
-    return retval;
-}
-
-
-
 // save the plugin data, for the current slide, to the file
 function saveCurrentData(): void {
     state.database.name = state.currentSlide.name;
     state.currentSlide.setPluginData("database", JSON.stringify(state.database));
 }
-
 
 
 // the opposite of the previous function
@@ -703,6 +289,12 @@ function loadCurrentData(slide: FrameNode): void {
 }
 
 
+function fixVersion(database: Database): void {
+    if (database.originalParams == undefined)
+        database.originalParams = {};
+}
+
+
 //get the database for a slide
 function getDatabase(slide: FrameNode): Database {
     const s = slide.getPluginData("database");
@@ -710,18 +302,12 @@ function getDatabase(slide: FrameNode): Database {
         return undefined
     else {
         const parsed = JSON.parse(s);
-        // fixVersion(parsed);
+        fixVersion(parsed);
         return parsed;
     }
 }
 
 
-//says if the node is a possible target for a show/hide event
-function isShowHideNode(node: SceneNode): boolean {
-    if (node.parent != state.currentSlide || node.getPluginData('childLink') != '')
-        return false;
-    return true;
-}
 
 //a node is a slide if it contains a database
 function isSlideNode(node: FrameNode): boolean {
@@ -740,14 +326,13 @@ function allSlides(): FrameNode[] {
     return retval
 }
 
-//find a slide in the document with the given id
-function findSlide(id: string): FrameNode {
-    for (const node of allSlides())
-        if (slideId(node) == id)
-            return node;
-    return null;
-}
 
+//find an node in the current slicde with the given id
+function findOverlayNodeById(id: string, slide: FrameNode): SceneNode {
+    for (const child of slide.children)
+        if (id == overlayId(child))
+            return child as SceneNode;
+}
 
 //Gives the object in the slide that corresponds to the event. For a show/hide event this is the node that is shown/hidden. For a child event, this is the link to the child.
 function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
@@ -759,9 +344,7 @@ function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
     }
     else {
         // for overlay events, we search if the corresponding object exists in the current slide
-        for (const child of slide.children)
-            if (event.id == overlayId(child))
-                return child as SceneNode;
+        return findOverlayNodeById(event.id, slide);
     }
     return null;
 }
@@ -805,96 +388,6 @@ function parentSlide(slide: FrameNode): FrameNode {
     }
     return null;
 }
-
-
-function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: Rect): GroupNode {
-    const targetSlide: FrameNode = findSlide(targetSlideId);
-
-    const redColor = {
-        type: 'SOLID',
-        color: {
-            r: 1,
-            g: 0,
-            b: 0
-        }
-    } as Paint;
-
-    // red semi-transparent rectangle, which will be later filled with the thumbnail
-    const rectNode = figma.createRectangle();
-    rectNode.resize(where.width, where.width);
-    rectNode.x = where.x;
-    rectNode.y = where.y;
-    updateThumbnail(rectNode, targetSlide);
-    rectNode.opacity = 0.5;
-    rectNode.setPluginData('thumbnail', 'yes');
-    state.currentSlide.appendChild(rectNode);
-
-    // a red frame, which will stay even when the thumbnail appears
-    const frameNode = figma.createRectangle();
-    frameNode.resize(where.width, where.width);
-    frameNode.x = where.x;
-    frameNode.y = where.y;
-    frameNode.fills = [];
-    frameNode.strokes = [redColor];
-    state.currentSlide.appendChild(frameNode);
-
-
-
-    // E a group with the nodes
-    const groupNode = figma.group([rectNode, frameNode], state.currentSlide);
-    groupNode.setPluginData("childLink", targetSlideId);
-    groupNode.expanded = false;
-
-    return groupNode;
-}
-
-async function updateThumbnail(rect: RectangleNode, slide: FrameNode) {
-    const image = figma.createImage(await slide.exportAsync({
-        format: 'PNG'
-    }));
-    rect.fills = [
-        {
-            type: 'IMAGE',
-            imageHash: image.hash,
-            scaleMode: 'FILL'
-        }
-    ]
-}
-
-
-
-//update the thumbnails for slide children
-async function updateThumbnails() {
-    const nodes = state.currentSlide.findAll((node: SceneNode) => node.getPluginData("childLink") != '');
-
-    for (const child of nodes) {
-        const slide = findSlide(child.getPluginData('childLink'));
-
-        //if the child link was created in an old version of Slajdomat, then it is simply a rectangle. In this case it needs to be upgraded to a new version, where it is a group containing two rectangles.
-        if (child.type == 'RECTANGLE') {
-            const where = { width: child.width, height: child.height, x: child.x, y: child.y };
-            child.remove();
-            createThumbnail(state.currentSlide, slideId(slide), where);
-        }
-
-
-
-        let rect: RectangleNode;
-        //finds the rectangle where the thumbnail should go; this is indicated by plugin data
-        if (child.type == 'GROUP') {
-            for (const grandchild of child.children)
-                if (grandchild.getPluginData('thumbnail')) {
-                    rect = grandchild as RectangleNode;
-                }
-        }
-
-        //if such a rectangle has been found, then its fill should be replaced with the thumbnail
-        if (rect != null) {
-            updateThumbnail(rect, slide);
-        }
-    }
-}
-
 
 
 //set the current slide of the plugin
@@ -976,7 +469,6 @@ function docChange(changes: DocumentChangeEvent): void {
 
 //event handler for when the selection has changed
 function selChange(): void {
-
     //if there is a saved selection, this means that the change was triggered by the user hovering over the event list in the plugin, and hence it should not count
 
     const slide = slideWithSelection();
@@ -1000,9 +492,6 @@ function selChange(): void {
 
     const sel = figma.currentPage.selection;
 
-
-
-
     const msg: PluginCodeToUI = {
         type: 'selChange',
         selected: false, // is there at least one object that can be used for show/hide
@@ -1012,7 +501,7 @@ function selChange(): void {
     };
 
     for (const item of figma.currentPage.selection) {
-        if (isShowHideNode(item))
+        if (canBeOverlayTarget(item))
             msg.selected = true;
     }
 
@@ -1031,8 +520,6 @@ function selChange(): void {
         }
         msg.canInsert = true;
     }
-
-
     //send the information about the updated selection
     sendToUI(msg)
 }
@@ -1095,9 +582,9 @@ function onMessage(msg: PluginUIToCode) {
             break;
 
         case 'mouseEnterPlugin':
-            //I'm not sure if this is necessary, but just in case I refresh the event list when the mouse enters the plugin.
-            if (state.currentSlide != null)
-                sendEventList();
+            // //I'm not sure if this is necessary, but just in case I refresh the event list when the mouse enters the plugin.
+            // if (state.currentSlide != null)
+            //     sendEventList();
             break;
 
         case 'hoverEvent':
@@ -1143,12 +630,6 @@ function onMessage(msg: PluginUIToCode) {
             throw "uncovered message type sent to code: "
 
     }
-
-
-
-
-
-
 }
 
 figma.on('documentchange', docChange);
@@ -1161,7 +642,8 @@ figma.showUI(__html__, {
 figma.ui.onmessage = onMessage;
 
 
-setCurrentSlide(slideWithSelection());
-initPlugin();
 
-// repairOldFormat();
+setCurrentSlide(slideWithSelection());
+initSettings();
+
+

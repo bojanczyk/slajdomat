@@ -6,7 +6,7 @@ Handles the comments to slides
 import doc from "pdfkit";
 import { userAlert } from "./html";
 import { currentState, decodeState, encodeState, gotoState } from "./timeline";
-import { StateJSON } from "./types";
+import { StateJSON } from "../common/types";
 import { manifest } from "./viewer";
 
 export { initComments };
@@ -52,8 +52,6 @@ async function initComments() {
         while (commentContainer.firstChild) {
             commentContainer.removeChild(commentContainer.firstChild);
         }
-
-        console.log(getScript);
 
         //load the comments from the database
         const response = await fetch(getScript);

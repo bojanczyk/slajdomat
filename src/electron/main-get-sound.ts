@@ -4,7 +4,8 @@ this code takes care of receiving sound from the viewer, and saving it to disk
 
 export { onGetWav, createLive }
 
-import { Manifest, MessageToServerLive, MessageToServerSound, ServerResponse, StateJSON } from "../viewer/types";
+import { Manifest,  StateJSON } from "../common/types";
+import { MessageToServerLive, MessageToServerSound, ServerResponse } from "../common/messages-viewer-server";
 import { dirList, presentationDir, readManifest, slideDir, writeManifest } from "./main-files";
 import { slajdomatSettings } from "./main-settings";
 import { sendStatus } from "./main";
@@ -97,10 +98,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         // find the index of msg.forWhat in the sound list
-        console.log('manifest.defaultTimeLine', manifest.defaultTimeLine);
-        console.log('msg.forWhat', msg.forWhat);
         let index = manifest.defaultTimeLine.findIndex((sound) => {return sameStateJSON(sound.state, msg.forWhat)});
-        console.log('index', index);
 
         if (index > -1) {
             manifest.defaultTimeLine.splice(index, 1);

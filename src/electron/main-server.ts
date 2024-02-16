@@ -16,7 +16,7 @@ import {
 import {
     MessageToServer,
     ServerResponse
-} from '../viewer/types';
+} from '../common/messages-viewer-server';
 
 import { onGetSlide } from './main-get-slides';
 import { createLive, onGetWav } from './main-get-sound';
@@ -55,7 +55,6 @@ function startServer(): void {
             const msg = JSON.parse(msgBody) as MessageToServer;
 
             let response: ServerResponse;
-            console.log('switching');
             if (msg.type != 'probe')
                 sendStatus(msg.type);
             switch (msg.type) {

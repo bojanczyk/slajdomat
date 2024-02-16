@@ -112,8 +112,9 @@ app.on('activate', () => {
 });
 
 //the user has clicked a presentation name, which should result in opening that presentation in a new window
-function openViewer(name: string) {
-  console.log('opening viewer', name);
+function openViewer(dir : string, fileName: string) {
+
+  const name = path.join(dir, fileName);
   const offset = mainWindow.getPosition();
   const viewerWin = new BrowserWindow({
     width: 800,
@@ -191,7 +192,7 @@ ipcMain.on('message-to-main', (event, arg) => {
       break;
 
     case 'open-viewer':
-      openViewer(path.join(message.dir, message.file));
+      openViewer(message.dir, message.file);
       break;
 
     case 'goto-folder':

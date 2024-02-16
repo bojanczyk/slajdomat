@@ -1,4 +1,4 @@
-import { Database, PresentationNode } from "../viewer/types";
+import { Database, PresentationNode } from "../common/types";
 import { LatexPluginSettings, LatexState } from "./plugin-types";
 
 export {PluginUIToCode, PluginCodeToUI};

@@ -3,8 +3,8 @@ this source takes manages the files and directories used by the backend
 */
 
 export {
-    PresentationList, copyHTMLFiles, dirList, downloadViewerFiles,
-    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, writeFile, writeManifest, commentServerPath
+    PresentationList, commentServerPath, copyHTMLFiles, dirList, downloadViewerFiles,
+    findExecutableInPath, gotoChild, gotoParent, presentationDir, readManifest, readPresentations, revealFinder, setResourceDir, slideDir, writeFile, writeManifest
 };
 
 
@@ -12,11 +12,8 @@ import { app, shell } from "electron";
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import {
-    freshName,
-    sanitize
-} from '../common/helper';
-import { Manifest } from "../viewer/types";
+import { freshName, sanitize } from '../common/helper';
+import { Manifest } from "../common/types";
 import { sendMessageToRenderer, sendStatus } from "./main";
 import { myStringify, slajdomatSettings } from "./main-settings";
 import { oldVersion } from "./main-version";
@@ -81,7 +78,7 @@ function setResourceDir() {
     // the user main pass a custom directory for the viewer files, using the command line argument --viewerdir
     const indexCustomDir = process.argv.indexOf('--viewerdir');
     if (indexCustomDir !== -1 && indexCustomDir < process.argv.length - 1) {
-        const customDir = process.argv[indexCustomDir+1];
+        const customDir = process.argv[indexCustomDir + 1];
         if (customDir != undefined)
             fs.access(customDir, fs.constants.F_OK, (err) => {
                 if (err) {
@@ -171,8 +168,8 @@ function revealFinder(name: string, type: 'folder' | 'presentation'): void {
 
 //returns the path from a sub-folder to the root folder
 function commentServerPath(presentationName: string) {
-    const relative  =path.relative(presentationDir(presentationName),slajdomatSettings.directory);
-    return path.join(relative,slajdomatSettings.commentServer)
+    const relative = path.relative(presentationDir(presentationName), slajdomatSettings.directory);
+    return path.join(relative, slajdomatSettings.commentServer)
 }
 
 

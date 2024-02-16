@@ -1,7 +1,7 @@
 export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline };
 
 import { findSlide, isOverlay, runOverlay, zoomSlide } from "./event";
-import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "./types";
+import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "../common/types";
 
 
 import { markSeen, openPanelTree, timelineSeen, updateTimeLineForCurrent } from "./html";
@@ -230,9 +230,10 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
 
         function runState(state: State, direction: 'forward' | 'backward') {
 
-            if (state.type == 'start')
-                {openPanelTree(state.slide, direction == 'forward');
-                runOverlay(state.slide, direction, mode);}
+            if (state.type == 'start') {
+                openPanelTree(state.slide, direction == 'forward');
+                runOverlay(state.slide, direction, mode);
+            }
             if (state.type == 'afterEvent' && state.event.type == 'child')
                 openPanelTree(state.event, direction == 'backward');
             if ((state.type == 'afterEvent') && (state.event.type != 'child'))
@@ -313,12 +314,17 @@ function encodeState(state: State): StateJSON {
 
 //read a state from a string representation that has been loaded from disk
 function decodeState(state: StateJSON): State {
-    if (state.type == 'start') {
-        return slideStartState(findSlide(state.slideId));
-    } else {
-        const slide = findSlide(state.slideId);
-        const event = slide.children.find((e) => e.id == state.eventId);
-        return afterEventState(event);
+    try {
+        if (state.type == 'start') {
+            return slideStartState(findSlide(state.slideId));
+        } else {
+            const slide = findSlide(state.slideId);
+            const event = slide.children.find((e) => e.id == state.eventId);
+            return afterEventState(event);
+        }
+    } catch (e) {
+        // this can happen if the slide or event has been deleted, or if the state is otherwise invalid
+        return undefined
     }
 }
 

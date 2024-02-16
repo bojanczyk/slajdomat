@@ -3,10 +3,9 @@ export {
 }
 
 import {
-    MessageToServerSound,
     SoundDict,
     State
-} from './types'
+} from '../common/types'
 
 import {
     getManifest,
@@ -28,6 +27,7 @@ import {
 } from "./html"
 import { StateMap, currentState, decodeState, encodeState, moveHead, sameState, timeline } from './timeline'
 import { formatTime } from './presenter-tools'
+import { MessageToServerSound } from '../common/messages-viewer-server'
 
 
 
@@ -70,7 +70,7 @@ function endRecording(): void {
 
     if (mediaRecorder == null || mediaRecorder.state != 'recording') return;
 
-    timelineRecording(timeline.current,'not recording');
+    timelineRecording(timeline.current, 'not recording');
 
     const retval: MessageToServerSound = {
         presentation: undefined,
@@ -127,7 +127,7 @@ async function startRecording(): Promise<void> {
 
     try {
 
-        timelineRecording(timeline.current,'recording');
+        timelineRecording(timeline.current, 'recording');
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true
         })
@@ -181,9 +181,10 @@ function initSoundTimeline(): void {
 
     for (const x of manifest.defaultTimeLine) {
         const state = decodeState(x.state);
-        defaultSounds.set(state, x.soundFile);
-        defaultDurations.set(state, x.soundDuration);
-
+        if (state != undefined) {
+            defaultSounds.set(state, x.soundFile);
+            defaultDurations.set(state, x.soundDuration);
+        }
     }
 
     for (const step of timeline.frames) {
@@ -238,7 +239,8 @@ async function loadSound(index: number): Promise<HTMLAudioElement> {
                 const audio = new Audio(timeline.frames[index].soundFile);
                 audio.onloadeddata = () => {
                     timeline.frames[index].audio = audio;
-                    resolve(audio);}
+                    resolve(audio);
+                }
                 audio.addEventListener('timeupdate', updateTimeCounter)
                 audio.onerror = (e) => { timeline.frames[index].audio = undefined; resolve(undefined) };
             });
@@ -362,7 +364,7 @@ function canPlaySound(frame: number): boolean {
     if (sound.audio == undefined)
         return false;
 
-    
+
     // even if the sound exists, the presentation could be finished
     if ((sound.audio.currentTime == sound.audio.duration) && (frame == timeline.frames.length - 1))
         return false;

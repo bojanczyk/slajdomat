@@ -13,7 +13,7 @@ import {
 import {
     pluginSettings,
     sendSettings
-} from './code'
+} from './code-settings'
 
 
 // functions for matematyk **************

@@ -8,7 +8,7 @@ the idea is that each slide manifest is tagged with the version of the Slajdomat
 
 
 export { oldVersion, upgradeManifest, upgradePresentation, version };
-    import { Manifest, Slide } from '../viewer/types';
+    import { Manifest, Slide } from '../common/types';
 
 
 
@@ -70,8 +70,6 @@ function upgradeManifest(manifest: Manifest): void {
         return;
 
     if (manifest.version < 0.89) {
-        console.log('nothing')
-
         //add keywords to all slides
         // eslint-disable-next-line no-inner-declarations
         function eventIdAdd(event: Slide) {
@@ -87,24 +85,6 @@ function upgradeManifest(manifest: Manifest): void {
         manifest.tree.eventId = 'root';
 
     }
-/*
-    if (manifest.version < 0.902) {
-        for (const slide of Object.keys(manifest.soundDict)) {
-            const dict = manifest.soundDict[slide]
-            const events = Object.keys(dict);
-            for (const event of events)
-                dict[event] = (dict[event] as any).duration;
-
-            const oldKey = (events.length - 1).toString();
-            dict['finish'] = dict[oldKey];
-            delete dict[oldKey];
-            const dir = slideDir(manifest, slide);
-            try {child.execSync(`mv ${dir}/${oldKey}.mp3 ${dir}/finish.mp3 `);}
-            catch (e) {console.log('failed to copy file',e)}
-        }
-        
-    }*/
-
 
 
 

@@ -5,7 +5,8 @@ this code takes care of recieving slides from the plugin, and saving them to dis
 export { onGetSlide };
 
 import * as path from 'path';
-import { Manifest, MessageToServerSlide, ServerResponse } from "../viewer/types";
+import { Manifest} from "../common/types";
+import { MessageToServerSlide, ServerResponse } from "../common/messages-viewer-server";
 import { sendStatus } from "./main";
 import { commentServerPath, copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
 import { slajdomatSettings } from "./main-settings";
