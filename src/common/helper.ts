@@ -1,4 +1,4 @@
-export { freshName, sanitize, freshRect }
+export { freshName, sanitize, freshRect, toAlphaNumeric }
 
 //gives a name, starting with base, which is not on the avoid list
 function freshName(base: string, avoid: string[]): string {
@@ -81,7 +81,9 @@ function freshRect(x: number, y : number, width: number, height: number, avoidLi
 }
 
 
-
+function toAlphaNumeric(s: string): string {
+    return s.replace(/[^a-zA-Z0-9]/g, '_');
+}
 
 //sanitize a string so that it is a good filename 
 function sanitize(s: string): string {

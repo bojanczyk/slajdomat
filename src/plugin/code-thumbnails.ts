@@ -2,25 +2,26 @@
 export { createThumbnail, updateThumbnails };
 import { findSlide, slideId, state } from "./code";
 
+// this is the colour that will be used for the thumbnail frame, and also for its fill when the thumbnail is not available
+const redColor = {
+    type: 'SOLID',
+    color: {
+        r: 1,
+        g: 0,
+        b: 0
+    }
+} as Paint;
 
+
+// creates a thumbnail of slide targetSlideId and places it in the current slide in the position where
 function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: Rect): GroupNode {
     const targetSlide: FrameNode = findSlide(targetSlideId);
-
-    const redColor = {
-        type: 'SOLID',
-        color: {
-            r: 1,
-            g: 0,
-            b: 0
-        }
-    } as Paint;
 
     // red semi-transparent rectangle, which will be later filled with the thumbnail
     const rectNode = figma.createRectangle();
     rectNode.resize(where.width, where.width);
     rectNode.x = where.x;
     rectNode.y = where.y;
-    updateThumbnail(rectNode, targetSlide);
     rectNode.opacity = 0.5;
     rectNode.setPluginData('thumbnail', 'yes');
     state.currentSlide.appendChild(rectNode);
@@ -34,27 +35,35 @@ function createThumbnail(sourceSlide: FrameNode, targetSlideId: string, where: R
     frameNode.strokes = [redColor];
     state.currentSlide.appendChild(frameNode);
 
-
-
-    // E a group with the nodes
+    //  a group with the nodes
     const groupNode = figma.group([rectNode, frameNode], state.currentSlide);
     groupNode.setPluginData("childLink", targetSlideId);
     groupNode.expanded = false;
+
+    // this creates the actual picture. it is separate code, since it will be called later when the thumbnail is updated but the rectagles created here stay the same
+    updateThumbnail(rectNode, targetSlide);
 
     return groupNode;
 }
 
 async function updateThumbnail(rect: RectangleNode, slide: FrameNode) {
-    const image = figma.createImage(await slide.exportAsync({
-        format: 'PNG'
-    }));
-    rect.fills = [
-        {
-            type: 'IMAGE',
-            imageHash: image.hash,
-            scaleMode: 'FILL'
-        }
-    ]
+    if (slide == undefined || slide.removed) {
+        // the target slide has been removed
+        rect.fills = [ redColor ];
+    }
+    else {
+        // the target slide exists, so we can generate a thumbnail
+        const image = figma.createImage(await slide.exportAsync({
+            format: 'PNG'
+        }));
+        rect.fills = [
+            {
+                type: 'IMAGE',
+                imageHash: image.hash,
+                scaleMode: 'FILL'
+            }
+        ]
+    }
 }
 
 

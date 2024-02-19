@@ -2,11 +2,11 @@
 
 export { createChildEvent, createNewSlide, createThumbnail };
 
-import { freshName, freshRect, sanitize } from "../common/helper";
-import { Database, Slide } from "../common/types";
-import { allSlides, findSlide, slideId, state } from "./code";
-import { avoidList, newEventId } from "./code-name-management";
-import { createThumbnail } from "./code-thumbnails";
+    import { freshName, freshRect, toAlphaNumeric } from "../common/helper";
+    import { Database, Slide } from "../common/types";
+    import { allSlides, findSlide, state } from "./code";
+    import { avoidList, newEventId } from "./code-name-management";
+    import { createThumbnail } from "./code-thumbnails";
 
 
 //Creates a new slide of given width and height. The place for the new slide is chosen to be close to the current slide.
@@ -29,7 +29,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
     newSlide.x = place.x;
     newSlide.y = place.y
     newSlide.resize(width, height);
-    const id = freshName(sanitize(newSlide.name), avoidList(undefined));
+    const id = freshName(toAlphaNumeric(newSlide.name), avoidList(undefined));
     const database: Database = {
         name: newSlide.name,
         id: id,

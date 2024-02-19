@@ -8,16 +8,16 @@ export {
 };
 
 
-import { app, shell } from "electron";
-import * as fs from 'fs';
-import * as https from 'https';
-import * as path from 'path';
-import { freshName, sanitize } from '../common/helper';
-import { Manifest } from "../common/types";
-import { sendMessageToRenderer, sendStatus } from "./main";
-import { myStringify, slajdomatSettings } from "./main-settings";
-import { oldVersion } from "./main-version";
-import { ElectronMainToRenderer } from "./messages-main-renderer";
+    import { app, shell } from "electron";
+    import * as fs from 'fs';
+    import * as https from 'https';
+    import * as path from 'path';
+    import { freshName, toAlphaNumeric } from '../common/helper';
+    import { Manifest } from "../common/types";
+    import { sendMessageToRenderer, sendStatus } from "./main";
+    import { myStringify, slajdomatSettings } from "./main-settings";
+    import { oldVersion } from "./main-version";
+    import { ElectronMainToRenderer } from "./messages-main-renderer";
 
 
 //these are the files in the resource directory that should be copied to each presentation
@@ -177,7 +177,7 @@ function commentServerPath(presentationName: string) {
 function presentationDir(presentationName: string) {
     if (!(presentationName in presentations)) {
         //choose a fresh name based on the presentation name
-        const dirName = freshName(sanitize(presentationName), dirList(currentDir));
+        const dirName = freshName(toAlphaNumeric(presentationName), dirList(currentDir));
         presentations[presentationName] = { file: dirName, updated: true };
         sendStatus('adding ' + dirName)
         fs.mkdirSync(path.join(currentDir, dirName));
@@ -191,8 +191,7 @@ function slideDir(manifest: Manifest, slideId: string, name: string = undefined)
     const presentation = manifest.presentation;
 
     if (!(slideId in manifest.slideDict)) {
-        let dirName = sanitize(name);
-
+        let dirName = toAlphaNumeric(name);
         //get an unused name
         dirName = freshName(dirName, Object.values(manifest.slideDict))
 

@@ -2,18 +2,18 @@
 this code takes care of receiving sound from the viewer, and saving it to disk
 */
 
-export { onGetWav, createLive }
+export { createLive, onGetWav };
 
-import { Manifest,  StateJSON } from "../common/types";
+import { freshName, toAlphaNumeric } from "../common/helper";
 import { MessageToServerLive, MessageToServerSound, ServerResponse } from "../common/messages-viewer-server";
-import { dirList, presentationDir, readManifest, slideDir, writeManifest } from "./main-files";
-import { slajdomatSettings } from "./main-settings";
+import { StateJSON } from "../common/types";
 import { sendStatus } from "./main";
-import { freshName, sanitize } from "../common/helper";
+import { presentationDir, readManifest, slideDir, writeManifest } from "./main-files";
+import { slajdomatSettings } from "./main-settings";
 
+import * as child from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as child from 'child_process';
 
 
 
@@ -31,10 +31,32 @@ function sameStateJSON(state1: StateJSON, state2: StateJSON): boolean {
         return state1.eventId == state2.eventId && state1.slideId == state2.slideId;
 }
 
+// returns a list of the mp3 files in the given path, without the mp3
+function existingSoundNames(path: string): string[] {
+    let retval: string[] = [];
+    try {
+        retval = fs.readdirSync(path).filter((name) => { return name.endsWith('.mp3') });
+    }
+    catch (e) {
+        //do nothing
+    }
+    // remover the mp3 suffix
+    retval = retval.map((name) => { return name.slice(0, -4) });
+    return retval;
+}
+
 
 //we get a single sound, in the wav format
 function onGetWav(msg: MessageToServerSound): ServerResponse {
+
+    // the description of the sound, for the status and error messages
     let soundDescription: string;
+    if (msg.forWhat.type == 'afterEvent') {
+        soundDescription = 'after event ' + msg.forWhat.eventId;
+    }
+    else {
+        soundDescription = 'start of slide ' + msg.forWhat.slideId;
+    }
 
 
     try {
@@ -42,24 +64,38 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         const manifest = readManifest(msg.presentation);
         const buffer = new Uint8Array(msg.file)
         const absolutePath = slideDir(manifest, msg.forWhat.slideId);
-        
-        let shortName: string;
-        if (msg.forWhat.type == 'afterEvent')
-        {
-            shortName = 'after_'+sanitize(msg.forWhat.eventId);
-            soundDescription = 'after event ' + msg.forWhat.eventId;
+
+
+        // the local name is relative to the presentation directory
+        let localFileName: string;
+        let absoluteFileName: string;
+
+        // find the index of msg.forWhat in the sound list
+        let index = manifest.defaultTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
+
+        if (index > -1) {
+            // the sound is already there 
+            localFileName  = manifest.defaultTimeLine[index].soundFile;
+            localFileName = localFileName.slice(0, -4);
+            manifest.defaultTimeLine.splice(index, 1);
+            absoluteFileName = path.join(presentationDir(msg.presentation), localFileName);
+            console.log('absoluteFileName', absoluteFileName);
         }
-        else
+        else 
         {
-            soundDescription = 'start of slide ' + msg.forWhat.slideId;
-            shortName = 'start';
+            // we need to generate a new sound name
+            let shortName: string;
+            if (msg.forWhat.type == 'afterEvent') {
+                shortName = 'after_' + toAlphaNumeric(msg.forWhat.eventId);
+            }
+            else {
+                shortName = 'start';
+            }
+    
+            shortName = freshName(shortName, existingSoundNames(absolutePath));
+            absoluteFileName = path.join(absolutePath, shortName);
+            localFileName = path.relative(presentationDir(msg.presentation), absoluteFileName);
         }
-
-        const absoluteFileName = path.join(absolutePath, shortName);
-        const localFileName = path.relative(presentationDir(msg.presentation), absoluteFileName);
-        
-
-
 
 
         fs.writeFileSync(absoluteFileName + '.wav', Buffer.from(buffer));
@@ -82,8 +118,6 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         }
         catch (e) { throw 'Failed to run ffmpeg for ' + absoluteFileName }
 
-
-
         fs.unlinkSync(absoluteFileName + '.wav');
 
 
@@ -95,20 +129,10 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         } catch (e) { throw 'Failed to run ffprobe' }
 
 
-
-
-        // find the index of msg.forWhat in the sound list
-        let index = manifest.defaultTimeLine.findIndex((sound) => {return sameStateJSON(sound.state, msg.forWhat)});
-
-        if (index > -1) {
-            manifest.defaultTimeLine.splice(index, 1);
-        }
-
-
         manifest.defaultTimeLine.push({
             state: msg.forWhat,
             soundDuration: duration,
-            soundFile:  localFileName + '.mp3'
+            soundFile: localFileName + '.mp3'
         });
 
 
@@ -138,40 +162,40 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 function createLive(msg: MessageToServerLive): ServerResponse {
     throw 'not implemented';
 }
-    /*
-    try {
-        sendStatus('going live')
-        const manifest: Manifest = readManifest(msg.presentation);
-        if (manifest.live == undefined)
-            manifest.live = [];
+/*
+try {
+    sendStatus('going live')
+    const manifest: Manifest = readManifest(msg.presentation);
+    if (manifest.live == undefined)
+        manifest.live = [];
 
 
-        //create a directory for the liver recording
-        const dir = freshName(`live_recording${manifest.live.length}`, dirList(presentationDir(msg.presentation)));
-        fs.mkdirSync(path.join(presentationDir(msg.presentation), dir));
+    //create a directory for the liver recording
+    const dir = freshName(`live_recording${manifest.live.length}`, dirList(presentationDir(msg.presentation)));
+    fs.mkdirSync(path.join(presentationDir(msg.presentation), dir));
 
 
-        manifest.live.push(
-            {
-                date: (new Date()).toString(),
-                dir: dir,
-                steps: []
-            });
+    manifest.live.push(
+        {
+            date: (new Date()).toString(),
+            dir: dir,
+            steps: []
+        });
 
-        sendStatus('has been pushed')
+    sendStatus('has been pushed')
 
-        writeManifest(manifest)
-        return {
-            status: 'live recording started'
-        };
-    }
-    catch (e) {
-        sendStatus(e)
-        return {
-            status: 'error',
-            explanation: e
-        };
-    }
+    writeManifest(manifest)
+    return {
+        status: 'live recording started'
+    };
+}
+catch (e) {
+    sendStatus(e)
+    return {
+        status: 'error',
+        explanation: e
+    };
+}
 
 
 }

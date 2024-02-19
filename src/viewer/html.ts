@@ -1,7 +1,7 @@
 export {
     initPanels, markDisabled, markSeen, openPanelTree,
     openPanelTreeRec, progressCache,
-    removeLoading, timelineHTML, timelineRecording, timelineSeen, updateTimeCounter, updateTimeLineForCurrent, userAlert
+    removeLoading, timelineHTML, timelineRecording, timelineSeen, updateTimeCounter, updateTimeLineForCurrent, userAlert, timelineFailedLoad
 };
 
 import { gsap } from "gsap";
@@ -117,7 +117,6 @@ function createTreeHTML(): void {
 
 function timelineHTML(): void {
 
-
     //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
     function timelineClicked(index: number, e: MouseEvent): void {
 
@@ -165,6 +164,12 @@ function timelineHTML(): void {
         const index = timeline.frames.findIndex((s) => s == event);
         timelineSeen(i);
     }
+
+
+    //if there is at least one sound, then we display the sound controls (play button, and speed button)
+    if (Object.keys(manifest.defaultTimeLine).length > 0) {
+        document.body.classList.add('has-sound');
+    }
 }
 
 
@@ -176,6 +181,11 @@ function timelineRecording(frame: number, status: 'recording' | 'not recording')
         div.classList.remove('nosound');
         div.classList.add('recording');
     }
+}
+
+function timelineFailedLoad(frame: number): void {
+    const div = progressCache[frame];
+    div.classList.add('nosound');
 }
 
 
@@ -356,14 +366,8 @@ function initPanels(): void {
 
     createTreeHTML();
     timelineHTML();
-
     initSearch();
     initComments();
-
-    //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.defaultTimeLine).length > 0) {
-        document.body.classList.add('has-sound');
-    }
     initLeftPanel();
 }
 

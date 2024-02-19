@@ -1,11 +1,9 @@
 /* This file contains the code for creating overlay events in a slide. */
-export { createOverlayEvent, canBeOverlayTarget }
+export { canBeOverlayTarget, createOverlayEvent };
 
-import { AnimationParams, Database, OverlayEvent } from "../common/types";
-import { freshName, freshRect, sanitize } from "../common/helper";
-import { allSlides, slideId, state } from "./code";
+import { AnimationParams, OverlayEvent } from "../common/types";
+import { state } from "./code";
 import { goodName, newEventId, overlayId } from "./code-name-management";
-import { loadAnimationParams, saveAnimationParams } from "./code-timeline";
 
 
 //says if the node is a possible target for a show/hide event

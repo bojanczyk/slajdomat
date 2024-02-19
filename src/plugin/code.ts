@@ -98,7 +98,7 @@ function createEvent(eventInfo: {
 
 
     saveAnimationParams();
-    
+
 
     let createdEvents: PresentationNode[];
 
@@ -190,7 +190,7 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     while (block.length > 0) {
         state.database.events.splice(realTarget, 0, block.pop());
     }
-    
+
     saveCurrentData();
     loadAnimationParams();
     sendEventList();
@@ -350,12 +350,20 @@ function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
 }
 
 
-//for each event, check if it is active
-// a child event is active if the linked frame exists
-// a show/hide event is active if the linked object exists
-// for the active show/hide events, store the index of the corresponding item
+// disable events that are not available, and fix stuff from older versions
 function cleanDatabase(): void {
+    
     state.database.name = state.currentSlide.name;
+
+    // this will be called when opening the slide for the first time, or 
+    // when using a slide created in older versions
+    if (state.database.selected == undefined)
+        state.database.selected = state.database.events.length;
+
+    //for each event, check if it is active
+    // a child event is active if the linked frame exists
+    // a show/hide event is active if the linked object exists
+    // for the active show/hide events, store the index of the corresponding item
     for (const event of state.database.events) {
         event.enabled = 'disabled';
         const node = findEventObject(event, state.currentSlide);

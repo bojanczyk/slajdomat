@@ -3,20 +3,19 @@
 this code receives svg files from the viewer, and creates a pdf out of them
 */
 
-export { exportPdf }
+export { exportPdf };
 
 // variant one
-import PDFDocument from 'pdfkit'
-import svgToPdf from 'svg-to-pdfkit'
+import PDFDocument from 'pdfkit';
+import svgToPdf from 'svg-to-pdfkit';
 
 
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { toAlphaNumeric } from '../common/helper';
 import { MessageToServerPdf, ServerResponse } from "../common/messages-viewer-server";
-import { sendStatus } from './main';
-import { readManifest, writeManifest, presentationDir } from './main-files';
-import { sanitize } from '../common/helper';
+import { presentationDir, readManifest, writeManifest } from './main-files';
 
 
 let pdfDoc: PDFKit.PDFDocument;
@@ -31,7 +30,7 @@ async function exportPdf(msg: MessageToServerPdf): Promise<ServerResponse> {
     if (msg.index == 1) {
       pdfDoc = new PDFDocument({ size: [msg.width, msg.height] });
       const dirName = presentationDir(msg.presentation);
-      fileName = sanitize(msg.presentation) + '.pdf';
+      fileName = toAlphaNumeric(msg.presentation) + '.pdf';
       writeStream = fs.createWriteStream(path.join(dirName, fileName));
       pdfDoc.pipe(writeStream);
     }

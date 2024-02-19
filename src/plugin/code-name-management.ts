@@ -1,9 +1,9 @@
-import { freshName, sanitize } from "../common/helper";
+import { freshName, toAlphaNumeric } from "../common/helper";
 import { allSlides, getDatabase, state } from "./code";
 import { canBeOverlayTarget } from "./code-overlay-events";
 
 /* code for managing names and id's in the plugin backend */
-export { newEventId, goodName, allTexts, findSlide, slideId, overlayId, avoidList };
+export { allTexts, avoidList, findSlide, goodName, newEventId, overlayId, slideId };
 
 
 //find a slide in the document with the given id
@@ -147,7 +147,7 @@ function overlayId(node: SceneNode): string {
     if (retval == '') {
         //generate a new id, because the id is empty. It could be empty because of the above deduplication code.
 
-        retval = freshName(sanitize(node.name), avoidList(slide));
+        retval = freshName(toAlphaNumeric(node.name), avoidList(slide));
         //save the name in the node
         node.setPluginData('id', retval);
     }

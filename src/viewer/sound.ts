@@ -20,6 +20,7 @@ import {
 
 import {
     progressCache,
+    timelineFailedLoad,
     timelineHTML,
     timelineRecording,
     updateTimeCounter,
@@ -115,7 +116,13 @@ function endRecording(): void {
         }
         fr.readAsArrayBuffer(audioBlob)
     }
+
     mediaRecorder.stop();
+    const mediaStream = mediaRecorder.stream;
+    for (const track of mediaStream.getTracks()) {
+        track.stop();
+    }
+
 }
 
 //start recording sound
@@ -242,7 +249,14 @@ async function loadSound(index: number): Promise<HTMLAudioElement> {
                     resolve(audio);
                 }
                 audio.addEventListener('timeupdate', updateTimeCounter)
-                audio.onerror = (e) => { timeline.frames[index].audio = undefined; resolve(undefined) };
+                audio.onerror = (e) => {
+                    console.log('failed to load sound ' + sound.soundFile + ' ' + e);
+                    timeline.frames[index].soundFile = undefined;
+                    timeline.frames[index].audio = undefined;
+                    timeline.frames[index].soundDuration = undefined;
+                    timelineHTML();
+                    resolve(undefined)
+                };
             });
         }
     }
@@ -293,8 +307,11 @@ function soundAdvance(t: number): { frame: number, time: number } {
 
 
 async function whenFinishedPlaying() {
-    if (timeline.current < timeline.frames.length - 1)
+    if (timeline.current < timeline.frames.length - 1) {
+        if (!canPlaySound(timeline.current + 1))
+            stopSound();
         moveHead(1);
+    }
     else
         stopSound();
 
