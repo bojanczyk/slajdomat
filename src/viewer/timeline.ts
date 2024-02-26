@@ -7,7 +7,7 @@ import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "
 import { markSeen, openPanelTree, timelineSeen, updateTimeLineForCurrent } from "./html";
 import { addToQueue } from "./loadSVG";
 // import { loadSound } from "./sound";
-import { initSoundTimeline, loadNearbySounds, loadSound, playAudio, soundState } from "./sound";
+import { endRecording, initSoundTimeline, loadNearbySounds, loadSound, playAudio, soundState, startRecording } from "./sound";
 import { manifest } from "./viewer";
 
 
@@ -148,8 +148,29 @@ function createTimeline(recorded: TimelineJSON): void {
         }
     }
 
-    createTimelineFromEvents(manifest.tree);
-    initSoundTimeline();
+
+
+
+    if (recorded != undefined) {
+        for (const item of recorded) {
+            const state = decodeState(item.state);
+            statesInPresentation.push(state);
+            timeline.frames.push({
+                state: state,
+                soundFile: item.soundFile,
+                soundDuration: item.soundDuration,
+                audio: undefined,
+                previousDuration: undefined
+            });
+        }
+        initSoundTimeline('live');
+
+    }
+    else
+    {
+        createTimelineFromEvents(manifest.tree);
+        initSoundTimeline('dfs');
+    }
 }
 
 
@@ -198,9 +219,13 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
         audio.currentTime = soundTime;
     }
 
+
     if (soundState == 'playing') {
         playAudio(timeline.frames[timeline.current].audio, 'pause');
         playAudio(timeline.frames[index].audio, 'play');
+    }
+    else if (soundState == 'recording') {
+        endRecording();
     }
 
 
@@ -291,6 +316,12 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
 
         loadNearbySounds();
     }
+
+    // resume recording from new state
+    if (soundState == 'recording') {
+        startRecording();
+    }
+
     updateTimeLineForCurrent();
 }
 

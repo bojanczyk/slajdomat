@@ -21,14 +21,16 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
         presentation: msg.presentation,
         slideDict: {},
         tree: msg.tree,
-        defaultTimeLine: []
+        dfsTimeLine: [],
+        liveTimeLine: []
     }
 
     try {
         //if there were some sounds previously saved, we keep them
         const oldManifest: Manifest = readManifest(msg.presentation);
         if (oldManifest != undefined) {
-            manifest.defaultTimeLine = oldManifest.defaultTimeLine;
+            manifest.dfsTimeLine = oldManifest.dfsTimeLine;
+            manifest.liveTimeLine = oldManifest.liveTimeLine;
             manifest.slideDict = oldManifest.slideDict;
             
 

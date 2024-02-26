@@ -50,12 +50,12 @@ function existingSoundNames(path: string): string[] {
 function onGetWav(msg: MessageToServerSound): ServerResponse {
 
     // the description of the sound, for the status and error messages
-    let soundDescription: string;
+    let textDescribingSound: string;
     if (msg.forWhat.type == 'afterEvent') {
-        soundDescription = 'after event ' + msg.forWhat.eventId;
+        textDescribingSound = 'after event ' + msg.forWhat.eventId;
     }
     else {
-        soundDescription = 'start of slide ' + msg.forWhat.slideId;
+        textDescribingSound = 'start of slide ' + msg.forWhat.slideId;
     }
 
 
@@ -70,20 +70,22 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         let localFileName: string;
         let absoluteFileName: string;
 
-        // find the index of msg.forWhat in the sound list
-        let index = manifest.defaultTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
 
-        if (index > -1) {
-            // the sound is already there 
-            localFileName  = manifest.defaultTimeLine[index].soundFile;
+
+        // find the index of msg.forWhat in the sound list
+        let index = manifest.dfsTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
+
+        if (msg.live == 'dfs' && index > -1) {
+            // the sound is already there, and we are recording the default timeline, then we will replace the sound
+            localFileName  = manifest.dfsTimeLine[index].soundFile;
             localFileName = localFileName.slice(0, -4);
-            manifest.defaultTimeLine.splice(index, 1);
+            manifest.dfsTimeLine.splice(index, 1);
             absoluteFileName = path.join(presentationDir(msg.presentation), localFileName);
             console.log('absoluteFileName', absoluteFileName);
         }
         else 
         {
-            // we need to generate a new sound name
+            // otherwise, we are recording a live sound, or the sound is not there in the default timeline, then  we need to generate a new sound name
             let shortName: string;
             if (msg.forWhat.type == 'afterEvent') {
                 shortName = 'after_' + toAlphaNumeric(msg.forWhat.eventId);
@@ -129,23 +131,28 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         } catch (e) { throw 'Failed to run ffprobe' }
 
 
-        manifest.defaultTimeLine.push({
+        const soundDesc = {
             state: msg.forWhat,
             soundDuration: duration,
             soundFile: localFileName + '.mp3'
-        });
+        };
 
+        // add the sound the description to the appropriate part of the manifest
+        if (msg.live == 'dfs')
+            manifest.dfsTimeLine.push(soundDesc);
+        else
+            manifest.liveTimeLine.push(soundDesc);
 
 
         writeManifest(manifest);
-        sendStatus(`Recorded ${duration.toFixed(2)}s for ${soundDescription}`);
+        sendStatus(`Recorded ${duration.toFixed(2)}s for ${textDescribingSound}`);
 
         retval.duration = duration;
         return retval;
 
 
     } catch (e) {
-        sendStatus(`Failed to record sound for ${soundDescription}`);
+        sendStatus(`Failed to record sound for ${textDescribingSound}`);
         sendStatus('Error: ' + e);
         return {
             status: e

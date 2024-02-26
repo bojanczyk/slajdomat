@@ -11,7 +11,7 @@ import { initComments } from './comments';
 import { formatTime, initPresenterTools } from './presenter-tools';
 import { initSearch } from './search';
 import { currentTool, toggleSketchpad } from './sketchpad';
-import { canPlaySound, loadSound } from './sound';
+import { canPlaySound, initSoundHTML, loadSound } from './sound';
 import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, slideStartState, timeline } from './timeline';
 import { manifest, nextButton, playButton, prevButton } from './viewer';
 
@@ -135,6 +135,7 @@ function timelineHTML(): void {
     const timelineDIV = document.getElementById('progress-line');
     timelineDIV.innerHTML = '';
 
+
     for (let i = 0; i < timeline.frames.length; i++) {
         const event = timeline.frames[i];
         const big = document.createElement('div');
@@ -167,7 +168,7 @@ function timelineHTML(): void {
 
 
     //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.defaultTimeLine).length > 0) {
+    if (Object.keys(manifest.dfsTimeLine).length > 0) {
         document.body.classList.add('has-sound');
     }
 }
@@ -369,6 +370,11 @@ function initPanels(): void {
     initSearch();
     initComments();
     initLeftPanel();
+    initSoundHTML();
+
+    // for testing 
+    togglePanel();
+    switchLeftPanelTab('author');
 }
 
 

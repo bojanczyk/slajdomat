@@ -126,7 +126,8 @@ interface Manifest {
     slideDict: {
         [id: string]: string
     },
-    defaultTimeLine: TimelineJSON,
+    dfsTimeLine: TimelineJSON,
+    liveTimeLine : TimelineJSON,
     tree: Slide,
     pdfFile?: string,
     comments?:

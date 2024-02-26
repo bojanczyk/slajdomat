@@ -73,7 +73,7 @@
 						<div class="button-line">
 							<span id="timer-button" class="material-icons">timer</span>
 							<span>Toggle stopwatch </span>
-							
+
 						</div>
 					</div>
 					<div>
@@ -85,7 +85,8 @@
 						</div>
 					</div>
 					<div>
-						<p> <b> Set key bindings. </b> Configure non-standard keys for your clicker using these buttons.</p>
+						<p> <b> Set key bindings. </b> Configure non-standard keys for your clicker using these buttons.
+						</p>
 						<div class="button-line key-binding">
 							<span id="new-prev-key" class="material-icons">navigate_before</span> Set key for previous
 						</div>
@@ -107,6 +108,25 @@
 							<span>Export to pdf </span>
 						</div>
 						<p id="pdf-export-status"> </p>
+					</div>
+					<div>
+						<p> <b> Sound recording.</b></p>
+						<p> Press r to start recording</p>
+						<p>
+							<input type="radio" id="dfs-record-mode" checked> For DFS mode.
+							<!-- Sounds are played in depth-first traversal. .  -->
+						</p>
+						<p> <input type="radio" id="live-record-mode"> For live mode.
+							<!-- The recording is  in the order that you visit the states, possibly with repetitions.  -->
+						</p>
+					</div>
+					<div>
+						<p> <b> Live recording.</b></p>
+						<p><input type="checkbox" id="show-live-recording-checkbox">
+							<label for="show-live-recording-checkbox">Set timeline to live recording</label>
+						</p>
+						<p id='list-of-live-sounds'>
+						</p>
 					</div>
 				</div>
 			</div>
@@ -143,7 +163,7 @@
 	</div>
 
 
-	<div id="alert-box"  class="visible"> 
+	<div id="alert-box" class="visible">
 		<div> Loading </div>
 	</div>
 

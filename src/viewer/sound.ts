@@ -1,5 +1,5 @@
 export {
-    loadNearbySounds, initSoundTimeline, soundState, stopSound, startRecording, soundIcon, playAudio, endRecording, canPlaySound, soundAdvance, loadSound
+    loadNearbySounds, initSoundTimeline, soundState, stopSound, startRecording, soundIcon, playAudio, endRecording, canPlaySound, soundAdvance, loadSound, initSoundHTML
 }
 
 import {
@@ -26,7 +26,7 @@ import {
     updateTimeCounter,
     userAlert
 } from "./html"
-import { StateMap, currentState, decodeState, encodeState, moveHead, sameState, timeline } from './timeline'
+import { StateMap, createTimeline, currentState, decodeState, encodeState, gotoIndex, gotoState, moveHead, sameState, timeline } from './timeline'
 import { formatTime } from './presenter-tools'
 import { MessageToServerSound } from '../common/messages-viewer-server'
 
@@ -67,6 +67,16 @@ let audioChunks: Blob[] = undefined;
 let mediaRecorder: MediaRecorder;
 
 
+
+function liveOrDFS(): 'live' | 'dfs' {
+    const radio = document.getElementById('live-record-mode') as HTMLInputElement;
+    if (radio.checked)
+        return 'live';
+    else
+        return 'dfs';
+}
+
+
 function endRecording(): void {
 
     if (mediaRecorder == null || mediaRecorder.state != 'recording') return;
@@ -74,10 +84,11 @@ function endRecording(): void {
     timelineRecording(timeline.current, 'not recording');
 
     const retval: MessageToServerSound = {
-        presentation: undefined,
+        presentation: manifest.presentation,
         type: 'wav',
         forWhat: encodeState(currentState()),
-        file: undefined
+        file: undefined,
+        live: liveOrDFS()
     }
 
     mediaRecorder.onstop = () => {
@@ -95,10 +106,10 @@ function endRecording(): void {
                                 //if sound recording has finished, then we reload the timeline
                                 //we reload the manifest to get the new version of the sound dictionary
                                 const man = await getManifest()
-                                manifest.defaultTimeLine = man.defaultTimeLine;
+                                manifest.dfsTimeLine = man.dfsTimeLine;
                                 //add some salt to the audio urls to flush the cache
                                 cacheFlush();
-                                initSoundTimeline();
+                                initSoundTimeline('dfs');
                                 loadNearbySounds();
                                 timelineHTML();
                             }
@@ -177,26 +188,29 @@ function playbackRateChange(): void {
 function findInsoundList(state: State, dict: SoundDict): number {
     return dict.findIndex((s) => sameState(decodeState(s.key), state));
 }
-
+ 
 
 
 //for each step in the timeline, get its file name and duration
-function initSoundTimeline(): void {
+function initSoundTimeline(mode: 'dfs' | 'live'): void {
 
-    const defaultSounds: StateMap<string> = new StateMap();
-    const defaultDurations: StateMap<number> = new StateMap();
 
-    for (const x of manifest.defaultTimeLine) {
-        const state = decodeState(x.state);
-        if (state != undefined) {
-            defaultSounds.set(state, x.soundFile);
-            defaultDurations.set(state, x.soundDuration);
+    if (mode == 'dfs') {
+        const defaultSounds: StateMap<string> = new StateMap();
+        const defaultDurations: StateMap<number> = new StateMap();
+
+        for (const x of manifest.dfsTimeLine) {
+            const state = decodeState(x.state);
+            if (state != undefined) {
+                defaultSounds.set(state, x.soundFile);
+                defaultDurations.set(state, x.soundDuration);
+            }
         }
-    }
 
-    for (const step of timeline.frames) {
-        step.soundDuration = defaultDurations.get(step.state);
-        step.soundFile = defaultSounds.get(step.state);
+        for (const step of timeline.frames) {
+            step.soundDuration = defaultDurations.get(step.state);
+            step.soundFile = defaultSounds.get(step.state);
+        }
     }
 
     const searchParams = (new URL(window.location.href)).searchParams;
@@ -350,14 +364,77 @@ function stopSound(): void {
 
 
 
+function showLiveRecordings(): void {
+
+    const liveRecordings = document.getElementById('list-of-live-sounds');
+
+    for (const live of manifest.liveTimeLine) {
+        const state = decodeState(live.state);
+        if (state != undefined) {
+
+            const div = document.createElement('div');
+            div.innerHTML += `<span>${live.soundDuration.toFixed(1) + 's'}</span>`;
+            let description: string;
+            if (state.type == 'start') {
+                description = 'Start of ' + state.slide.name;
+            } else {
+                description = 'After event ' + state.event.name;
+            }
+            div.innerHTML += `<span>${description}</span>`;
+            div.classList.add('live-sound-list-item');
+            liveRecordings.appendChild(div);
+        }
+
+    }
+
+}
+
+async function changeTimelineMode( mode : 'dfs' | 'live') {
+
+    if (mode == 'live') {
+        if (manifest.liveTimeLine.length > 0) {
+            const firstState = manifest.liveTimeLine[0].state;
+            console.log('going to state', firstState);
+            await gotoState(decodeState(firstState));
+            console.log('did go');
+            createTimeline(manifest.liveTimeLine);
+            timelineHTML();
+        }
+    }
+    else {
+
+    }
+
+}
 
 function initSoundHTML(): void {
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
     // soundIcon();
+
+    const liveRecordingRadio = document.getElementById('live-record-mode') as HTMLInputElement;
+    const dfsRecordingRadio = document.getElementById('dfs-record-mode') as HTMLInputElement;
+    liveRecordingRadio.addEventListener('change', () => {
+        if (liveRecordingRadio.checked) {
+            dfsRecordingRadio.checked = false;
+        }
+    });
+    dfsRecordingRadio.addEventListener('change', () => {
+        if (dfsRecordingRadio.checked) {
+            liveRecordingRadio.checked = false;
+        }
+    });
+
+    const showLiveCheckbox = document.getElementById('show-live-recording-checkbox') as HTMLInputElement;
+    showLiveCheckbox.addEventListener('change', () => { if (showLiveCheckbox.checked) changeTimelineMode('live'); else changeTimelineMode('dfs') });
+
+
+    showLiveRecordings();
+
+
 }
 
-initSoundHTML();
+
 
 
 

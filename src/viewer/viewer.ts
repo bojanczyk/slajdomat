@@ -68,7 +68,6 @@ function playButton(): void {
                 playAudio(audio, 'play')
             break;
         case 'recording':
-            stopSound();
             break;
     }
     soundIcon();
@@ -92,22 +91,12 @@ async function nextOrPrevButton(direction: -1 | 1): Promise<void> {
             }
             break;
         case 'recording':
-            if (direction == 1) {
-                //when going right, we continue recording
-                endRecording();
-                await moveHead(1);
-                await startRecording();
-            }
-            else {
-                //when going left, we stop recording
-                stopSound();
-                await moveHead(-1);
-            }
-
+            await moveHead(direction);
             break;
     }
     soundIcon();
 }
+
 
 async function nextButton(): Promise<void> {
     await nextOrPrevButton(1);

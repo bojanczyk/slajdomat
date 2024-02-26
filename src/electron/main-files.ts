@@ -234,6 +234,13 @@ function readManifest(presentation: string): Manifest {
     try {
         const data = fs.readFileSync(path.join(presentationDir(presentation), 'manifest.json')).toString();
         const json = JSON.parse(data) as Manifest;
+        
+        // maybe this code should be part of the upgrading process
+        if (json.liveTimeLine == undefined)
+            json.liveTimeLine = [];
+        if (json.dfsTimeLine == undefined)
+            json.dfsTimeLine = [];
+
         return json;
     } catch (error) {
         return undefined

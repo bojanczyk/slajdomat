@@ -11,8 +11,8 @@ type MessageToServerSound = {
     type: 'wav',
     file: number[],
     presentation: string,
-    forWhat: StateJSON
-    // forWhat: EventDescription | { type: 'step', description: StepDescription }
+    forWhat: StateJSON,
+    live : 'dfs' | 'live'
 }
 
 type MessageToServerSlide = {

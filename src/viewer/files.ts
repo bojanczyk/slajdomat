@@ -45,8 +45,6 @@ function fileName(slide: string, file: string): string {
 
 //send an object to the server
 async function sendToServer(msg: MessageToServer): Promise<ServerResponse> {
-    if (msg.type == 'slides' || msg.type == 'wav')
-        msg.presentation = manifest.presentation;
 
     const json = JSON.stringify(msg);
     const response = await fetch(getServer(), {
