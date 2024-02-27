@@ -1,10 +1,10 @@
-export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline };
+export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline, changeTimelineMode };
 
 import { findSlide, isOverlay, runOverlay, zoomSlide } from "./event";
 import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "../common/types";
 
 
-import { markSeen, openPanelTree, timelineSeen, updateTimeLineForCurrent } from "./html";
+import { markSeen, openPanelTree, timelineHTML, timelineSeen, updateTimeLineForCurrent } from "./html";
 import { addToQueue } from "./loadSVG";
 // import { loadSound } from "./sound";
 import { endRecording, initSoundTimeline, loadNearbySounds, loadSound, playAudio, soundState, startRecording } from "./sound";
@@ -111,7 +111,7 @@ let statesInPresentation: State[];
 
 
 //creates the sequence of events to be played in the presentation, based on a recorded sequence of steps. If we are not given a recorded sequence of steps, then we default to a traversal of the event tree. 
-function createTimeline(recorded: TimelineJSON): void {
+function createTimeline(mode: 'chronicle' | 'tree'): void {
     statesInPresentation = [];
     timeline.frames = [];
 
@@ -150,9 +150,8 @@ function createTimeline(recorded: TimelineJSON): void {
 
 
 
-
-    if (recorded != undefined) {
-        for (const item of recorded) {
+    if (mode == 'chronicle') {
+        for (const item of manifest.chronicleTimeLine) {
             const state = decodeState(item.state);
             statesInPresentation.push(state);
             timeline.frames.push({
@@ -166,13 +165,43 @@ function createTimeline(recorded: TimelineJSON): void {
         initSoundTimeline('live');
 
     }
-    else
-    {
+    else {
         createTimelineFromEvents(manifest.tree);
-        initSoundTimeline('dfs');
+        initSoundTimeline('tree');
     }
 }
 
+
+async function changeTimelineMode(mode: 'tree' | 'chronicle') {
+
+    const url = new URL(window.location.href);
+    const searchParams = url.searchParams;
+
+    if (mode == 'chronicle') {
+        if (manifest.chronicleTimeLine.length > 0) {
+            const firstState = manifest.chronicleTimeLine[0].state;
+            await gotoState(decodeState(firstState));
+            createTimeline('chronicle');
+            timelineHTML();
+
+
+            // Set the 'step' parameter
+            searchParams.set('mode', 'chronicle');
+
+        }
+    }
+    else {
+        const state = currentState();
+        createTimeline('tree');
+        timelineHTML();
+        await gotoState(state);
+        searchParams.delete('mode');
+    }
+
+    url.search = searchParams.toString();
+    window.history.replaceState({}, '', url.toString());
+
+}
 
 //is this a future slide
 function futureSlide(event: Slide): boolean {

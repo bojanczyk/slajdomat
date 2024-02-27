@@ -2,10 +2,10 @@
 this code takes care of receiving sound from the viewer, and saving it to disk
 */
 
-export { createLive, onGetWav };
+export { createChronicle, onGetWav };
 
 import { freshName, toAlphaNumeric } from "../common/helper";
-import { MessageToServerLive, MessageToServerSound, ServerResponse } from "../common/messages-viewer-server";
+import { MessageToServerChronicle, MessageToServerSound, ServerResponse } from "../common/messages-viewer-server";
 import { StateJSON } from "../common/types";
 import { sendStatus } from "./main";
 import { presentationDir, readManifest, slideDir, writeManifest } from "./main-files";
@@ -73,13 +73,13 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         // find the index of msg.forWhat in the sound list
-        let index = manifest.dfsTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
+        let index = manifest.treeTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
 
-        if (msg.live == 'dfs' && index > -1) {
+        if (msg.live == 'tree' && index > -1) {
             // the sound is already there, and we are recording the default timeline, then we will replace the sound
-            localFileName  = manifest.dfsTimeLine[index].soundFile;
+            localFileName  = manifest.treeTimeLine[index].soundFile;
             localFileName = localFileName.slice(0, -4);
-            manifest.dfsTimeLine.splice(index, 1);
+            manifest.treeTimeLine.splice(index, 1);
             absoluteFileName = path.join(presentationDir(msg.presentation), localFileName);
             console.log('absoluteFileName', absoluteFileName);
         }
@@ -138,10 +138,10 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
         };
 
         // add the sound the description to the appropriate part of the manifest
-        if (msg.live == 'dfs')
-            manifest.dfsTimeLine.push(soundDesc);
+        if (msg.live == 'tree')
+            manifest.treeTimeLine.push(soundDesc);
         else
-            manifest.liveTimeLine.push(soundDesc);
+            manifest.chronicleTimeLine.push(soundDesc);
 
 
         writeManifest(manifest);
@@ -166,7 +166,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
 //start a live recording. The result is adding a new array of live steps to the manifest.
-function createLive(msg: MessageToServerLive): ServerResponse {
+function createChronicle(msg: MessageToServerChronicle): ServerResponse {
     throw 'not implemented';
 }
 /*

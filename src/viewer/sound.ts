@@ -10,7 +10,8 @@ import {
 import {
     getManifest,
     manifest,
-    serverConnected
+    serverConnected,
+    treeOrChronicleURL
 } from './viewer'
 
 import {
@@ -26,7 +27,7 @@ import {
     updateTimeCounter,
     userAlert
 } from "./html"
-import { StateMap, createTimeline, currentState, decodeState, encodeState, gotoIndex, gotoState, moveHead, sameState, timeline } from './timeline'
+import { StateMap, changeTimelineMode, createTimeline, currentState, decodeState, encodeState, gotoIndex, gotoState, moveHead, sameState, timeline } from './timeline'
 import { formatTime } from './presenter-tools'
 import { MessageToServerSound } from '../common/messages-viewer-server'
 
@@ -68,12 +69,12 @@ let mediaRecorder: MediaRecorder;
 
 
 
-function liveOrDFS(): 'live' | 'dfs' {
-    const radio = document.getElementById('live-record-mode') as HTMLInputElement;
+function liveOrtree(): 'live' | 'tree' {
+    const radio = document.getElementById('chronicle-record-mode') as HTMLInputElement;
     if (radio.checked)
         return 'live';
     else
-        return 'dfs';
+        return 'tree';
 }
 
 
@@ -88,7 +89,7 @@ function endRecording(): void {
         type: 'wav',
         forWhat: encodeState(currentState()),
         file: undefined,
-        live: liveOrDFS()
+        live: liveOrtree()
     }
 
     mediaRecorder.onstop = () => {
@@ -106,10 +107,10 @@ function endRecording(): void {
                                 //if sound recording has finished, then we reload the timeline
                                 //we reload the manifest to get the new version of the sound dictionary
                                 const man = await getManifest()
-                                manifest.dfsTimeLine = man.dfsTimeLine;
+                                manifest.treeTimeLine = man.treeTimeLine;
                                 //add some salt to the audio urls to flush the cache
                                 cacheFlush();
-                                initSoundTimeline('dfs');
+                                initSoundTimeline('tree');
                                 loadNearbySounds();
                                 timelineHTML();
                             }
@@ -192,14 +193,14 @@ function findInsoundList(state: State, dict: SoundDict): number {
 
 
 //for each step in the timeline, get its file name and duration
-function initSoundTimeline(mode: 'dfs' | 'live'): void {
+function initSoundTimeline(mode: 'tree' | 'live'): void {
 
 
-    if (mode == 'dfs') {
+    if (mode == 'tree') {
         const defaultSounds: StateMap<string> = new StateMap();
         const defaultDurations: StateMap<number> = new StateMap();
 
-        for (const x of manifest.dfsTimeLine) {
+        for (const x of manifest.treeTimeLine) {
             const state = decodeState(x.state);
             if (state != undefined) {
                 defaultSounds.set(state, x.soundFile);
@@ -364,11 +365,15 @@ function stopSound(): void {
 
 
 
-function showLiveRecordings(): void {
+function showChronicleRecordings(): void {
 
-    const liveRecordings = document.getElementById('list-of-live-sounds');
+    const liveRecordings = document.getElementById('list-of-chronicle-sounds');
 
-    for (const live of manifest.liveTimeLine) {
+    if (manifest.chronicleTimeLine == undefined || manifest.chronicleTimeLine.length == 0) {
+        liveRecordings.innerHTML = 'The chronicle is empty';
+        return;
+    }
+    for (const live of manifest.chronicleTimeLine) {
         const state = decodeState(live.state);
         if (state != undefined) {
 
@@ -381,7 +386,7 @@ function showLiveRecordings(): void {
                 description = 'After event ' + state.event.name;
             }
             div.innerHTML += `<span>${description}</span>`;
-            div.classList.add('live-sound-list-item');
+            div.classList.add('chronicle-sound-list-item');
             liveRecordings.appendChild(div);
         }
 
@@ -389,56 +394,72 @@ function showLiveRecordings(): void {
 
 }
 
-async function changeTimelineMode(mode: 'dfs' | 'live') {
-
-    if (mode == 'live') {
-        if (manifest.liveTimeLine.length > 0) {
-            const firstState = manifest.liveTimeLine[0].state;
-            console.log('going to state', firstState);
-            await gotoState(decodeState(firstState));
-            console.log('did go');
-            createTimeline(manifest.liveTimeLine);
-            timelineHTML();
-        }
-    }
-    else {
-
-    }
-
-}
 
 function initSoundHTML(): void {
     document.getElementById('sound-speed').addEventListener('click',
         playbackRateChange);
     // soundIcon();
 
-    const liveRecordingRadio = document.getElementById('live-record-mode') as HTMLInputElement;
-    const dfsRecordingRadio = document.getElementById('dfs-record-mode') as HTMLInputElement;
+    const liveRecordingRadio = document.getElementById('chronicle-record-mode') as HTMLInputElement;
+    const treeRecordingRadio = document.getElementById('tree-record-mode') as HTMLInputElement;
     liveRecordingRadio.addEventListener('change', () => {
         if (liveRecordingRadio.checked) {
-            dfsRecordingRadio.checked = false;
+            treeRecordingRadio.checked = false;
         }
     });
-    dfsRecordingRadio.addEventListener('change', () => {
-        if (dfsRecordingRadio.checked) {
+    treeRecordingRadio.addEventListener('change', () => {
+        if (treeRecordingRadio.checked) {
             liveRecordingRadio.checked = false;
         }
     });
 
 
-    const playLiveButton = document.getElementById('play-live-recording') as HTMLInputElement;
-    playLiveButton.addEventListener('click', () => {
-        let url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set('mode', 'live');
-        let strippedUrl = url.toString();
-        // open window with strippedUrl
-        window.open(strippedUrl, '_blank');
-        // changeTimelineMode('live')
+    const soundRecordingDiv = document.getElementById('sound-recording-mode') as HTMLDivElement;
+    const displayChronicleRadio = document.getElementById('display-chronicle-mode') as HTMLInputElement;
+    const displayTreeRadio = document.getElementById('display-tree-mode') as HTMLInputElement;
+
+    if (treeOrChronicleURL() == 'chronicle') 
+    {
+        displayChronicleRadio.checked = true;
+        displayTreeRadio.checked = false;
+        liveRecordingRadio.setAttribute('disabled', 'true');
+        treeRecordingRadio.setAttribute('disabled', 'true');
+        soundRecordingDiv.classList.add('disabled');
+    }
+    else
+    {
+        displayTreeRadio.checked = true;
+        displayChronicleRadio.checked = false;
+    }
+
+    displayChronicleRadio.addEventListener('change', () => {
+        if (displayChronicleRadio.checked) {
+            displayTreeRadio.checked = false;
+            changeTimelineMode('chronicle');
+            // disable the recording buttons
+            liveRecordingRadio.setAttribute('disabled', 'true');
+            treeRecordingRadio.setAttribute('disabled', 'true');
+            soundRecordingDiv.classList.add('disabled');
+        }
+    });
+    displayTreeRadio.addEventListener('change', () => {
+        if (displayTreeRadio.checked) {
+            displayChronicleRadio.checked = false;
+            changeTimelineMode('tree');
+            // enable the recording buttons
+            liveRecordingRadio.removeAttribute('disabled');
+            treeRecordingRadio.removeAttribute('disabled');
+            soundRecordingDiv.classList.remove('disabled');
+        }
     });
 
+    if (manifest.chronicleTimeLine == undefined || manifest.chronicleTimeLine.length == 0) {
+        displayChronicleRadio.setAttribute('disabled', 'true');
+        const chronicleLabel = document.getElementById("display-chronicle-mode-container") as HTMLLabelElement;
+        chronicleLabel.classList.add('disabled');
+    }
 
-    showLiveRecordings();
+    showChronicleRecordings();
 
 
 }

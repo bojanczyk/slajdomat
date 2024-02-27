@@ -260,20 +260,25 @@ p {
 }
 
 
-.live-sound-list-item {
+.chronicle-sound-list-item {
     padding : 5px;
     cursor: pointer;
     overflow-x: hidden;
     display: flex;
 }
 
-.live-sound-list-item > :first-child {
+.chronicle-sound-list-item > :first-child {
     width: 30px;
 }
 
-.live-sound-list-item > :nth-child(2) {
+.chronicle-sound-list-item > :nth-child(2) {
     width : 150px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.disabled {
+    color: gray;
+    cursor: default;
 }

@@ -19,7 +19,7 @@ import {
 } from '../common/messages-viewer-server';
 
 import { onGetSlide } from './main-get-slides';
-import { createLive, onGetWav } from './main-get-sound';
+import { createChronicle, onGetWav } from './main-get-sound';
 import { slajdomatSettings } from './main-settings';
 
 import cors from 'cors';
@@ -75,8 +75,8 @@ function startServer(): void {
                     };
                     break
 
-                case 'startLive':
-                    response = createLive(msg);
+                case 'startChronicle':
+                    response = createChronicle(msg);
                     break;
 
                 case 'toPdf':

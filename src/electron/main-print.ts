@@ -56,7 +56,7 @@ async function exportPdf(msg: MessageToServerPdf): Promise<ServerResponse> {
     return { status: 'error', explanation: 'could not create pdf file' }
   }
 
-  // gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH -sOutputFile=output.pdf input.pdf
+  // gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPtreeETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH -sOutputFile=output.pdf input.pdf
 
   return { status: 'pdf created' };
 

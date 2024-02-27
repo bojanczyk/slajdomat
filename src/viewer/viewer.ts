@@ -1,6 +1,6 @@
 export {
     getManifest, manifest, nextButton, playButton, prevButton, serverConnected,
-    userAgent
+    userAgent, treeOrChronicleURL
 }
 
 import './css/left-panel.css'
@@ -235,19 +235,17 @@ function runFromApp(): void {
 
 
 
-
-function getRecordedSteps(): TimelineJSON {
+// checks if the url has a tree or chronicle parameter
+function treeOrChronicleURL(): 'tree' | 'chronicle' {
     // throw 'Not implemented yet';
     const searchParams = (new URL(window.location.href)).searchParams;
     try {
-        if (searchParams.get('mode') == 'live'){
-            return manifest.liveTimeLine;
-        }
-            
-
-        // return manifest.live[i];
+        if (searchParams.get('mode') == 'chronicle' && manifest.chronicleTimeLine != undefined && manifest.chronicleTimeLine.length > 0)
+            return 'chronicle'
+        else 
+            return 'tree'
     } catch (e) {
-        return undefined;
+        return 'tree';
     }
 }
 
@@ -268,7 +266,7 @@ async function onLoadWindow(): Promise<void> {
     createEventTree();
 
     //if the url had a live timeline, then get it
-    const recorded = getRecordedSteps();
+    const recorded = treeOrChronicleURL();
     //initialize the steps in the timeline
     createTimeline(recorded);
 

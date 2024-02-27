@@ -236,10 +236,10 @@ function readManifest(presentation: string): Manifest {
         const json = JSON.parse(data) as Manifest;
         
         // maybe this code should be part of the upgrading process
-        if (json.liveTimeLine == undefined)
-            json.liveTimeLine = [];
-        if (json.dfsTimeLine == undefined)
-            json.dfsTimeLine = [];
+        if (json.chronicleTimeLine == undefined)
+            json.chronicleTimeLine = [];
+        if (json.treeTimeLine == undefined)
+            json.treeTimeLine = [];
 
         return json;
     } catch (error) {

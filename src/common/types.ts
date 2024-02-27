@@ -107,7 +107,7 @@ type TimelineJSON = {
 }[]        
 
 // a json representation of a live recording
-type LiveRecordingJSON = {
+type ChronicleRecordingJSON = {
     name: string,
     date: string,
     states: { state: StateJSON, duration: number, audio: string }[],
@@ -126,8 +126,8 @@ interface Manifest {
     slideDict: {
         [id: string]: string
     },
-    dfsTimeLine: TimelineJSON,
-    liveTimeLine : TimelineJSON,
+    treeTimeLine: TimelineJSON,
+    chronicleTimeLine : TimelineJSON,
     tree: Slide,
     pdfFile?: string,
     comments?:

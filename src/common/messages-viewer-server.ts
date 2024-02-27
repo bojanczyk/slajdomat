@@ -1,7 +1,7 @@
 /* messages between the slide viewer and the electron server */
 
 
-export type { MessageToServer, ServerResponse, MessageToServerSound, MessageToServerSlide, MessageToServerLive, MessageToServerPdf}
+export type { MessageToServer, ServerResponse, MessageToServerSound, MessageToServerSlide, MessageToServerChronicle, MessageToServerPdf}
 
 import e from "cors"
 import { Database, Slide, StateJSON } from "./types"
@@ -12,7 +12,7 @@ type MessageToServerSound = {
     file: number[],
     presentation: string,
     forWhat: StateJSON,
-    live : 'dfs' | 'live'
+    live : 'tree' | 'live'
 }
 
 type MessageToServerSlide = {
@@ -25,8 +25,8 @@ type MessageToServerSlide = {
     }[]
 }
 
-type MessageToServerLive = {
-    type: 'startLive',
+type MessageToServerChronicle = {
+    type: 'startChronicle',
     presentation: string
 }
 
@@ -42,7 +42,7 @@ type MessageToServerPdf = {
 
 
 
-type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerLive | MessageToServerPdf
+type MessageToServer = MessageToServerSound | MessageToServerSlide | MessageToServerChronicle | MessageToServerPdf
     |
 {
     type: 'probe'

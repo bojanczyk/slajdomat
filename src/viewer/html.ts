@@ -168,7 +168,7 @@ function timelineHTML(): void {
 
 
     //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.dfsTimeLine).length > 0) {
+    if (Object.keys(manifest.treeTimeLine).length > 0) {
         document.body.classList.add('has-sound');
     }
 }
