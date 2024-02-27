@@ -240,8 +240,11 @@ function getRecordedSteps(): TimelineJSON {
     // throw 'Not implemented yet';
     const searchParams = (new URL(window.location.href)).searchParams;
     try {
-        const i = parseInt(searchParams.get('live'));
-        throw 'Not implemented yet';
+        if (searchParams.get('mode') == 'live'){
+            return manifest.liveTimeLine;
+        }
+            
+
         // return manifest.live[i];
     } catch (e) {
         return undefined;

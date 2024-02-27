@@ -12,7 +12,8 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: 'src/icons/slajdomat.icns'
+    icon: 'src/icons/slajdomat.icns',
+    executableName: 'slajdomat',
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],

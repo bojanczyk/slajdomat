@@ -188,7 +188,7 @@ function playbackRateChange(): void {
 function findInsoundList(state: State, dict: SoundDict): number {
     return dict.findIndex((s) => sameState(decodeState(s.key), state));
 }
- 
+
 
 
 //for each step in the timeline, get its file name and duration
@@ -389,7 +389,7 @@ function showLiveRecordings(): void {
 
 }
 
-async function changeTimelineMode( mode : 'dfs' | 'live') {
+async function changeTimelineMode(mode: 'dfs' | 'live') {
 
     if (mode == 'live') {
         if (manifest.liveTimeLine.length > 0) {
@@ -425,8 +425,17 @@ function initSoundHTML(): void {
         }
     });
 
-    const showLiveCheckbox = document.getElementById('show-live-recording-checkbox') as HTMLInputElement;
-    showLiveCheckbox.addEventListener('change', () => { if (showLiveCheckbox.checked) changeTimelineMode('live'); else changeTimelineMode('dfs') });
+
+    const playLiveButton = document.getElementById('play-live-recording') as HTMLInputElement;
+    playLiveButton.addEventListener('click', () => {
+        let url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set('mode', 'live');
+        let strippedUrl = url.toString();
+        // open window with strippedUrl
+        window.open(strippedUrl, '_blank');
+        // changeTimelineMode('live')
+    });
 
 
     showLiveRecordings();
