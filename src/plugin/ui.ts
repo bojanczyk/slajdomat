@@ -157,7 +157,7 @@ function exportWaiting(waiting: boolean): void {
 
 //send the presentation to the server
 //this has to be done on the side of the ui, because only the ui has access to an internet connection
-function savePresentation(presentation: {
+async function savePresentation(presentation: {
   type: 'savePresentation'
   name: string,
   slideList: {
@@ -165,7 +165,7 @@ function savePresentation(presentation: {
     svg: Uint8Array;
   }[],
   tree: PresentationNode
-}): void {
+}): Promise<void> {
   //for some reason, TextDecoder does not work on the plugin side
 
   const newSlideList: {
@@ -180,26 +180,34 @@ function savePresentation(presentation: {
     })
   }
 
-  fetch(pluginSettings.serverURL, {
-    method: 'POST',
-    body: JSON.stringify({
-      type: 'slides',
-      presentation: presentation.name,
-      slideList: newSlideList,
-      tree: presentation.tree
-    })
-  }).
-    then(() => {
-      exportWaiting(false);
-      notify("Successfully exported slides to the Slajdomat app.")
-    })
-    .catch(() => {
-      notify("Not connected to the Slajdomat app. Make sure that it is running.");
-      exportWaiting(false);
+  try {
+
+    const response = await fetch(pluginSettings.serverURL, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'slides',
+        presentation: presentation.name,
+        slideList: newSlideList,
+        tree: presentation.tree
+      })
     });
+
+    const responseText = await response.text();
+    const json = JSON.parse(responseText);
+    if (json.status == 'error') {
+      notify("Error exporting slides to the Slajdomat app. See the Slajdomat log.");
+    }
+    else {
+      notify("Successfully exported slides to the Slajdomat app.");
+    }
+
+
+  } catch (e) {
+    notify("Not connected to the Slajdomat app. Make sure that it is running.");
+  }
+
+  exportWaiting(false);
 }
-
-
 
 
 //display a figma alert. Only the figma side can do this.
@@ -519,7 +527,7 @@ for (const toolbarButton of toolbarButtons) {
     if (target.classList.contains('event-toolbar-title')) {
       const parent = target.parentNode as HTMLElement;
       if (parent.id == 'event-toolbar-zoom')
-      // the title of the zoom menu was clicked
+        // the title of the zoom menu was clicked
         dropdownTitleClicked = true;
     }
 

@@ -61,7 +61,7 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
     } catch (error) {
         sendStatus(`Error receiving slide ${error.toString()}`);
         return {
-            status: 'error', explanation: `Error receiving slide ${error.toString()}`
+            status: 'error', explanation: `${error.toString()}`
         }
     }
 
