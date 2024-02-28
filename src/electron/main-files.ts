@@ -24,7 +24,7 @@ export {
 const theHTMLFiles = ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg'];
 
 type PresentationList = {
-    [key: string]: { file: string, updated: boolean }
+    [key: string]: { file: string, version: 'old' | 'current' }
 };
 
 
@@ -178,7 +178,7 @@ function presentationDir(presentationName: string) {
     if (!(presentationName in presentations)) {
         //choose a fresh name based on the presentation name
         const dirName = freshName(toAlphaNumeric(presentationName), dirList(currentDir));
-        presentations[presentationName] = { file: dirName, updated: true };
+        presentations[presentationName] = { file: dirName, version: 'current' };
         sendStatus('adding ' + dirName)
         fs.mkdirSync(path.join(currentDir, dirName));
 
@@ -288,7 +288,7 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
             //for each child of the current directory, check if it is a folder with a presentation, and if so, add it to the presentations dictionary
             const data = fs.readFileSync(path.join(fullName, 'manifest.json')).toString();
             const json = JSON.parse(data) as Manifest;
-            msg.presentations[json.presentation] = { file: file, updated: !oldVersion(json) };
+            msg.presentations[json.presentation] = { file: file, version: oldVersion(json) };
         } catch (e) {
             //otherwise, if display as folder, assuming it is not hidden like .git
             if (!file.startsWith('.'))

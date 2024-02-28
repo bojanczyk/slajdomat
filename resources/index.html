@@ -110,23 +110,30 @@
 						<p id="pdf-export-status"> </p>
 					</div>
 					<div>
-						<p> <b> Sound recording.</b></p>
+						<p> <b> Timeline display</b></p>
+						<p> The timeline is the progress bar at the bottom. Choose one of the following two options for what it should contain. </p>
+						<p> 
+							<input type="radio" id="display-tree-mode" checked> <b>  Tree display. </b>
+							The timeline is a depth-first traversal of the states in the presentation tree. 
+						</p>
+						<p id="display-chronicle-mode-container"> 
+							<input type="radio" id="display-chronicle-mode"> <b> Chronicle display. </b>
+							The timeline is a list of previously recorded (state, sound) pairs, which need not respect the order of the slides. 
+						</p>
+					</div>
+					<div id='sound-recording-mode'>
+						<p> <b> Sound recording mode</b></p>
 						<p> Press r to start recording</p>
 						<p>
-							<input type="radio" id="tree-record-mode" checked> For tree mode.
+							<input type="radio" id="tree-record-mode" checked> <b>Record for tree mode.</b>
 							<!-- Sounds are played in depth-first traversal. .  -->
+							Recording a new sound replaces the previous one for the same state.  This mode is useful for preparing a recorded presentation in advance, where you can correct mistakes by re-recording a sound.
 						</p>
-						<p> <input type="radio" id="chronicle-record-mode"> For live mode.
-							<!-- The recording is  in the order that you visit the states, possibly with repetitions.  -->
+						<p> <input type="radio" id="chronicle-record-mode"> <b> Append to chronicle. </b> Recording a new sound appends it to a list of recorded (state, sound) pairs.  This mode is useful for recording a live presentation, where you go back and forth between slides.
 						</p>
 					</div>
 					<div>
-						<p> <b> Live recording.</b></p>
-						<div class = "button-line">
-							<span id="play-chronicle-recording" class="material-icons">play_arrow</span>
-							<span>Play live recording </span>
-						</div>
-	
+						<p> <b> Contents of the chronicle</b></p>
 						<p id='list-of-chronicle-sounds'>
 						</p>
 					</div>

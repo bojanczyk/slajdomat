@@ -27,6 +27,7 @@ import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-
     import '../icons/upload2.svg';
     import '../icons/loading.svg';
     import '../icons/science.svg';
+    import '../icons/trending-up.svg';
 import { receivePresentations } from './presentations-tab';
 
 
@@ -222,5 +223,22 @@ commentsCheckbox.addEventListener('click', e => {
         
 })
 
+
+// add a handler for key presses
+document.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case 'Shift':
+            document.getElementById('directory-listing').classList.remove('hide-updates');
+            break;
+    }
+})
+
+document.addEventListener('keyup', (event) => {
+    switch (event.key) {
+        case 'Shift':
+            document.getElementById('directory-listing').classList.add('hide-updates');
+            break;
+    }
+})
 
 

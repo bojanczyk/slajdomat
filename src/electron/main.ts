@@ -24,6 +24,7 @@ import { readPresentations, gotoChild, gotoParent, revealFinder,  setResourceDir
 
 import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
 import { runUploadScript, saveUploadScript } from './main-upload';
+import { upgradePresentation } from './main-version';
 
 
 export { sendStatus, mainWindow, choosePresentationsFolder, sendMessageToRenderer }
@@ -200,10 +201,8 @@ ipcMain.on('message-to-main', (event, arg) => {
       break;
 
     case 'upgrade':
-      //not currently used
-      throw ('upgrade event is not currently supported');
-      //   upgradePresentation(arg);
-      //   readPresentations()
+        upgradePresentation(message.name);
+        readPresentations()
       break;
 
     case 'parent-folder-button':

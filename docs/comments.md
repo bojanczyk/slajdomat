@@ -1,4 +1,4 @@
-Slajdomat supports comments on slides. These are stored in a database, which is updated by a php script on your web server. To support comments in your slides, do the following.
+Slajdomat supports comments on slides. These are stored in a database, which is updated by a php script on your web server. To have comments in your slides, do the following.
 
 ### Step 1
 

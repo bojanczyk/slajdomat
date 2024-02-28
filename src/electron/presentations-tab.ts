@@ -26,10 +26,9 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
     }
 
     function updateButton(name: string) {
-        const retval = document.createElement('i');
-        retval.classList.add('material-icons');
-        retval.innerHTML = 'trending_up';
-        retval.classList.add('toolbar-button');
+        const retval = document.createElement('div');
+        retval.innerHTML = `
+        <span class="toolbar-button update-button"> <img src="../src/icons/trending-up.svg"></span>`;
         retval.addEventListener('click', () => {
             sendElectronRendererToMain({ type: 'upgrade', name: name });
         })
@@ -90,10 +89,8 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
                 sendElectronRendererToMain({ type: 'open-viewer', dir : msg.dir, file :  msg.presentations[i].file })
             })
             li.appendChild(revealButton(i, 'presentation'));
-            if (!msg.presentations[i].updated) {
-                //here there could be code for upgrading presentations, which is not currently used
-                // li.appendChild(updateButton(i));
-                // canUpgrade = true;
+            if (msg.presentations[i].version == 'old') {
+                li.appendChild(updateButton(i));
             }
             ul.appendChild(li);
         }

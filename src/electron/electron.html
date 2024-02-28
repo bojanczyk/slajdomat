@@ -24,7 +24,7 @@
     <div id="upload-head" class="hidden">Upload</div>
     <div id="settings-head">Settings</div>
     <div id="messages-head">Log</div>
-      <img id='spinner' src="../src/icons/loading.svg">
+    <img id='spinner' src="../src/icons/loading.svg">
   </div>
 
   <div id='tab-contents'>
@@ -66,7 +66,7 @@
         Figma.
       </div>
 
-      <div id="directory-listing">
+      <div id="directory-listing" class="hide-updates">
       </div>
 
     </div>
@@ -78,8 +78,7 @@
           Tools to upload your presentation folder to your web page.
         </p>
         <div class='tab-toolbar'>
-          <span class="toolbar-button disabled" id="upload-script-button"> <img
-              src='../src/icons/upload.svg'> </span>
+          <span class="toolbar-button disabled" id="upload-script-button"> <img src='../src/icons/upload.svg'> </span>
           <span> Run script. </span>
           <span class="toolbar-button" id="save-script"> <img src='../src/icons/save.svg'></span>
           <span> Save script. </span>
@@ -94,43 +93,39 @@
     </div>
 
     <div id="settings-tab">
-      <div class="tab-toolbar">
-        <span class="toolbar-button" id="save-settings"> <img src='../src/icons/save.svg'></span>
-        <span> Save settings </span>
-      </div>
       <div id="settings-contents">
-      <div>
-        <p>
-          Use this button to download a new version of the viewer files from github.
-          <!-- <span id="viewer-version"> verion number </span> -->
-        </p>
-        <p class="tab-toolbar">
-          <span class="toolbar-button" id="download-new-viewer"> <img src='../src/icons/download.svg'></span>
-          <span> Download new version </span>
-        </p>
+        <div class="tab-toolbar">
+          <span class="toolbar-button" id="save-settings"> <img src='../src/icons/save.svg'></span>
+          <span> Save settings </span>
+        </div>
+        <div>
+          <p class="tab-toolbar">
+            <span class="toolbar-button" id="download-new-viewer"> <img src='../src/icons/download.svg'></span>
+            <span> Download new version of viewer files from github </span>
+          </p>
+        </div>
+        <div>
+          <p><b>Port number</b> <input type="text" id="port-number" />
+          </p>
+          <p>This number is used for communication between Slajdomat and the Figma plugin. The default is 3001. If
+            you use a non-default number (because 3001 is used by some other program on your computer) then make
+            sure
+            that the Figma plugin is configured to use the same number.</p>
+        </div>
+        <div id="comment-container">
+          <p> <input type="checkbox" id="comments-checkbox" value="checked"> Use comments </p>
+          <p> To have comments in your slides, <a myref='comments.html'>see the user guide. </a> </p>
+          <p> <b>Server script</b> <input type="text" id="comment-url" /> </p>
+        </div>
+        <div>
+          <p><b>Path to ffmpeg <input type="text" id="ffmpeg-path" /></b> </p>
+          <p><b>Path to ffprobe <input type="text" id="ffprobe-path" /></b> </p>
+          <p>
+            These programs are needed for recording sound. If the two fields above are empty, then Slajdomat
+            could not find these paths, which likely means that you have not installed the programs.
+          </p>
+        </div>
       </div>
-      <div>
-        <p><b>Port number</b> <input type="text" id="port-number" />
-        </p>
-        <p>This number is used for communication between Slajdomat and the Figma plugin. The default is 3001. If
-          you use a non-default number (because 3001 is used by some other program on your computer) then make
-          sure
-          that the Figma plugin is configured to use the same number.</p>
-      </div>
-      <div id="comment-container">
-        <p>  <input type="checkbox" id="comments-checkbox" value="checked"> Use comments </p>
-        <p> To have comments in your slides, you need to have a access to an SQL database. <a myref='comments.html'>See the user guide. </a> </p>
-        <p> <b>Server script</b> <input type="text" id="comment-url" /> </p>
-      </div>
-      <div>
-        <p><b>Path to ffmpeg <input type="text" id="ffmpeg-path" /></b> </p>
-        <p><b>Path to ffprobe <input type="text" id="ffprobe-path" /></b> </p>
-        <p>
-          These programs are needed for recording sound. If the two fields above are empty, then Slajdomat
-          could not find these paths, which likely means that you have not installed the programs.
-        </p>
-      </div>
-    </div>
     </div>
 
     <div id="messages-tab">

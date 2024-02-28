@@ -8,7 +8,7 @@ the idea is that each slide manifest is tagged with the version of the Slajdomat
 
 
 export { oldVersion, upgradeManifest, upgradePresentation, version };
-    import { Manifest, Slide } from '../common/types';
+import { Manifest, Slide, State, StateJSON, TimelineJSON } from '../common/types';
 
 
 
@@ -18,19 +18,26 @@ import { copyHTMLFiles, readManifest, slideDir, writeManifest } from './main-fil
 // import { slideDir, writeManifest, copyHTMLFiles, readManifest, readPresentations } from './server';
 
 import { version as versionNumber } from '../..//package.json';
+import { TimeLike } from 'node:original-fs';
+import * as path from 'path';
+
 
 function version(): number {
     return parseFloat(versionNumber);
 }
 
-function oldVersion(manifest: Manifest): boolean {
-    return manifest.version != version();
+function oldVersion(manifest: Manifest): 'old' | 'current' {
+    if (manifest.version != version())
+        return 'old';
+    else
+        return 'current';
 }
 
 
 
 //upgrades a presentation to the most recent version. This includes upgrading the manifest file.
 function upgradePresentation(presentation: string): void {
+    console.log('upgrading ' + presentation);
     const manifest = readManifest(presentation);
     upgradeManifest(manifest);
     writeManifest(manifest);
@@ -63,32 +70,85 @@ function upgradeAllPresentations(dir = currentDir): void {
 */
 
 
+//finds a slide based on its id
+function findSlide(id: string, manifest: Manifest): Slide {
+    function rec(event: Slide): Slide {
+        if (event.id == id)
+            return event;
+        for (const child of event.children)
+            if (child.type == 'child') {
+                const retval = rec(child);
+                if (retval != undefined)
+                    return retval;
+            }
+        return undefined;
+    }
+    return rec(manifest.tree);
+}
+
+type SoundDict = {
+    [slide: string]: {
+        [eventIndex: string]: number;
+    };
+};
+
+function soundDictToTimeline(soundDict: SoundDict, manifest: Manifest): TimelineJSON {
+    let timeline: TimelineJSON = [];
+
+
+    for (const slideId of Object.keys(soundDict)) {
+        const node = findSlide(slideId, manifest);
+        const dir = manifest.slideDict[slideId];
+
+        const events = Object.keys(soundDict[slideId]);
+        for (const eventIndex of events) {
+
+            try {
+                let index: number;
+                if (eventIndex == 'finish')
+                    index = node.children.length - 1
+                else {
+                    // check if eventIndex is a number                            
+                    index = parseInt(eventIndex) - 1;
+                    if (index >= node.children.length - 1)
+                        throw 'index out of range'
+
+                }
+
+                let state: StateJSON;
+
+                if (index == -1)
+                    state = { type: 'start', slideId: slideId }
+                else
+                    state = { type: 'afterEvent', slideId: slideId, eventId: node.children[index].eventId }
+
+
+                let timelineItem = {
+                    state: state,
+                    soundFile: path.join(dir, eventIndex + '.mp3'),
+                    soundDuration: soundDict[slideId][eventIndex]
+                }
+
+                timeline.push(timelineItem);
+            }
+            catch (e) {
+                console.log('out of range', slideId, eventIndex);
+            }
+
+        }
+    }
+    return timeline;
+}
+
+
 function upgradeManifest(manifest: Manifest): void {
 
-    
     if (manifest.version == version())
         return;
 
-    if (manifest.version < 0.89) {
-        //add keywords to all slides
-        // eslint-disable-next-line no-inner-declarations
-        function eventIdAdd(event: Slide) {
-            for (let i = 0; i < event.children.length; i++) {
-                const child = event.children[i];
-                child.eventId = i.toString();
-                if (child.type == 'child')
-                    eventIdAdd(child);
-            }
-        }
-
-        eventIdAdd(manifest.tree);
-        manifest.tree.eventId = 'root';
-
-    }
-
-
-
-
+    const soundDict = (manifest as any).soundDict as SoundDict;
+    if (soundDict != undefined)
+        manifest.treeTimeLine = soundDictToTimeline(soundDict, manifest);
 
     sendStatus('Upgraded ' + manifest.presentation)
     manifest.version = version();

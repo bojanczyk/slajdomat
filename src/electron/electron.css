@@ -280,3 +280,11 @@ a {
 .hidden {
     display: none;
 }
+
+
+
+/* ************************************* */
+
+.hide-updates .update-button  {
+    display: none;
+}

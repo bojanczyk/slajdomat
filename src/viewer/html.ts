@@ -373,8 +373,8 @@ function initPanels(): void {
     initSoundHTML();
 
     // for testing 
-    togglePanel();
-    switchLeftPanelTab('author');
+    // togglePanel();
+    // switchLeftPanelTab('author');
 }
 
 
