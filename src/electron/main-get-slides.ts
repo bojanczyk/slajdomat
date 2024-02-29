@@ -8,9 +8,10 @@ import * as path from 'path';
 import { Manifest} from "../common/types";
 import { MessageToServerSlide, ServerResponse } from "../common/messages-viewer-server";
 import { sendStatus } from "./main";
-import { commentServerPath, copyHTMLFiles, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
+import { commentServerPath, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
 import { slajdomatSettings } from "./main-settings";
 import { version } from "./main-version";
+import { copyHTMLFiles } from './main-viewer-files';
 
 //receive the slides from the figma plugin. The slides are copied to the appropriate directory, together with the latest versions of the html code.
 function onGetSlide(msg: MessageToServerSlide): ServerResponse {

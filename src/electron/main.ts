@@ -7,27 +7,28 @@ The main purpose of this code is to dispatch the events to the various files mai
 */
 
 
-import { app, BrowserWindow, ipcMain, dialog, session, shell } from 'electron';
-import { createMenu } from './menubar'
+import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron';
+import { createMenu } from './menubar';
 
 
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'fs';
+import * as path from 'path';
 
-import { startServer,  } from './main-server'
+import { startServer, } from './main-server';
 
-import {slajdomatSettings, saveSettings, loadSettings, assignSettings, SlajdomatSettings } from './main-settings'
+import { assignSettings, loadSettings, saveSettings, slajdomatSettings } from './main-settings';
 
-import { readPresentations, gotoChild, gotoParent, revealFinder,  setResourceDir, downloadViewerFiles } from './main-files'
+import { gotoChild, gotoParent, readPresentations, revealFinder } from './main-files';
 
 
 
-import { ElectronRendererToMain, ElectronMainToRenderer } from './messages-main-renderer';
 import { runUploadScript, saveUploadScript } from './main-upload';
 import { upgradePresentation } from './main-version';
+import { downloadViewerFiles, setResourceDir } from './main-viewer-files';
+import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
 
 
-export { sendStatus, mainWindow, choosePresentationsFolder, sendMessageToRenderer }
+export { choosePresentationsFolder, mainWindow, sendMessageToRenderer, sendStatus };
 
 //this is the link to the main window html, produced by the despicable webpack
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;

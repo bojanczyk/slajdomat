@@ -2,9 +2,9 @@
 This file describes the communication inteface between the renderer and the main process. 
 */
 
-export { ElectronRendererToMain, ElectronMainToRenderer};
-import { PresentationList } from './main-files'
-import { SlajdomatSettings } from './main-settings';
+export { ElectronMainToRenderer, ElectronRendererToMain };
+    import { PresentationList } from './main-files';
+    import { SlajdomatSettings } from './main-settings';
 
 const { ipcRenderer } = window.require('electron');
 

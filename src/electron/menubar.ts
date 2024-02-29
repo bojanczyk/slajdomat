@@ -3,10 +3,10 @@
 initializes the menubar 
 */
 
-export{ createMenu}
+export { createMenu }
 
-import {app,Menu} from 'electron'
-import {choosePresentationsFolder} from './main'
+import { app, Menu } from 'electron'
+import { choosePresentationsFolder } from './main'
 
 
 function createMenu() : void

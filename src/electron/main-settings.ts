@@ -24,7 +24,8 @@ type SlajdomatSettings = {
     ffmpeg: string,
     ffprobe: string,
     comments : boolean,
-    commentServer : string
+    commentServer : string,
+    viewerVersion : string
 }
 
 let slajdomatSettings: SlajdomatSettings;
@@ -45,7 +46,8 @@ function loadSettings() {
             ffprobe: findExecutableInPath('ffprobe'),
             port: 3001,
             comments : false,
-            commentServer : 'slajdomat-comments.php'
+            commentServer : 'slajdomat-comments.php',
+            viewerVersion : undefined
         }
     }
 

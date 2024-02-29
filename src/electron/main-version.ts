@@ -7,20 +7,21 @@ the idea is that each slide manifest is tagged with the version of the Slajdomat
 
 
 
-export { oldVersion, upgradeManifest, upgradePresentation, version };
-import { Manifest, Slide, State, StateJSON, TimelineJSON } from '../common/types';
+export { oldVersion, upgradeManifest, upgradePresentation, version};
+import { Manifest, Slide, State, StateJSON, TimelineJSON, VersionList } from '../common/types';
 
 
 
 import * as child from 'child_process';
 import { sendStatus } from './main';
-import { copyHTMLFiles, readManifest, slideDir, writeManifest } from './main-files';
+import { readManifest, slideDir, writeManifest } from './main-files';
 // import { slideDir, writeManifest, copyHTMLFiles, readManifest, readPresentations } from './server';
 
 import { version as versionNumber } from '../..//package.json';
 import { TimeLike } from 'node:original-fs';
 import * as path from 'path';
-
+import * as https from 'https';
+import { copyHTMLFiles } from './main-viewer-files';
 
 function version(): number {
     return parseFloat(versionNumber);
@@ -154,3 +155,6 @@ function upgradeManifest(manifest: Manifest): void {
     manifest.version = version();
 
 }
+
+
+

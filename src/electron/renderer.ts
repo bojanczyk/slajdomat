@@ -12,23 +12,26 @@ export { selectTab, sendElectronRendererToMain };
 
 const { ipcRenderer } = window.require('electron');
 
+// import * as https from 'https';
+import { version as versionNumber } from '../..//package.json';
 import { SlajdomatSettings } from './main-settings';
 import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
-import { version as versionNumber } from '../..//package.json';
 
 
 //icons 
-    import '../icons/download.svg';
-    import '../icons/folder.svg';
-    import '../icons/leftarrow.svg';
-    import '../icons/save.svg';
-    import '../icons/slideshow.svg';
-    import '../icons/upload.svg';
-    import '../icons/upload2.svg';
-    import '../icons/loading.svg';
-    import '../icons/science.svg';
-    import '../icons/trending-up.svg';
+    import { VersionList } from '../common/types';
+import '../icons/download.svg';
+import '../icons/folder.svg';
+import '../icons/leftarrow.svg';
+import '../icons/loading.svg';
+import '../icons/save.svg';
+import '../icons/science.svg';
+import '../icons/slideshow.svg';
+import '../icons/trending-up.svg';
+import '../icons/upload.svg';
+import '../icons/upload2.svg';
 import { receivePresentations } from './presentations-tab';
+
 
 
 //the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
@@ -180,18 +183,51 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 
 
 
+let latestVersion : string;
+let currentViewerVersion : string = undefined;
+
+async function latestViewerVersion() {
+    
+    const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/version.json';
+    const downloadViewerText = document.getElementById('text-for-download-new-version') as HTMLSpanElement;
+
+    //  // load version list from github
+    try {
+        const res = await fetch(fileUrl);
+        if (!(res.ok))
+            throw "not connected";
+        else
+            {
+                 const versionList = (await res.json()) as VersionList;
+                 console.log(versionList);
+            }
+    } catch (e) {
+        const downloadButton = document.getElementById('download-new-viewer') as HTMLElement;
+        downloadButton.classList.add('disabled');
+        downloadViewerText.innerText = 'Could not download version list';
+    }
+
+
+
+}
+
 
 //display the settings in the forms in the settings tab
 function displaySettings(settings: SlajdomatSettings) {
 
     const versionDiv = document.getElementById('app-version-number') as HTMLDivElement;
     versionDiv.innerText +=' ' +  versionNumber;
+    latestViewerVersion();
 
     (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
     (document.querySelector('#ffprobe-path') as HTMLInputElement).value = settings.ffprobe;
     (document.querySelector('#port-number') as HTMLInputElement).value = settings.port.toString();
     (document.querySelector('#comments-checkbox') as HTMLInputElement).checked = settings.comments;
     (document.querySelector('#comment-url') as HTMLInputElement).value = settings.commentServer;
+    currentViewerVersion = settings.viewerVersion;
+    (document.querySelector('#viewer-version-number') as HTMLElement).innerText = currentViewerVersion;
+
+
 }
 
 
@@ -204,6 +240,7 @@ function sendSettings() {
         port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value),
         comments : (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
         commentServer : (document.querySelector('#comment-url') as HTMLInputElement).value,
+        viewerVersion : currentViewerVersion
     }
     sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
 }

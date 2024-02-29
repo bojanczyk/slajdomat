@@ -1,6 +1,6 @@
 export {
     AnimateEvent, AnimationParams, Database, Frame, Manifest, OverlayEvent, PresentationNode, ShowHideEvent, Slide, SoundDict, State,
-    StateJSON, TimelineJSON
+    StateJSON, TimelineJSON, VersionList
 }
 
 //the central type, which describes an event of the presentation
@@ -138,3 +138,4 @@ interface Manifest {
 }
 
 
+type VersionList = {viewerVersion : string, requiresAppVersion : string} []
