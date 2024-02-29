@@ -2,9 +2,5 @@
     {
         "viewerVersion": "3.0.0",
         "requiresAppVersion" : "3.0.0"
-    },
-    {
-        "viewerVersion": "3.0.1",
-        "requiresAppVersion" : "3.0.0"
     }
 ]

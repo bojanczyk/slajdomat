@@ -137,11 +137,18 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
         const downloadPath = path.join(customViewerDirectory, fileName);
         sendStatus('Downloading file ' + fileName + ' from version ' + bestVersion);
         const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/' + bestVersion + '/' + fileName;
+
+        function failCode() {
+            failedDownloads++;
+            sendStatus('Failed downloading ' + fileName);
+            if (successfulDownloads + failedDownloads == theHTMLFiles.length)
+                sendStatus('Failed downloading', 'quick');
+        }
+
         https.get(fileUrl, (response) => {
             // check if the file was found
-            if (response.statusCode !== 200) {
-                throw new Error('File not found');
-            }
+            if (response.statusCode !== 200) 
+                failCode();
             else {
                 const fileStream = fs.createWriteStream(downloadPath);
                 response.pipe(fileStream);
@@ -152,17 +159,9 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
                     if (successfulDownloads + failedDownloads == theHTMLFiles.length) {
                         sendStatus('All files downloaded', 'quick');
                         slajdomatSettings.viewerVersion = bestVersion;
-
                     }
-
                 });
             }
-        }).on('error', (err) => {
-            failedDownloads++;
-            sendStatus('Failed downloading ' + err);
-            if (successfulDownloads + failedDownloads == theHTMLFiles.length)
-                sendStatus('Failed downloading', 'quick');
-
-        });
+        }).on('error', (err) => {failCode();});
     }
 }
