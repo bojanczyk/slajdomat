@@ -6,5 +6,13 @@
   {
     "viewerVersion": "3.0.3",
     "requiresAppVersion": "3.0.0"
+  },
+  {
+    "viewerVersion": "3.0.4",
+    "requiresAppVersion": "3.0.0"
+  },
+  {
+    "viewerVersion": "3.0.6",
+    "requiresAppVersion": "3.0.0"
   }
 ]

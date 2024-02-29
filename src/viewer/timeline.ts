@@ -368,7 +368,7 @@ function encodeState(state: State): StateJSON {
     if (state.type == 'start') {
         return { type: 'start', slideId: state.slide.id };
     } else {
-        return { type: 'afterEvent', slideId: state.event.parent.id, eventId: state.event.id };
+        return { type: 'afterEvent', slideId: state.event.parent.id, eventId: state.event.eventId };
     }
 }
 
@@ -379,7 +379,7 @@ function decodeState(state: StateJSON): State {
             return slideStartState(findSlide(state.slideId));
         } else {
             const slide = findSlide(state.slideId);
-            const event = slide.children.find((e) => e.id == state.eventId);
+            const event = slide.children.find((e) => e.eventId == state.eventId);
             return afterEventState(event);
         }
     } catch (e) {

@@ -117,6 +117,11 @@ function createTreeHTML(): void {
 
 function timelineHTML(): void {
 
+    //if there is at least one sound, then we display the sound controls (play button, and speed button)
+    if  ((Object.keys(manifest.treeTimeLine).length > 0)) {
+        document.body.classList.add('has-sound');
+    }
+
     //the timeline for an event was clicked; with the ratio being the indicating the click position inside the timeline
     function timelineClicked(index: number, e: MouseEvent): void {
 
@@ -155,7 +160,7 @@ function timelineHTML(): void {
         else {
             big.classList.add('nosound');
             if (i == 0)
-                big.style.flexGrow = '0';
+                big.classList.add('first-sound');
             else
                 big.style.flexGrow = '2';
         }
@@ -167,10 +172,7 @@ function timelineHTML(): void {
     }
 
 
-    //if there is at least one sound, then we display the sound controls (play button, and speed button)
-    if (Object.keys(manifest.treeTimeLine).length > 0) {
-        document.body.classList.add('has-sound');
-    }
+    
 }
 
 

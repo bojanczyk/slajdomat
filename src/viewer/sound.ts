@@ -146,6 +146,7 @@ async function startRecording(): Promise<void> {
 
     try {
 
+        document.body.classList.add('has-sound');
         timelineRecording(timeline.current, 'recording');
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true

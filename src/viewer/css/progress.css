@@ -135,3 +135,13 @@ body:not(.has-sound) #sound-speed {
     margin-right : 10px;
     font-size: large;
 }
+
+/* if it has no recorded sound, the first element of the timeline is hidden when there are no sounds at all */
+body:not(.has-sound) .first-sound {
+    flex-grow : 0;
+}
+
+body.has-sound .first-sound {
+    flex-grow: 2;
+}
+
