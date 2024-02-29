@@ -19,7 +19,7 @@ import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-
 
 
 //icons 
-    import { VersionList } from '../common/types';
+import { VersionList } from '../common/types';
 import '../icons/download.svg';
 import '../icons/folder.svg';
 import '../icons/leftarrow.svg';
@@ -51,22 +51,22 @@ function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
             const div = document.createElement('div');
             div.innerHTML = text;
             let statusPanel;
-        
+
             if (subtype == 'log')
                 statusPanel = document.getElementById('general-status');
             else
                 statusPanel = document.getElementById('upload-status');
-        
+
             statusPanel.appendChild(div);
             statusPanel.scrollTo(0, statusPanel.scrollHeight);
             break;
 
         //this pops up some text at the bottom of the screen for a 5 seconds
         case 'quick':
-            const quickStatus : HTMLElement = document.querySelector('#quick-status');
+            const quickStatus: HTMLElement = document.querySelector('#quick-status');
             quickStatus.innerHTML = text;
             quickStatus.style.opacity = '1';
-            setTimeout(() => {quickStatus.style.opacity = '0';}, 2500);
+            setTimeout(() => { quickStatus.style.opacity = '0'; }, 2500);
             break;
 
     }
@@ -89,7 +89,7 @@ ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
             break;
 
         case 'settings':
-            displaySettings(arg.settings);
+            displaySettings(arg.settings, arg.availableVersion);
             break;
 
         default:
@@ -131,14 +131,12 @@ document.getElementById('settings-head').addEventListener('click', (e) => select
 
 
 //links to web pages
-for (const link of document.querySelectorAll('a')) 
-{
+for (const link of document.querySelectorAll('a')) {
     const url = 'https://bojanczyk.github.io/slajdomat/' + link.getAttribute('myref');
     //so far there is only one link, for the user guide 
-    link.addEventListener('click' , () =>
-    {
-            //a link is displayed by the backend, since only the backend has the ability to open a web browser
-    sendElectronRendererToMain({type : 'display-web-page',url : url })
+    link.addEventListener('click', () => {
+        //a link is displayed by the backend, since only the backend has the ability to open a web browser
+        sendElectronRendererToMain({ type: 'display-web-page', url: url })
     }
     )
 }
@@ -183,41 +181,37 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 
 
 
-let latestVersion : string;
-let currentViewerVersion : string = undefined;
+let latestVersion: string;
+let currentViewerVersion: string = undefined;
 
-async function latestViewerVersion() {
-    
-    const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/version.json';
-    const downloadViewerText = document.getElementById('text-for-download-new-version') as HTMLSpanElement;
+// async function latestViewerVersion() {
 
-    //  // load version list from github
-    try {
-        const res = await fetch(fileUrl);
-        if (!(res.ok))
-            throw "not connected";
-        else
-            {
-                 const versionList = (await res.json()) as VersionList;
-                 console.log(versionList);
-            }
-    } catch (e) {
-        const downloadButton = document.getElementById('download-new-viewer') as HTMLElement;
-        downloadButton.classList.add('disabled');
-        downloadViewerText.innerText = 'Could not download version list';
-    }
+//     const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/version.json';
+
+//     //  // load version list from github
+//     try {
+//         const res = await fetch(fileUrl);
+//         if (!(res.ok))
+//             throw "not connected";
+//         else {
+//             const versionList = (await res.json()) as VersionList;
+//             console.log(versionList);
+//         }
+//     } catch (e) {
+
+//     }
 
 
 
-}
+// }
 
 
 //display the settings in the forms in the settings tab
-function displaySettings(settings: SlajdomatSettings) {
+function displaySettings(settings: SlajdomatSettings, availableVersion: string) {
 
     const versionDiv = document.getElementById('app-version-number') as HTMLDivElement;
-    versionDiv.innerText +=' ' +  versionNumber;
-    latestViewerVersion();
+    versionDiv.innerText += ' ' + versionNumber;
+
 
     (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
     (document.querySelector('#ffprobe-path') as HTMLInputElement).value = settings.ffprobe;
@@ -227,6 +221,17 @@ function displaySettings(settings: SlajdomatSettings) {
     currentViewerVersion = settings.viewerVersion;
     (document.querySelector('#viewer-version-number') as HTMLElement).innerText = currentViewerVersion;
 
+    const downloadViewerText = document.getElementById('text-for-download-new-version') as HTMLSpanElement;
+
+    if (availableVersion == undefined) {
+        const downloadButton = document.getElementById('download-new-viewer') as HTMLElement;
+        downloadButton.classList.add('disabled');
+        downloadViewerText.innerText = 'Could not download version list';
+    }
+    else {
+        downloadViewerText.innerText = 'Download new version ' + availableVersion;
+        // latestVersion = availableVersion;
+    }
 
 }
 
@@ -238,9 +243,9 @@ function sendSettings() {
         ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
         ffprobe: (document.querySelector('#ffprobe-path') as HTMLInputElement).value,
         port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value),
-        comments : (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
-        commentServer : (document.querySelector('#comment-url') as HTMLInputElement).value,
-        viewerVersion : currentViewerVersion
+        comments: (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
+        commentServer: (document.querySelector('#comment-url') as HTMLInputElement).value,
+        viewerVersion: currentViewerVersion
     }
     sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
 }
@@ -250,18 +255,16 @@ const commentsCheckbox = document.querySelector('#comments-checkbox') as HTMLInp
 
 commentsCheckbox.addEventListener('click', e => {
     const comments = document.querySelector('#comment-container');
-    const commentsField = document.querySelector('#comment-url') as HTMLInputElement; 
-    if (commentsCheckbox.checked) 
-    {
+    const commentsField = document.querySelector('#comment-url') as HTMLInputElement;
+    if (commentsCheckbox.checked) {
         comments.classList.remove('disabled');
         commentsField.disabled = false;
     }
-    else
-    {
+    else {
         commentsField.disabled = true;
         comments.classList.add('disabled');
     }
-        
+
 })
 
 

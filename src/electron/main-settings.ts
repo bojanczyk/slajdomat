@@ -16,6 +16,7 @@ import * as path from 'path';
 import { Manifest } from "../common/types";
 import { sendMessageToRenderer, sendStatus } from "./main";
 import { restartServer } from "./main-server";
+import { latestViewerVersion } from "./main-viewer-files";
 
 
 type SlajdomatSettings = {
@@ -30,12 +31,14 @@ type SlajdomatSettings = {
 
 let slajdomatSettings: SlajdomatSettings;
 
-function loadSettings() {
+async function loadSettings() {
 
+    let version : string; 
     try {
         const fileName = path.join(app.getPath('userData'), 'settings.json');
         const data = fs.readFileSync(fileName).toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
+        version = await latestViewerVersion();
     }
     catch (err) {
         // this should be called when there are no settings, i.e. the app is loaded for the first time
@@ -51,7 +54,7 @@ function loadSettings() {
         }
     }
 
-    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings });
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion : version });
 }
 
 

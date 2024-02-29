@@ -25,7 +25,8 @@ type ElectronMainToRenderer = {
     gitscript : string
 } | {
     type: 'settings',
-    settings : SlajdomatSettings
+    settings : SlajdomatSettings,
+    availableVersion : string
 }
 
 //messages from electron renderer to electron main
