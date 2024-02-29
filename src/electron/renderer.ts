@@ -229,8 +229,10 @@ function displaySettings(settings: SlajdomatSettings, availableVersion: string) 
         downloadViewerText.innerText = 'Could not download version list';
     }
     else {
-        downloadViewerText.innerText = 'Download new version ' + availableVersion;
-        // latestVersion = availableVersion;
+        if (availableVersion == currentViewerVersion) 
+            downloadViewerText.innerText = 'You have the latest version';        
+        else 
+            downloadViewerText.innerText = 'Download new version ' + availableVersion;
     }
 
 }

@@ -16,6 +16,7 @@ import { presentationDir } from './main-files';
 import { VersionList } from '../common/types';
 import { slajdomatSettings } from './main-settings';
 
+
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
 let customViewerDirectory: string = undefined;
 
@@ -105,47 +106,63 @@ async function latestViewerVersion(): Promise<string> {
 
 async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
 
+    // check if downloading is necessary
+    if (mode == 'if not there') {
+        let someMissing = false;
+        for (const fileName of theHTMLFiles) {
+            const downloadPath = path.join(customViewerDirectory, fileName);
+            fs.access(downloadPath, fs.constants.F_OK, (err) => {
+                if (err) {
+                    someMissing = true;
+                    return;
+                }
+            });
+        }
+        if (!someMissing)
+            return;
+    }
+
+    // determine the viewer version that we want to download
     const bestVersion = await latestViewerVersion();
     if (bestVersion == undefined) {
         sendStatus('Could not get the list of viewer versions');
         return;
     }
 
+    let successfulDownloads = 0;
+    let failedDownloads = 0;
+
+    // download the files
     for (const fileName of theHTMLFiles) {
         const downloadPath = path.join(customViewerDirectory, fileName);
-        function download() {
+        sendStatus('Downloading file ' + fileName + ' from version ' + bestVersion);
+        const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/' + bestVersion + '/' + fileName;
+        https.get(fileUrl, (response) => {
+            // check if the file was found
+            if (response.statusCode !== 200) {
+                throw new Error('File not found');
+            }
+            else {
+                const fileStream = fs.createWriteStream(downloadPath);
+                response.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    sendStatus('Successfully downloaded ' + fileName);
+                    fileStream.close();
+                    successfulDownloads++;
+                    if (successfulDownloads + failedDownloads == theHTMLFiles.length) {
+                        sendStatus('All files downloaded', 'quick');
+                        slajdomatSettings.viewerVersion = bestVersion;
 
-            sendStatus('Downloading file ' + fileName + ' from version ' + bestVersion);
-            const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/' + bestVersion + '/' + fileName;
-            https.get(fileUrl, (response) => {
-                // check if the file was found
-                if (response.statusCode !== 200) {
-                    sendStatus('Error: could not download ' + fileName + ' from ' + fileUrl);
-                    sendStatus('Failed downloading ' + fileName, 'quick');
-                    return;
-                }
-                else {
-                    const fileStream = fs.createWriteStream(downloadPath);
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        sendStatus('Successfully downloaded ' + fileName);
-                        fileStream.close();
-                    });
-                }
-            }).on('error', (err) => {
-                sendStatus('Failed downloading ' + err);
-                sendStatus('Failed downloading ' + fileName, 'quick');
-            });
-        }
+                    }
 
-        if (mode == 'unconditionally')
-            download();
-        else
-            fs.access(downloadPath, fs.constants.F_OK, (err) => {
-                if (err) {
-                    download();
-                    return;
-                }
-            });
+                });
+            }
+        }).on('error', (err) => {
+            failedDownloads++;
+            sendStatus('Failed downloading ' + err);
+            if (successfulDownloads + failedDownloads == theHTMLFiles.length)
+                sendStatus('Failed downloading', 'quick');
+
+        });
     }
 }
