@@ -14,7 +14,7 @@ import { currentTool, toggleSketchpad } from './sketchpad';
 import { canPlaySound, initSoundHTML, loadSound } from './sound';
 import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, slideStartState, timeline } from './timeline';
 import { manifest, nextButton, playButton, prevButton } from './viewer';
-
+import { version as versionNumber } from '../..//package.json';
 
 
 //these dictionaries store, for each slide event, the corresponding div and subtreeDiv in the tree panel. The div is the name of the event, while the subtreeDiv is defined only for child events, and it is the subtree.
@@ -334,6 +334,10 @@ function initLeftPanel(): void {
 
     initPdf();
     initPresenterTools();
+
+    const versionDiv = document.getElementById('viewer-version');
+    versionDiv.textContent+= 'v' + versionNumber;
+    
 
     //switch tabs in the left panel
     document.getElementById('tab-heads').addEventListener('click', event => {

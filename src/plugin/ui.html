@@ -1,12 +1,16 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link rel="preconnect" href="https://fonts.gstatic.com"> 
+<link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet">
 
 <div id="entire-plugin">
 	<div class="column hidden" id="settings-column">
 		<i id="close-settings" class="material-icons">close</i>
 		<div class="row">
-			Settings
+			<b> Settings </b>
+		</div>
+		<div class="settings-item">
+			<label id="plugin-version">Plugin version</label>
+
 		</div>
 
 		<div class="settings-item">
@@ -59,16 +63,17 @@
 	<div class="column hidden" id="no-slide-column">
 		<i class="material-icons" id="settings-button-two">settings</i>
 		<div class="row">
-		<p>
-			No slide is currently selected.
-		</p>
+			<p>
+				No slide is currently selected.
+			</p>
 			<button class='button button--primary' id="make-first-small">Create new slide 1024 x 768</button>
 			<button class='button button--primary' id="make-first-big">Create new slide 1920 x 1080</button>
 		</div>
 
 		<div class="row">
 			<p>
-			To use this plugin, you need to install a standalone app, which will play the slides, and also create web pages out of them.
+				To use this plugin, you need to install a standalone app, which will play the slides, and also create
+				web pages out of them.
 			</p>
 			<button class='button button--primary' id="find-app-in-github">Download the app</button>
 		</div>
@@ -76,7 +81,8 @@
 
 	<div class="column hidden" id="slide-column">
 		<div class="toolbar">
-			<i class="material-icons toolbar-icon" title="This is the root slide, i.e. the first one in the presentation" id="is-root-slide"> stars
+			<i class="material-icons toolbar-icon"
+				title="This is the root slide, i.e. the first one in the presentation" id="is-root-slide"> stars
 			</i>
 			<div title="Name of the current slide." id="slide-name">
 			</div>
@@ -84,7 +90,7 @@
 			<i class="material-icons toolbar-button" id="settings-button">settings</i>
 		</div>
 
-		<div class= "toolbar-separator"></div>
+		<div class="toolbar-separator"></div>
 
 		<!-- The toolbar which contains buttons for creating events -->
 		<div id="event-toolbar" class="toolbar">
@@ -95,7 +101,7 @@
 					class="event-toolbar-title updatedable-menu-title">
 					<i class="material-icons menu-title-icon">visibility</i>
 					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
-					<div class='toolbar-triangle'> 
+					<div class='toolbar-triangle'>
 					</div>
 				</div>
 				<div class="toolbar-dropdown" id="dropdown-show">
@@ -123,12 +129,11 @@
 					class="event-toolbar-title updatedable-menu-title">
 					<i class="material-icons menu-title-icon">file_upload</i>
 					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
-					<div class='toolbar-triangle'> 
+					<div class='toolbar-triangle'>
 					</div>
 				</div>
 				<div class="toolbar-dropdown">
-					<div title="The root slide is the first one in the presentation" class="row"
-						id='dropdown-export'>
+					<div title="The root slide is the first one in the presentation" class="row" id='dropdown-export'>
 						<i class="material-icons">file_upload</i>
 						Export slides to the app
 					</div>
@@ -174,14 +179,17 @@
 
 		<div id='matematyk'>
 			<div class='toolbar'>
-				<i class='material-icons toolbar-button' id='latex-button' title='Latex converts the selected text to a picture of a math formula, and delatex reverts the process.'>attach_money</i>
-				<div id='matematyk-input-container' title="Use this to insert characters, such as math symbols, that are not available in your basic font. The math font is chosen in the settings."> Insert 
-				<input type="input" id='matematyk-input' placeholder="Σ">
-				in math font </div>
+				<i class='material-icons toolbar-button' id='latex-button'
+					title='Latex converts the selected text to a picture of a math formula, and delatex reverts the process.'>attach_money</i>
+				<div id='matematyk-input-container'
+					title="Use this to insert characters, such as math symbols, that are not available in your basic font. The math font is chosen in the settings.">
+					Insert
+					<input type="input" id='matematyk-input' placeholder="Σ">
+					in math font
+				</div>
 			</div>
 			<div id="matematyk-words">
 			</div>
 		</div>
 	</div>
 </div>
-

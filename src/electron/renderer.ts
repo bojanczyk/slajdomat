@@ -14,7 +14,7 @@ const { ipcRenderer } = window.require('electron');
 
 import { SlajdomatSettings } from './main-settings';
 import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
-
+import { version as versionNumber } from '../..//package.json';
 
 
 //icons 
@@ -183,6 +183,10 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 
 //display the settings in the forms in the settings tab
 function displaySettings(settings: SlajdomatSettings) {
+
+    const versionDiv = document.getElementById('app-version-number') as HTMLDivElement;
+    versionDiv.innerText +=' ' +  versionNumber;
+
     (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
     (document.querySelector('#ffprobe-path') as HTMLInputElement).value = settings.ffprobe;
     (document.querySelector('#port-number') as HTMLInputElement).value = settings.port.toString();

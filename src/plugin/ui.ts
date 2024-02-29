@@ -21,7 +21,7 @@ import {
 } from '../common/types'
 import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
-
+import { version as versionNumber } from '../..//package.json';
 
 
 // import 'material-design-icons/iconfont/material-icons.css'
@@ -73,6 +73,8 @@ function getLatexSettings(settings: LatexPluginSettings): void {
 
   pluginSettings = settings;
   probeServer();
+  const pluginVersion = document.getElementById('plugin-version');
+  pluginVersion.innerHTML += ' ' + versionNumber.toString();
 
   const lengths = [0.8, 1, 1.2];
   for (let i = 0; i < lengths.length; i++) {
