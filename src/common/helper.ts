@@ -1,4 +1,9 @@
-export { freshName, sanitize, freshRect, toAlphaNumeric }
+export { freshName, sanitize, freshRect, toAlphaNumeric, isLater, theHTMLFiles }
+
+
+
+//these are the files in the resource directory that should be copied to each presentation
+const theHTMLFiles = ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg'];
 
 //gives a name, starting with base, which is not on the avoid list
 function freshName(base: string, avoid: string[]): string {
@@ -99,4 +104,17 @@ function sanitize(s: string): string {
         retval = retval.replace(replace[0], replace[1]);
 
     return retval;
+}
+
+
+function isLater(version1: string, version2: string): boolean {
+    const v1 = version1.split('.').map(x => parseInt(x));
+    const v2 = version2.split('.').map(x => parseInt(x));
+    for (let i = 0; i < v1.length; i++) {
+        if (v1[i] > v2[i])
+            return true;
+        if (v1[i] < v2[i])
+            return false;
+    }
+    return true;
 }

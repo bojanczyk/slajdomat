@@ -11,10 +11,12 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import { sendStatus } from './main';
+import { sendMessageToRenderer, sendStatus } from './main';
 import { presentationDir } from './main-files';
 import { VersionList } from '../common/types';
-import { slajdomatSettings } from './main-settings';
+import { saveSettings, slajdomatSettings } from './main-settings';
+import { save } from 'pdfkit';
+import { isLater, theHTMLFiles } from '../common/helper';
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -50,9 +52,6 @@ function getResourceDir(): string {
 
 
 
-//these are the files in the resource directory that should be copied to each presentation
-const theHTMLFiles = ['index.html', 'viewer.js', 'favicon.png', 'slajdomat-logo-blue.svg'];
-
 
 function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
@@ -61,17 +60,6 @@ function copyHTMLFiles(presentation: string) {
     }
 }
 
-function isLater(version1: string, version2: string): boolean {
-    const v1 = version1.split('.').map(x => parseInt(x));
-    const v2 = version2.split('.').map(x => parseInt(x));
-    for (let i = 0; i < v1.length; i++) {
-        if (v1[i] > v2[i])
-            return true;
-        if (v1[i] < v2[i])
-            return false;
-    }
-    return true;
-}
 
 
 
@@ -147,7 +135,7 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
 
         https.get(fileUrl, (response) => {
             // check if the file was found
-            if (response.statusCode !== 200) 
+            if (response.statusCode !== 200)
                 failCode();
             else {
                 const fileStream = fs.createWriteStream(downloadPath);
@@ -159,9 +147,11 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
                     if (successfulDownloads + failedDownloads == theHTMLFiles.length) {
                         sendStatus('All files downloaded', 'quick');
                         slajdomatSettings.viewerVersion = bestVersion;
+                        saveSettings();
+                        sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion : bestVersion });
                     }
                 });
             }
-        }).on('error', (err) => {failCode();});
+        }).on('error', (err) => { failCode(); });
     }
 }

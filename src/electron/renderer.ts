@@ -210,7 +210,7 @@ let currentViewerVersion: string = undefined;
 function displaySettings(settings: SlajdomatSettings, availableVersion: string) {
 
     const versionDiv = document.getElementById('app-version-number') as HTMLDivElement;
-    versionDiv.innerText += ' ' + versionNumber;
+    versionDiv.innerText = ' ' + versionNumber;
 
 
     (document.querySelector('#ffmpeg-path') as HTMLInputElement).value = settings.ffmpeg;
