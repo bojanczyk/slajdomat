@@ -63,11 +63,12 @@ jobs:
 
                 - name: Compress directory
                   run: |
-                                if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-                                        Compress-Archive -Path ./out/* -DestinationPath my_directory.zip
-                                else
-                                        zip -r my_directory.zip ./out/
-                                fi
+                        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+                                7z a my_directory.zip ./out/*
+                        else
+                                zip -r my_directory.zip ./out/
+                        fi
+                  shell: bash
 
                 - name: Upload Release Asset
                   id: upload_release_asset
