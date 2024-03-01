@@ -64,9 +64,11 @@ jobs:
                 - name: Compress directory
                   run: |
                         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-                                7z a my_directory.zip ./out/Slajdomat-win32-x64
+                                7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
+                                # 7z a my_directory.zip ./out/Slajdomat-win32-x64
                         elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-                                zip -r my_directory.zip ./out/Slajdomat-darwin-x64/Slajdomat.app
+                                # on macos, this directory contains the smallest file
+                                mv ./out/make/zip/darwin/x64/*zip my_directory.zip
                         else
                                 zip -r my_directory.zip ./out/
                         fi
