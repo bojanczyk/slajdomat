@@ -7,15 +7,16 @@ jobs:
     upload:
         runs-on: ubuntu-latest
         steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
-
         - name: Create an empty hello.txt file
           run: touch hello.txt
 
-        - name: Get release
-          id: get_release
-          uses: jossef/action-latest-release-info@v1.2.2
+        - name: Get Current Release
+          id: get_current_release
+          uses: joutvhu/get-release@v1
+          with:
+            debug: true
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         - name: Upload Release Asset
           id: upload_release_asset
