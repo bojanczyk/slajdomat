@@ -42,17 +42,17 @@ jobs:
                     zip -r my_directory.zip ./out/
                 fi
 
-        - name: Create Release
-          id: create_release
-          if: matrix.os == 'ubuntu-latest'
-          uses: actions/create-release@v1
-          env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
-                release_name: Release ${{ steps.get_version.outputs.version }}
-                draft: true
-                prerelease: false
+        - name: Get release
+          id: get_release
+          run: |
+                  response=$(curl --silent --show-error --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases")
+                  upload_url=$(echo "$response" | jq -r '.[] | select(.name=="Latest build") | .upload_url' | sed -e "s/{?name,label}//")
+                  echo "::set-output name=upload_url::$upload_url"
+          shell: bash
+          
+        - name: Download artifacts
+          uses: actions/download-artifact@v2
+          
 
         - name: Upload Release Asset
           id: upload_release_asset
@@ -60,7 +60,7 @@ jobs:
           env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-                upload_url: ${{ steps.create_release.outputs.upload_url }}
+                upload_url: ${{ steps.get_release.outputs.upload_url }}
                 asset_path: ./my_directory.zip
                 asset_name: my_directory-${{ matrix.os }}.zip
                 asset_content_type: application/zip
