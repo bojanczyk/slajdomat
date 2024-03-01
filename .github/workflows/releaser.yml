@@ -1,67 +1,81 @@
 name: Build and Release
 
 on:
-    workflow_dispatch:
+        workflow_dispatch:
 
 jobs:
-    build:
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
+        create_release:
+                runs-on: ubuntu-latest
+                outputs:
+                        upload_url: ${{ steps.create_release.outputs.upload_url }}
+                        version: ${{ steps.get_version.outputs.version }}
 
-        steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
+                steps:
+                - name: Checkout code
+                  uses: actions/checkout@v2
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v2
-          with:
-                node-version: '20' 
+                - name: Setup Node.js
+                  uses: actions/setup-node@v2
+                  with:
+                                node-version: '20' 
 
-        - name: Get version
-          id: get_version
-          run: |
-                echo "::set-output name=version::$(node -p "require('./package.json').version")"
-            
-        - name: Install dependencies
-          run: |
-                npm install
-          working-directory: ./
-            
-        - name: Build Electron App
-          run: |
-                npm run make
-          working-directory: ./
+                - name: Get version
+                  id: get_version
+                  run: |
+                                echo "::set-output name=version::$(node -p "require('./package.json').version")"
 
-        - name: Compress directory
-          run: |
-                if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-                    Compress-Archive -Path ./out/* -DestinationPath my_directory.zip
-                else
-                    zip -r my_directory.zip ./out/
-                fi
-                
-        - name: Get Current Release
-          id: get_current_release
-          run: |
-            response=$(curl --silent --show-error --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest")
-                  upload_url=$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")
-                  echo "::set-output name=upload_url::$upload_url"
-          shell: bash
-        
-          
-        - name: Download artifacts
-          uses: actions/download-artifact@v2
-          
+                - name: Create Release
+                  id: create_release
+                  uses: actions/create-release@v1
+                  env:
+                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  with:
+                                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
+                                release_name: Latest ${{ steps.get_version.outputs.version }}
+                                draft: true
+                                prerelease: false
 
-        - name: Upload Release Asset
-          id: upload_release_asset
-          uses: actions/upload-release-asset@v1
-          env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-                upload_url: ${{ steps.get_current_release.outputs.upload_url }}
-                asset_path: ./my_directory.zip
-                asset_name: my_directory-${{ matrix.os }}.zip
-                asset_content_type: application/zip
+        build_and_upload:
+                needs: create_release
+                runs-on: ${{ matrix.os }}
+                strategy:
+                        matrix:
+                                os: [ubuntu-latest, windows-latest, macos-latest]
+
+                steps:
+                - name: Checkout code
+                  uses: actions/checkout@v2
+
+                - name: Setup Node.js
+                  uses: actions/setup-node@v2
+                  with:
+                                node-version: '20' 
+
+                - name: Install dependencies
+                  run: |
+                                npm install
+                  working-directory: ./
+                        
+                - name: Build Electron App
+                  run: |
+                                npm run make
+                  working-directory: ./
+
+                - name: Compress directory
+                  run: |
+                                if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+                                        Compress-Archive -Path ./out/* -DestinationPath my_directory.zip
+                                else
+                                        zip -r my_directory.zip ./out/
+                                fi
+
+                - name: Upload Release Asset
+                  id: upload_release_asset
+                  uses: actions/upload-release-asset@v1
+                  env:
+                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  with:
+                                upload_url: ${{ needs.create_release.outputs.upload_url }}
+                                asset_path: ./my_directory.zip
+                                asset_name: my_directory-${{ matrix.os }}.zip
+                                asset_content_type: application/zip
