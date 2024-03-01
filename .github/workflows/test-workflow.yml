@@ -24,7 +24,7 @@ jobs:
           env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-                upload_url: ${{ steps.get_release.outputs.upload_url }}
+                upload_url: ${{ steps.get_current_release.upload_url }}
                 asset_path: ./hello.txt
                 asset_name: hello.txt
                 asset_content_type: text/plain
