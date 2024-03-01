@@ -12,11 +12,7 @@ jobs:
 
         - name: Get Current Release
           id: get_current_release
-          uses: joutvhu/get-release@v1
-          with:
-            tag_name : latest
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          uses: jossef/action-latest-release-info@v1.2.2
 
         - name: Upload Release Asset
           id: upload_release_asset
