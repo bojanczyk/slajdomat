@@ -12,9 +12,11 @@ jobs:
 
         - name: Get Current Release
           id: get_current_release
-          uses: bruceadams/get-release@v1.3.2
-          env:
-            GITHUB_TOKEN: ${{ github.token }}
+          run: |
+            response=$(curl --silent --show-error --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest")
+            upload_url=$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")
+            echo "::set-output name=upload_url::$upload_url"
+          shell: bash
 
         - name: Upload Release Asset
           id: upload_release_asset
