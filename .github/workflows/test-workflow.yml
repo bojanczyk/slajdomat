@@ -12,7 +12,9 @@ jobs:
 
         - name: Get Current Release
           id: get_current_release
-          uses: jossef/action-latest-release-info@v1.2.2
+          uses: bruceadams/get-release@v1.3.2
+          env:
+            GITHUB_TOKEN: ${{ github.token }}
 
         - name: Upload Release Asset
           id: upload_release_asset
