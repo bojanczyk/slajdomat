@@ -65,7 +65,7 @@ jobs:
                   run: |
                         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
                                 7z a my_directory.zip ./out/Slajdomat-win32-x64
-                        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+                        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
                                 zip -r my_directory.zip ./out/Slajdomat-darwin-x64/Slajdomat.app
                         else
                                 zip -r my_directory.zip ./out/
