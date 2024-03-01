@@ -1,0 +1,22 @@
+name: Build and Release
+
+on:
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+
+        steps:
+
+        - name: Get Current Release
+          id: get_current_release
+          uses: joutvhu/get-release@v1
+          with:
+                  debug: true
+          env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
