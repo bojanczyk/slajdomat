@@ -14,7 +14,7 @@ jobs:
           id: get_current_release
           uses: joutvhu/get-release@v1
           with:
-            debug: true
+            tag_name : latest
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
