@@ -16,6 +16,11 @@ jobs:
           with:
             node-version: '20' 
 
+        - name: Get version
+          id: get_version
+          run: |
+              echo "::set-output name=version::$(node -p "require('./package.json').version")"
+      
         - name: Install dependencies
           run: |
               npm install
@@ -32,14 +37,14 @@ jobs:
           env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-                tag_name: Tag 
-                release_name: Release ${{ github.ref }}
-                draft: false
+                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
+                release_name: Release ${{ steps.get_version.outputs.version }}
+                draft: true
                 prerelease: false
 
         - name: Compress directory
           run: |
-                zip -r my_directory.zip ./out
+                zip -r my_directory.zip ./out/make
 
         - name: Upload Release Asset
           id: upload_release_asset
