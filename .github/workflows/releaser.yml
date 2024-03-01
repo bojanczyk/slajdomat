@@ -64,7 +64,9 @@ jobs:
                 - name: Compress directory
                   run: |
                         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-                                7z a my_directory.zip ./out/*
+                                7z a my_directory.zip ./out/Slajdomat-win32-x64
+                        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+                                zip -r my_directory.zip ./out/Slajdomat-darwin-x64/Slajdomat.app
                         else
                                 zip -r my_directory.zip ./out/
                         fi
@@ -78,5 +80,5 @@ jobs:
                   with:
                                 upload_url: ${{ needs.create_release.outputs.upload_url }}
                                 asset_path: ./my_directory.zip
-                                asset_name: my_directory-${{ matrix.os }}.zip
+                                asset_name: slajdomat-${{ matrix.os }}.zip
                                 asset_content_type: application/zip
