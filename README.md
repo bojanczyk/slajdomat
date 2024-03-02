@@ -2,7 +2,7 @@
 This is a program for making zooming slides in Figma.
 
 To see how the software works, and how to install it without building it yourself, see the
-[User guide](doc/user-guide.md).
+[User guide](docs/README.md).
 
 
 
