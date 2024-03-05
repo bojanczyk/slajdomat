@@ -2,6 +2,7 @@
 export { getLatexSettings, initSettings, pluginSettings, sendSettings };
 
 import { selChange, sendToUI } from "./code";
+import { deleteTree, drawTree } from "./code-draw-tree";
 import { LatexPluginSettings } from "./plugin-types";
 import { upgradeVersion } from "./plugin-version";
 
@@ -16,7 +17,14 @@ let pluginSettings: LatexPluginSettings;
 
 //get the settings from the ui
 function getLatexSettings(settings: LatexPluginSettings): void {
+    let oldDrawTree = pluginSettings.drawTree;
     pluginSettings = settings;
+    if (oldDrawTree !== settings.drawTree) {
+        if (settings.drawTree) 
+            drawTree()
+        else 
+            deleteTree();
+    }
     figma.clientStorage.setAsync('slajdomat', JSON.stringify(settings));
     sendSettings();
 }
@@ -38,6 +46,7 @@ function initSettings() {
         x => {
             //the default plugin settings
             const defaultSettings = {
+                drawTree: false,
                 words: ['∀', '∃', '∧', '∨', '∈'],
                 active: false,
                 mathFont: {

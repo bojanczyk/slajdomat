@@ -35,7 +35,7 @@ When the presentation is displayed by the viewer, the slide tree is visited usin
 Each moment in this traversal is called a state. The states are as follows:
 
 - For each slide node, we begin with a "start" state for this node (the blue circles in the picture).
-- Then, for each child of the slide, we traverse its tree, and after that there is an "after" state for the child (the yellow circles in the picture). If the child is an overlay, it does not have any other states, except the "after" state.
+- Then, for each child, we do the following. If the child is a slide, we recursively traverse it, if it is an overlay we do nothing. After that, regardless of whether the child was a slide or an overlay, we have an "after" state for the child (the yellow circles in the picture).
 
 Therefore, the "start" states are in one-to-one correspondence with the slides, while the "after" states are in one-to-one correspondence with the tree edges.
 

@@ -68,21 +68,29 @@ function probeServer(): void {
 
 
 function getLatexSettings(settings: LatexPluginSettings): void {
-  //create the matematyk panel, which allows to make latex and math symbols
+  //the part for the non-math plugin
 
-
+  const drawTreeCheckbox = document.getElementById('draw-tree-checkbox') as HTMLInputElement;
+  drawTreeCheckbox.checked = settings.drawTree;
   pluginSettings = settings;
   probeServer();
   const pluginVersion = document.getElementById('plugin-version');
-  pluginVersion.innerHTML += ' ' + versionNumber.toString();
+  pluginVersion.innerHTML = versionNumber.toString();
 
+
+  // the part for the matematyk plugin
   const lengths = [0.8, 1, 1.2];
   for (let i = 0; i < lengths.length; i++) {
     if (pluginSettings.mathFontSize == lengths[i])
       (document.getElementById('math-font-size-select') as HTMLSelectElement).selectedIndex = i;
   }
 
+  try {
   document.getElementById('current-insertion-font').innerHTML = pluginSettings.mathFont.family;
+  }
+  catch {
+    document.getElementById('current-insertion-font').innerHTML = 'No font selected';
+  }
 
 
   if (pluginSettings.active) {
@@ -492,6 +500,8 @@ function selChange(msg: {
 }
 
 
+document.getElementById('slide-count').addEventListener('click', () => {postMessage({type: 'drawTree'})});
+
 //the event handlers for the clicking on the buttons in the event toolbar, which create dropdowns 
 const toolbarButtons = document.getElementsByClassName('event-toolbar-menu');
 for (const toolbarButton of toolbarButtons) {
@@ -885,6 +895,13 @@ document.getElementById('settings-column').addEventListener('change',
 
 
     pluginSettings.mathFontSize = parseInt((document.getElementById('math-font-size-select') as HTMLSelectElement).value) / 100;
+
+    if ((document.getElementById('draw-tree-checkbox') as HTMLInputElement).checked) {
+      pluginSettings.drawTree = true;
+    }
+    else {
+      pluginSettings.drawTree = false;
+    }
 
     if ((document.getElementById('matematyk-checkbox') as HTMLInputElement).checked) {
       document.getElementById('matematyk').style.display = '';

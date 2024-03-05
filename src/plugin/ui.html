@@ -5,43 +5,42 @@
 <div id="entire-plugin">
 	<div class="column hidden" id="settings-column">
 		<i id="close-settings" class="material-icons">close</i>
-		<div class="row">
-			<b> Settings </b>
-		</div>
-		<div class="settings-item">
-			<label id="plugin-version">Plugin version</label>
-
+		<div>
+			<b> Settings. </b> Plugin version <span id="plugin-version"> </span>
 		</div>
 
-		<div class="settings-item">
-			<label>Slajdomat app</label>
-			<div class="settings-item">
-				Address of the Slajdomat app. Default is http://localhost:3001
-			</div>
-			<div class="settings-item">
-				<input type="text" id="server-url" />
-			</div>
-			<div class="settings-item" id="server-url-status">
-			</div>
+		<div>
+			<input type="checkbox" id="draw-tree-checkbox">
+			<label>Draw tree. Your slides will be automatically organized into a tree.</label>
+
+		</div>
+		<div>
+			Address of the Slajdomat app. Default is http://localhost:3001
+		</div>
+		<div>
+			<input type="text" id="server-url" />
+		</div>
+		<div id="server-url-status">
 		</div>
 
-		<div class="settings-item" id='settings-matematyk'>
+
+		<div id='settings-matematyk'>
 			<input type="checkbox" id="matematyk-checkbox">
 			<label>Latex and math extension</label>
-			<div class="settings-item">
+			<div>
 				Math characters are inserted using the font
 				<label id="current-insertion-font">
 				</label> <label>. Use the following button to change to the currently selected font </label>
 			</div>
-			<div class="settings-item">
+			<div>
 				<button type="button" id="new-font-name">
 					Change to font of selection</button>
 			</div>
 
-			<div class="settings-item">
+			<div>
 				Math characters use a font size that is scaled with respect to preceding characters.
 			</div>
-			<div class="settings-item">
+			<div>
 				<label>Size: </label>
 				<select id="math-font-size-select">
 					<option value="80">80%</option>
@@ -49,10 +48,10 @@
 					<option value="120">120%</option>
 				</select>
 			</div>
-			<div class="settings-item">
-				When converting latex code to a picture, the following service is used:
+			<div>
+				Service for converting latex code to a picture. Default is https://latex.codecogs.com/svg.latex?
 			</div>
-			<div class="settings-item">
+			<div>
 				<input type="text" id='latexit-url' placeholder='' />
 			</div>
 		</div>

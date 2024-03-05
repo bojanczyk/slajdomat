@@ -317,8 +317,17 @@ the second line is just to avoid an error message */
 /* settings column ************ */
 
 #settings-column {
-  padding-right : 15px;
+  padding : 5px;
+  width : 90%;
 }
+
+#settings-column div {
+  margin-top : 5px;
+  margin-bottom : 7px;
+  margin-left : 10px;
+  margin-right: 7px;
+}
+
 
 #close-settings {
   position: absolute;
@@ -327,29 +336,11 @@ the second line is just to avoid an error message */
   cursor : pointer;
 }
 
-.settings-item .label {
-  color: black;
-}
-
-.settings-item button {
-  font-family: 'Inter';
-    font-size: 11px;
-    margin-bottom : 5px;
-}
-
-.settings-item {
-  margin-top : 5px;
-  margin-bottom : 7px;
-  margin-left : 10px;
-  margin-right: 7px;
-}
-
-.settings-item select {
-  margin-left : 3px;
+select {
   font-size : 11px;
 }
 
-.settings-item input[type=text] {
+#settings-column input[type=text] {
   width : 100%
 }
 

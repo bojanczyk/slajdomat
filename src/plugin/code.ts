@@ -20,6 +20,7 @@ import { exportSlides } from './export'
 import { latexitOne, latexitTwo, matematykData, matematykWord } from './matematyk'
 import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
 import { LatexState } from './plugin-types'
+import { drawTree } from './code-draw-tree'
 
 
 
@@ -108,7 +109,8 @@ function createEvent(eventInfo: {
             const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
             eventInfo.id = slideId(newSlide)
         }
-        createdEvents = createChildEvent(eventInfo.id);
+        createdEvents = createChildEvent(eventInfo.id);        
+        drawTree();
     }
     else {
 
@@ -633,6 +635,10 @@ function onMessage(msg: PluginUIToCode) {
             latexitTwo(msg.text);
             break;
 
+        case 'drawTree' :
+            //draw a tree of the presentation
+            drawTree();
+            break;
 
         default:
             throw "uncovered message type sent to code: "

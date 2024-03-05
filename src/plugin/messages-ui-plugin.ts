@@ -61,6 +61,8 @@ type PluginUIToCode = {
 } | {
   type: 'latexitTwo',
   text: string
+} | {
+  type: 'drawTree'
 }
 
 // messages sent in the opposite direction, from the backend to the ui

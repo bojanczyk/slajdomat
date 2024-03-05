@@ -16,6 +16,7 @@ export {
 
 //these are the settings for the latex parte of the plugin, i.e. "matematyk", that are stored in the global plugin data
 type LatexPluginSettings = {
+  drawTree : boolean,
   mathFontSize: number,
   mathFont: FontName,
   active: boolean,
