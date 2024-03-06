@@ -13,7 +13,7 @@ import { Database, PresentationNode } from '../common/types'
 import { createChildEvent, createNewSlide } from './code-child-events'
 import { findSlide, overlayId, slideId } from './code-name-management'
 import { canBeOverlayTarget, createOverlayEvent } from './code-overlay-events'
-import { getLatexSettings, initSettings } from './code-settings'
+import { getLatexSettings, initSettings, pluginSettings } from './code-settings'
 import { updateThumbnails } from './code-thumbnails'
 import { loadAnimationParams, saveAnimationParams } from './code-timeline'
 import { exportSlides } from './export'
@@ -110,7 +110,6 @@ function createEvent(eventInfo: {
             eventInfo.id = slideId(newSlide)
         }
         createdEvents = createChildEvent(eventInfo.id);        
-        drawTree();
     }
     else {
 
@@ -129,10 +128,14 @@ function createEvent(eventInfo: {
 
 
     saveCurrentData();
-    console.log('before load animation params', JSON.stringify(state.database));
     loadAnimationParams();
-    console.log('after load animation params', JSON.stringify(state.database));
     sendEventList();
+
+    if (eventInfo.subtype == 'child' && pluginSettings.drawTree)
+    {   
+        console.log('draw tree')
+        drawTree();
+    }
 }
 
 
@@ -168,6 +171,10 @@ function mergeEvent(index: number): void {
 function reorderEvents(sourceBlock: number, targetBlock: number): void {
 
     saveAnimationParams();
+
+
+    
+
     //the source is a block, and so is the target
     const blockStarts: number[] = [];
     let i: number;
@@ -180,6 +187,23 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     const target = blockStarts[targetBlock];
     const sourceCount = blockStarts[sourceBlock + 1] - source;
     const targetCount = blockStarts[targetBlock + 1] - target;
+
+    // check if the source or target block contains a child event, which will force a redraw of the tree
+    let swapsChildren = false;
+    for (let i = source; i < source + sourceCount; i++) {
+        if (state.database.events[i].type == "child") {
+            swapsChildren = true;
+            break;
+        }
+    }
+    for (let i = target; i < target + targetCount; i++) {
+        if (state.database.events[i].type == "child") {
+            swapsChildren = true;
+            break;
+        }
+    }
+
+
 
     let realTarget;
     if (source > target) {
@@ -196,6 +220,9 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     saveCurrentData();
     loadAnimationParams();
     sendEventList();
+
+    if (swapsChildren && pluginSettings.drawTree)
+        drawTree();
 
 }
 
