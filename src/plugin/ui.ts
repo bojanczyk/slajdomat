@@ -22,6 +22,7 @@ import {
 import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
 import { version as versionNumber } from '../..//package.json';
+import { ServerResponse } from '../common/messages-viewer-server';
 
 
 // import 'material-design-icons/iconfont/material-icons.css'
@@ -203,9 +204,9 @@ async function savePresentation(presentation: {
     });
 
     const responseText = await response.text();
-    const json = JSON.parse(responseText);
+    const json = JSON.parse(responseText) as ServerResponse
     if (json.status == 'error') {
-      notify("Error exporting slides to the Slajdomat app. See the Slajdomat log.");
+      notify("Error exporting slides to the Slajdomat app. " + json.explanation);
     }
     else {
       notify("Successfully exported slides to the Slajdomat app.");

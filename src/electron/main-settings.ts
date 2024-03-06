@@ -8,7 +8,7 @@ export {
     SlajdomatSettings, assignSettings, loadSettings, myStringify, saveSettings, slajdomatSettings
 };
 
-    import { PresentationList, findExecutableInPath, writeFile } from "./main-files";
+import { PresentationList, findExecutableInPath, writeFile } from "./main-files";
 
 import { app } from "electron";
 import * as fs from 'fs';
@@ -16,7 +16,7 @@ import * as path from 'path';
 import { Manifest } from "../common/types";
 import { sendMessageToRenderer, sendStatus } from "./main";
 import { restartServer } from "./main-server";
-import { latestViewerVersion } from "./main-viewer-files";
+import { downloadViewerFiles, latestViewerVersion } from "./main-viewer-files";
 
 
 type SlajdomatSettings = {
@@ -24,21 +24,21 @@ type SlajdomatSettings = {
     directory?: string,
     ffmpeg: string,
     ffprobe: string,
-    comments : boolean,
-    commentServer : string,
-    viewerVersion : string
+    comments: boolean,
+    commentServer: string,
+    viewerVersion: string,
+    viewerDownload: 'automatic' | 'manual'
 }
 
 let slajdomatSettings: SlajdomatSettings;
 
 async function loadSettings() {
 
-    let version : string; 
+    let version: string;
     try {
         const fileName = path.join(app.getPath('userData'), 'settings.json');
         const data = fs.readFileSync(fileName).toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
-        version = await latestViewerVersion();
     }
     catch (err) {
         // this should be called when there are no settings, i.e. the app is loaded for the first time
@@ -48,13 +48,22 @@ async function loadSettings() {
             ffmpeg: findExecutableInPath('ffmpeg'),
             ffprobe: findExecutableInPath('ffprobe'),
             port: 3001,
-            comments : false,
-            commentServer : 'slajdomat-comments.php',
-            viewerVersion : undefined
+            comments: false,
+            commentServer: 'slajdomat-comments.php',
+            viewerVersion: undefined,
+            viewerDownload: 'automatic'
         }
     }
 
-    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion : version });
+
+    version = await latestViewerVersion();
+    let downloadSuccess;
+    if (slajdomatSettings.viewerDownload != 'manual' && slajdomatSettings.viewerVersion != version) {
+        downloadSuccess = await downloadViewerFiles('unconditionally');
+    } else 
+        downloadSuccess = await downloadViewerFiles('if not there');
+        
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: version });
 }
 
 
@@ -77,7 +86,7 @@ function assignSettings(arg: SlajdomatSettings): void {
 
     if (slajdomatSettings.port != arg.port) {
         //the port has been changed, so we restart the server
-       restartServer();
+        restartServer();
     }
     slajdomatSettings = arg;
     saveSettings();

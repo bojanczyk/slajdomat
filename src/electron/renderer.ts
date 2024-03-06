@@ -229,11 +229,14 @@ function displaySettings(settings: SlajdomatSettings, availableVersion: string) 
         downloadViewerText.innerText = 'Could not download version list';
     }
     else {
-        if (availableVersion == currentViewerVersion) 
-            downloadViewerText.innerText = 'You have the latest version';        
-        else 
-            downloadViewerText.innerText = 'Download new version ' + availableVersion;
+        downloadViewerText.innerText = 'Download viewer version ' + availableVersion;
     }
+
+    const autoUpdateCheckbox = document.getElementById('automatically-update-viewer') as HTMLInputElement;
+    if (settings.viewerDownload == 'manual')
+        autoUpdateCheckbox.checked = false
+    else
+        autoUpdateCheckbox.checked = true;
 
 }
 
@@ -241,13 +244,24 @@ function displaySettings(settings: SlajdomatSettings, availableVersion: string) 
 
 //send back the settings to the main process, so that they can be saved to disk
 function sendSettings() {
+
+
+    const autoUpdateCheckbox = document.getElementById('automatically-update-viewer') as HTMLInputElement;
+    let autoUpdate: 'automatic' | 'manual';
+    if (autoUpdateCheckbox.checked)
+        autoUpdate = 'automatic'
+    else
+        autoUpdate = 'manual';
+
+
     const settings: SlajdomatSettings = {
         ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
         ffprobe: (document.querySelector('#ffprobe-path') as HTMLInputElement).value,
         port: parseInt((document.querySelector('#port-number') as HTMLInputElement).value),
         comments: (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
         commentServer: (document.querySelector('#comment-url') as HTMLInputElement).value,
-        viewerVersion: currentViewerVersion
+        viewerVersion: currentViewerVersion,
+        viewerDownload: autoUpdate
     }
     sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
 }

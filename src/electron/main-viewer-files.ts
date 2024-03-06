@@ -17,6 +17,9 @@ import { VersionList } from '../common/types';
 import { saveSettings, slajdomatSettings } from './main-settings';
 import { save } from 'pdfkit';
 import { isLater, theHTMLFiles } from '../common/helper';
+import axios from 'axios';
+import { promisify } from 'util';
+import { pipeline as callbackPipeline } from 'stream';
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -26,24 +29,6 @@ let customViewerDirectory: string = undefined;
 
 function setResourceDir() {
     customViewerDirectory = app.getPath('userData')
-
-    // the user main pass a custom directory for the viewer files, using the command line argument --viewerdir
-    const indexCustomDir = process.argv.indexOf('--viewerdir');
-    if (indexCustomDir !== -1 && indexCustomDir < process.argv.length - 1) {
-        const customDir = process.argv[indexCustomDir + 1];
-        if (customDir != undefined)
-            fs.access(customDir, fs.constants.F_OK, (err) => {
-                if (err) {
-                    sendStatus('Error: could not access directory ' + customDir);
-                    return;
-                }
-                sendStatus('Custom viewer code will be used from' + customDir);
-                customViewerDirectory = customDir;
-            });
-    }
-
-    //checks if a file is there, and if not, downloads it from github
-    downloadViewerFiles('if not there');
 }
 
 function getResourceDir(): string {
@@ -56,6 +41,11 @@ function getResourceDir(): string {
 function copyHTMLFiles(presentation: string) {
     const presDir = presentationDir(presentation);
     for (const file of theHTMLFiles) {
+        const source = path.join(getResourceDir(), file);
+        // check if source exists 
+        if (!fs.existsSync(source)) {
+            throw new Error('The Slajdomat app is missing the viewer files. See its settings.');
+        }
         fs.copyFileSync(path.join(getResourceDir(), file), path.join(presDir, file))
     }
 }
@@ -92,33 +82,27 @@ async function latestViewerVersion(): Promise<string> {
     }
 }
 
-async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
+async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Promise<'success' | 'failure'> {
 
     // check if downloading is necessary
     if (mode == 'if not there') {
         let someMissing = false;
         for (const fileName of theHTMLFiles) {
             const downloadPath = path.join(customViewerDirectory, fileName);
-            fs.access(downloadPath, fs.constants.F_OK, (err) => {
-                if (err) {
-                    someMissing = true;
-                    return;
-                }
-            });
+            if (!fs.existsSync(downloadPath))
+                someMissing = true;
         }
         if (!someMissing)
-            return;
+            return 'success';
     }
 
     // determine the viewer version that we want to download
     const bestVersion = await latestViewerVersion();
     if (bestVersion == undefined) {
         sendStatus('Could not get the list of viewer versions');
-        return;
+        return 'failure';
     }
 
-    let successfulDownloads = 0;
-    let failedDownloads = 0;
 
     // download the files
     for (const fileName of theHTMLFiles) {
@@ -126,32 +110,33 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally') {
         sendStatus('Downloading file ' + fileName + ' from version ' + bestVersion);
         const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/' + bestVersion + '/' + fileName;
 
-        function failCode() {
-            failedDownloads++;
-            sendStatus('Failed downloading ' + fileName);
-            if (successfulDownloads + failedDownloads == theHTMLFiles.length)
-                sendStatus('Failed downloading', 'quick');
+        try {
+            const response = await axios({
+                url: fileUrl,
+                method: 'GET',
+                responseType: 'stream'
+            });
+
+
+            if (response.status !== 200) {
+                sendStatus('Failed downloading ' + fileName);
+                throw new Error('Failed downloading ' + fileName);
+            }
+
+            const pipeline = promisify(callbackPipeline);
+            await pipeline(response.data, fs.createWriteStream(downloadPath));
+
+            sendStatus('Successfully downloaded ' + fileName);
+
+        } catch (error) {
+            sendStatus('Failed downloading viewer files', 'quick');
+            return 'failure';
         }
 
-        https.get(fileUrl, (response) => {
-            // check if the file was found
-            if (response.statusCode !== 200)
-                failCode();
-            else {
-                const fileStream = fs.createWriteStream(downloadPath);
-                response.pipe(fileStream);
-                fileStream.on('finish', () => {
-                    sendStatus('Successfully downloaded ' + fileName);
-                    fileStream.close();
-                    successfulDownloads++;
-                    if (successfulDownloads + failedDownloads == theHTMLFiles.length) {
-                        sendStatus('All files downloaded', 'quick');
-                        slajdomatSettings.viewerVersion = bestVersion;
-                        saveSettings();
-                        sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion : bestVersion });
-                    }
-                });
-            }
-        }).on('error', (err) => { failCode(); });
+
     }
+    slajdomatSettings.viewerVersion = bestVersion;
+    saveSettings();
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: bestVersion });
+    return 'success'
 }

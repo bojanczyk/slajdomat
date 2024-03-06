@@ -99,9 +99,13 @@
           <span> Save settings </span>
         </div>
         <div>
-          <p> App version <span id="app-version-number"> </span> • Viewer version <span id="viewer-version-number"> </span>
+          <p> App version <span id="app-version-number"> </span> • Installed viewer version <span id="viewer-version-number"> </span> 
           </p>
-          <p id="latest-viewer-version">   </p>
+          <p> The app version is the version of this app. The viewer version is the version of the
+            html files that are used to display the slides. </p>
+            <p> 
+              <input type="checkbox" id="automatically-update-viewer" value="checked"> Update viewer files automatically when starting app.
+            </p>
           <p  class="tab-toolbar">
             <span class="toolbar-button" id="download-new-viewer"> <img src='../src/icons/download.svg'></span>
             <span id="text-for-download-new-version"> Download new version of viewer files from github </span>

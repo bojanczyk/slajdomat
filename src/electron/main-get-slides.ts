@@ -5,7 +5,7 @@ this code takes care of recieving slides from the plugin, and saving them to dis
 export { onGetSlide };
 
 import * as path from 'path';
-import { Manifest} from "../common/types";
+import { Manifest } from "../common/types";
 import { MessageToServerSlide, ServerResponse } from "../common/messages-viewer-server";
 import { sendStatus } from "./main";
 import { commentServerPath, readManifest, readPresentations, slideDir, writeFile, writeManifest } from "./main-files";
@@ -33,12 +33,12 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
             manifest.treeTimeLine = oldManifest.treeTimeLine;
             manifest.chronicleTimeLine = oldManifest.chronicleTimeLine;
             manifest.slideDict = oldManifest.slideDict;
-            
+
 
             if (slajdomatSettings.comments) {
-                manifest.comments = { 
-                    server :  commentServerPath(msg.presentation),
-                    presentation : msg.presentation
+                manifest.comments = {
+                    server: commentServerPath(msg.presentation),
+                    presentation: msg.presentation
                 }
                 //if there was an old manifest, then maybe there was some nonstandard presentations key for the presentations, in which case we inherit it. The idee is that manifest.comments.presentation is the presentation name by default, but it can diverge
                 if (oldManifest.comments != undefined)
@@ -48,10 +48,20 @@ function onGetSlide(msg: MessageToServerSlide): ServerResponse {
 
         for (const slide of msg.slideList) {
             const dir = slideDir(manifest, slide.database.id, slide.database.name)
-            writeFile(path.join(dir, 'image.svg'), slide.svg);
+            try {
+                writeFile(path.join(dir, 'image.svg'), slide.svg);
+            } catch (error) {
+                throw new Error(`Error writing file ${error.toString()}`);
+            }
             sendStatus('Received slides for ' + slide.database.name);
         }
-        writeManifest(manifest);
+        try {
+            writeManifest(manifest);
+        }
+        catch (error) {
+            throw new Error(`Error writing manifest ${error.toString()}`);
+        }
+        
         copyHTMLFiles(manifest.presentation);
         //reload the presentations in case a new one was added
         readPresentations();

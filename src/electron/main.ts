@@ -114,7 +114,7 @@ app.on('activate', () => {
 });
 
 //the user has clicked a presentation name, which should result in opening that presentation in a new window
-function openViewer(dir : string, fileName: string) {
+function openViewer(dir: string, fileName: string) {
 
   const name = path.join(dir, fileName);
   const offset = mainWindow.getPosition();
@@ -160,12 +160,13 @@ async function choosePresentationsFolder(): Promise<void> {
 function startApp(): void {
 
   try {
-    loadSettings()
+    loadSettings();
     if (fs.existsSync(slajdomatSettings.directory) &&
       fs.lstatSync(slajdomatSettings.directory).isDirectory()) {
       readPresentations(slajdomatSettings.directory);
     }
     startServer();
+    
     setResourceDir();
   }
 
@@ -202,8 +203,8 @@ ipcMain.on('message-to-main', (event, arg) => {
       break;
 
     case 'upgrade':
-        upgradePresentation(message.name);
-        readPresentations()
+      upgradePresentation(message.name);
+      readPresentations()
       break;
 
     case 'parent-folder-button':
@@ -231,7 +232,7 @@ ipcMain.on('message-to-main', (event, arg) => {
       sendStatus('Downloading new versions', 'quick');
       downloadViewerFiles('unconditionally');
       break;
-    
+
     case 'display-web-page':
       shell.openExternal(message.url);
       break;
