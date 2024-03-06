@@ -54,9 +54,14 @@ function lineBetweenPoints(start: Point, end: Point): LineNode {
     line.x = start.x;
     line.y = start.y;
 
-    const angle = Math.atan2(end.y - start.y, end.x - start.x);
-    const length = Math.sqrt((end.y - start.y) ** 2 + (end.x - start.x) ** 2);
-    line.rotation = -angle * 180 / Math.PI;
+
+    let length = 1;
+    if (start.x != end.x || start.y != end.y) {
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const length = Math.sqrt((end.y - start.y) ** 2 + (end.x - start.x) ** 2);
+        line.rotation = -angle * 180 / Math.PI;
+    }
+
     line.resize(length, 0);
     line.strokeWeight = 20;
     // set the color
@@ -139,6 +144,12 @@ async function drawTree() {
     const lineList = [] as LineNode[];
     const point = reorganizeTree(tree, lineList, { x: 0, y: 0 });
 
+    // groups need to be nonempty
+    if (lineList.length == 0) {
+        const fakeLine = lineBetweenPoints(point, point);
+        lineList.push(fakeLine);
+    }
+
     // create a group for the tree
     const group = figma.group(lineList, figma.currentPage);
     group.setPluginData('annotation', 'group');
@@ -146,13 +157,16 @@ async function drawTree() {
     group.name = 'Slajdomat presentation tree annotation';
     figma.currentPage.insertChild(0, group);
 
+    const height = Math.max(group.height, tree.frame.height);
+
+    
     // create a caption for the tree
-    const fontSize = group.height * 0.1;
+    const fontSize = height * 0.1;
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
     const treeCaption = figma.createText();
     treeCaption.characters = 'Presentation tree';
     treeCaption.fontSize = fontSize;
-    treeCaption.y = point.y - treeCaption.height * 3;
+    treeCaption.y = tree.frame.y - treeCaption.height * 3;
     treeCaption.x = point.x - treeCaption.width / 2;
     treeCaption.opacity = 0.1;
     group.appendChild(treeCaption);
@@ -164,7 +178,7 @@ async function drawTree() {
         let unusedCaption = figma.createText();
         unusedCaption.fontSize = fontSize;
         unusedCaption.characters = 'Unused slides';
-        unusedCaption.y = group.y +  group.height + unusedCaption.height;
+        unusedCaption.y = group.y + group.height + tree.frame.y + unusedCaption.height;
         unusedCaption.x = point.x - unusedCaption.width / 2;
         unusedCaption.opacity = 0.1;
         group.appendChild(unusedCaption);
