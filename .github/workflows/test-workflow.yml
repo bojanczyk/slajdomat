@@ -11,20 +11,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Get latest release
-      id: latest_release
-      run: |
-        token=$TOKEN
-        url="https://api.github.com/repos/${{ github.repository }}/releases/latest"
-        upload_url=$(curl -sSL -H "Authorization: token $token" $url | jq -r '.upload_url')
-        upload_url="${upload_url%\{*}"
-        echo "::set-output name=upload_url::$upload_url"
-
     - name: Create empty file
       run: touch hello.txt
 
-    - name: Upload file to release
-      run: |
-        token=$TOKEN
-        upload_url="${{ steps.latest_release.outputs.upload_url }}?name=hello.txt"
-        curl -sSL -X POST -H "Authorization: token $token" -H "Content-Type: application/octet-stream" --data-binary @hello.txt $upload_url
+    - name: Upload hello to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: hello.txt
+        asset_name: mything
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: "This is my release text"
