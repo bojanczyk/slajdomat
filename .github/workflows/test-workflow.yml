@@ -1,31 +1,30 @@
-name: test releasing
+name: Create and Upload File to Latest Release
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-    upload:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Create an empty hello.txt file
-          run: touch hello.txt
+  create-and-upload-file:
+    runs-on: ubuntu-latest
 
-        - name: Get Current Release
-          id: get_current_release
-          run: |
-            token=$TOKEN
-            url="https://api.github.com/repos/${{ github.repository }}/releases/latest"
-            upload_url=$(curl -sSL -H "Authorization: token $token" $url | jq -r '.upload_url')
-            echo "::set-output name=upload_url::$upload_url"
-          shell: bash
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-        - name: Upload Release Asset
-          id: upload_release_asset
-          uses: actions/upload-release-asset@v1
-          env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-                upload_url: https://uploads.github.com/repos/bojanczyk/slajdomat/releases/144321044/assets{?name,label}
-                asset_path: ./hello.txt
-                asset_name: hello.txt
-                asset_content_type: text/plain
+    - name: Get latest release
+      id: latest_release
+      run: |
+        token=$TOKEN
+        url="https://api.github.com/repos/${{ github.repository }}/releases/latest"
+        upload_url=$(curl -sSL -H "Authorization: token $token" $url | jq -r '.upload_url')
+        upload_url="${upload_url%\{*}"
+        echo "::set-output name=upload_url::$upload_url"
+
+    - name: Create empty file
+      run: touch hello.txt
+
+    - name: Upload file to release
+      run: |
+        token=$TOKEN
+        upload_url="${{ steps.latest_release.outputs.upload_url }}?name=hello.txt"
+        curl -sSL -X POST -H "Authorization: token $token" -H "Content-Type: application/octet-stream" --data-binary @hello.txt $upload_url
