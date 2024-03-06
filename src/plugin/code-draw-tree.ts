@@ -178,12 +178,12 @@ async function drawTree() {
         let unusedCaption = figma.createText();
         unusedCaption.fontSize = fontSize;
         unusedCaption.characters = 'Unused slides';
-        unusedCaption.y = group.y + group.height + tree.frame.y + unusedCaption.height;
+        unusedCaption.y = group.y + group.height + tree.frame.height + unusedCaption.height;
         unusedCaption.x = point.x - unusedCaption.width / 2;
         unusedCaption.opacity = 0.1;
         group.appendChild(unusedCaption);
 
-        const x = group.x + group.width / 2;
+        const x = group.x + group.width / 2 - tree.frame.width / 2;
         let y = unusedCaption.y + unusedCaption.height * 2;
 
         for (const slide of unused) {
