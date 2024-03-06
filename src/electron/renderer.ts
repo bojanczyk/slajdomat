@@ -90,6 +90,8 @@ ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
 
         case 'settings':
             displaySettings(arg.settings, arg.availableVersion);
+            if (arg.problemWithViewerFiles)
+                selectTab('settings');
             break;
 
         default:

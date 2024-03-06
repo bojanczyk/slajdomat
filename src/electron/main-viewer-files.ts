@@ -20,6 +20,7 @@ import { isLater, theHTMLFiles } from '../common/helper';
 import axios from 'axios';
 import { promisify } from 'util';
 import { pipeline as callbackPipeline } from 'stream';
+import { DownloadViewerResult } from './messages-main-renderer';
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -82,25 +83,32 @@ async function latestViewerVersion(): Promise<string> {
     }
 }
 
-async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Promise<'success' | 'failure'> {
+
+
+async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Promise<DownloadViewerResult> {
+
+    // check if some viewer files are missing
+    let someMissing = false;
+    for (const fileName of theHTMLFiles) {
+        const downloadPath = path.join(customViewerDirectory, fileName);
+        if (!fs.existsSync(downloadPath))
+            someMissing = true;
+    }
 
     // check if downloading is necessary
     if (mode == 'if not there') {
-        let someMissing = false;
-        for (const fileName of theHTMLFiles) {
-            const downloadPath = path.join(customViewerDirectory, fileName);
-            if (!fs.existsSync(downloadPath))
-                someMissing = true;
-        }
         if (!someMissing)
-            return 'success';
+            return 'did nothing';
     }
 
     // determine the viewer version that we want to download
     const bestVersion = await latestViewerVersion();
     if (bestVersion == undefined) {
         sendStatus('Could not get the list of viewer versions');
-        return 'failure';
+        if (someMissing)
+            return 'critical failure'
+        else
+            return 'failure';
     }
 
 
@@ -130,13 +138,17 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Pr
 
         } catch (error) {
             sendStatus('Failed downloading viewer files', 'quick');
-            return 'failure';
+            if (someMissing)
+                return 'critical failure'
+            else
+                return 'failure';
         }
 
 
     }
     slajdomatSettings.viewerVersion = bestVersion;
     saveSettings();
-    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: bestVersion });
+    sendStatus('Viewer files downloaded at version ' + bestVersion, 'quick');
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: bestVersion, problemWithViewerFiles : false });
     return 'success'
 }

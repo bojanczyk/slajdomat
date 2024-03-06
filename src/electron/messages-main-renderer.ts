@@ -2,12 +2,14 @@
 This file describes the communication inteface between the renderer and the main process. 
 */
 
-export { ElectronMainToRenderer, ElectronRendererToMain };
+export { ElectronMainToRenderer, ElectronRendererToMain, DownloadViewerResult };
     import { PresentationList } from './main-files';
     import { SlajdomatSettings } from './main-settings';
 
 const { ipcRenderer } = window.require('electron');
 
+
+type DownloadViewerResult = 'success' | 'did nothing' | 'failure' | 'critical failure';
 
 //messages from electron main to electron renderer
 type ElectronMainToRenderer = { 
@@ -26,8 +28,9 @@ type ElectronMainToRenderer = {
 } | {
     type: 'settings',
     settings : SlajdomatSettings,
-    availableVersion : string
-}
+    availableVersion : string,
+    problemWithViewerFiles : boolean
+} 
 
 //messages from electron renderer to electron main
 type ElectronRendererToMain = {

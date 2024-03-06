@@ -16,7 +16,8 @@ import * as path from 'path';
 import { Manifest } from "../common/types";
 import { sendMessageToRenderer, sendStatus } from "./main";
 import { restartServer } from "./main-server";
-import { downloadViewerFiles, latestViewerVersion } from "./main-viewer-files";
+import {  downloadViewerFiles, latestViewerVersion } from "./main-viewer-files";
+import { DownloadViewerResult } from "./messages-main-renderer";
 
 
 type SlajdomatSettings = {
@@ -57,13 +58,18 @@ async function loadSettings() {
 
 
     version = await latestViewerVersion();
-    let downloadSuccess;
+    let downloadSuccess : DownloadViewerResult;
     if (slajdomatSettings.viewerDownload != 'manual' && slajdomatSettings.viewerVersion != version) {
         downloadSuccess = await downloadViewerFiles('unconditionally');
     } else 
         downloadSuccess = await downloadViewerFiles('if not there');
-        
-    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: version });
+    
+    // critical failure means that some viewer files are missing, and cannot be recovered
+    if (downloadSuccess == 'critical failure') {
+        sendStatus('Could not get viewer files, try to download them in the settings','quick');
+    }
+
+    sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: version, problemWithViewerFiles : downloadSuccess == 'critical failure' });
 }
 
 
