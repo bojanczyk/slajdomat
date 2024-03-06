@@ -13,8 +13,9 @@ jobs:
         - name: Get Current Release
           id: get_current_release
           run: |
-            response=$(curl --silent --show-error --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest")
-            upload_url=$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")
+            token=$TOKEN
+            url="https://api.github.com/repos/${{ github.repository }}/releases/latest"
+            upload_url=$(curl -sSL -H "Authorization: token $token" $url | jq -r '.upload_url')
             echo "::set-output name=upload_url::$upload_url"
           shell: bash
 
