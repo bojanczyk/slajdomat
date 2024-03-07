@@ -1,7 +1,7 @@
 # slajdomat
 This is a program for making zooming slides in Figma.
 
-You can compile yourself (see below), or  install the latest release from [here](https://github.com/<username>/slajdomat/releases/latest). To see how the software works, see the
+You can compile yourself (see below), or  install the latest release from [here](https://github.com/bojanczyk/slajdomat/releases/latest). To see how the software works, see the
 [User guide](docs/README.md).
 
 ### How to compile
