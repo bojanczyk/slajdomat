@@ -59,7 +59,7 @@ jobs:
                     tag: latest
                     overwrite: true
 
-                 - name: Upload to archive release
+                - name: Upload to archive release
                   uses: svenstaro/upload-release-action@v2
                   with:
                     repo_token: ${{ secrets.GITHUB_TOKEN }}
