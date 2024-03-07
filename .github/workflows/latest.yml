@@ -50,11 +50,20 @@ jobs:
                         fi
                   shell: bash
 
-                - name: Upload to release
+                - name: Upload to latest release
+                  uses: svenstaro/upload-release-action@v2
+                  with:
+                    repo_token: ${{ secrets.GITHUB_TOKEN }}
+                    file: my_directory.zip
+                    asset_name: slajdomat-${{ matrix.os }}.zip
+                    tag: latest
+                    overwrite: true
+
+                 - name: Upload to archive release
                   uses: svenstaro/upload-release-action@v2
                   with:
                     repo_token: ${{ secrets.GITHUB_TOKEN }}
                     file: my_directory.zip
                     asset_name: slajdomat-${{ matrix.os }}-${{ steps.get_version.outputs.version }}.zip
-                    tag: latest
+                    tag: archive
                     overwrite: true
