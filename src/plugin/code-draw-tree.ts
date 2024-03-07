@@ -1,6 +1,6 @@
 import { font } from "pdfkit";
 import { Frame, Slide } from "../common/types";
-import { allSlides, findSlide, getDatabase, getRoot } from "./code";
+import { allSlides, findSlide, getDatabase, getRoot, state } from "./code";
 
 export { drawTree, deleteTree }
 
@@ -21,9 +21,10 @@ function presentationTree(): FrameNodeTree {
 
         const database = getDatabase(frame);
         if (database != undefined) {
-            for (const child of database.events) {
-                if (child.type == 'child') {
-                    const childFrame = findSlide(child.id);
+            for (const event of database.events) {
+                console.log(event);
+                if (event.type == 'child' && event.enabled == 'enabled') {
+                    const childFrame = findSlide(event.id);
                     retval.children.push(recursive(childFrame));
                 }
             }
@@ -31,7 +32,10 @@ function presentationTree(): FrameNodeTree {
         return retval;
     }
 
-    return recursive(getRoot());
+    const root = getRoot();
+    const tree = recursive(root);
+    return tree;
+
 }
 
 function widthOfTree(tree: FrameNodeTree): number {
@@ -49,6 +53,8 @@ type Point = {
     y: number
 }
 
+const annotationColors = [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8 } }] as Paint[];
+
 function lineBetweenPoints(start: Point, end: Point): LineNode {
     const line = figma.createLine();
     line.x = start.x;
@@ -58,14 +64,14 @@ function lineBetweenPoints(start: Point, end: Point): LineNode {
     let length = 1;
     if (start.x != end.x || start.y != end.y) {
         const angle = Math.atan2(end.y - start.y, end.x - start.x);
-        const length = Math.sqrt((end.y - start.y) ** 2 + (end.x - start.x) ** 2);
+        length = Math.sqrt((end.y - start.y) ** 2 + (end.x - start.x) ** 2);
         line.rotation = -angle * 180 / Math.PI;
     }
 
     line.resize(length, 0);
     line.strokeWeight = 20;
-    // set the color
-    line.opacity = 0.1;
+    // make the line grey
+    line.strokes = annotationColors;
 
     line.setPluginData('annotation', 'line');
 
@@ -133,12 +139,13 @@ function unusedSlides(tree: FrameNodeTree): FrameNode[] {
 
 // organize the slides into a tree
 async function drawTree() {
+    // compute tree of all slides
+    const tree = presentationTree();
 
     // delete all lines previously drawn
     deleteTree();
 
-    // compute tree of all slides
-    const tree = presentationTree();
+
 
     // draw this tree, with the lines stored in lineList
     const lineList = [] as LineNode[];
@@ -159,7 +166,7 @@ async function drawTree() {
 
     const height = Math.max(group.height, tree.frame.height);
 
-    
+
     // create a caption for the tree
     const fontSize = height * 0.1;
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
@@ -168,7 +175,7 @@ async function drawTree() {
     treeCaption.fontSize = fontSize;
     treeCaption.y = tree.frame.y - treeCaption.height * 3;
     treeCaption.x = point.x - treeCaption.width / 2;
-    treeCaption.opacity = 0.1;
+    treeCaption.fills = annotationColors;
     group.appendChild(treeCaption);
 
     // create a section with unused slides
@@ -180,7 +187,7 @@ async function drawTree() {
         unusedCaption.characters = 'Unused slides';
         unusedCaption.y = group.y + group.height + tree.frame.height + unusedCaption.height;
         unusedCaption.x = point.x - unusedCaption.width / 2;
-        unusedCaption.opacity = 0.1;
+        unusedCaption.fills = annotationColors;
         group.appendChild(unusedCaption);
 
         const x = group.x + group.width / 2 - tree.frame.width / 2;

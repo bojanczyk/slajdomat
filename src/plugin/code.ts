@@ -21,6 +21,7 @@ import { latexitOne, latexitTwo, matematykData, matematykWord } from './matematy
 import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
 import { LatexState } from './plugin-types'
 import { drawTree } from './code-draw-tree'
+import { save } from 'pdfkit'
 
 
 
@@ -156,6 +157,9 @@ function removeEvent(index: number): void {
     saveCurrentData();
     loadAnimationParams();
     sendEventList();
+
+    if (pluginSettings.drawTree && event.type == "child")
+        drawTree();
 }
 
 //merge or de-merge an event with the previous one 
@@ -380,8 +384,12 @@ function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
 
 
 // disable events that are not available, and fix stuff from older versions
+// Among other places, this code is called at sendEventList, which is called at every selection change. Therefore, this code should be made more efficient.
 function cleanDatabase(): void {
     
+    // we will want to redraw the tree if some child events have changed
+    let shouldRedrawTree = false;
+
     state.database.name = state.currentSlide.name;
 
     // this will be called when opening the slide for the first time, or 
@@ -394,6 +402,7 @@ function cleanDatabase(): void {
     // a show/hide event is active if the linked object exists
     // for the active show/hide events, store the index of the corresponding item
     for (const event of state.database.events) {
+        const oldEnabled = event.enabled;
         event.enabled = 'disabled';
         const node = findEventObject(event, state.currentSlide);
         if (node != null) {
@@ -410,6 +419,15 @@ function cleanDatabase(): void {
                 event.enabled = 'enabled';
             }
         }
+        if (oldEnabled != event.enabled && event.type == "child")
+        {
+            shouldRedrawTree = true;
+        }
+    }
+    
+    if (shouldRedrawTree &&  pluginSettings.drawTree == true) {
+        saveCurrentData();
+        drawTree();
     }
 }
 
