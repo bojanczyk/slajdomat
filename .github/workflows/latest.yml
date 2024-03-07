@@ -55,7 +55,6 @@ jobs:
                   with:
                     repo_token: ${{ secrets.GITHUB_TOKEN }}
                     file: my_directory.zip
-                    asset_name: slajdomat-${{ matrix.os }}.zip
-                    tag: ${{ github.ref }}
+                    asset_name: slajdomat-${{ matrix.os }}-${{ steps.get_version.outputs.version }}.zip
+                    tag: latest
                     overwrite: true
-                    body: "This is my release text"
