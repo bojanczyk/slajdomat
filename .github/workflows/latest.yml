@@ -24,17 +24,6 @@ jobs:
                   run: |
                                 echo "::set-output name=version::$(node -p "require('./package.json').version")"
 
-                - name: Create Release
-                  id: create_release
-                  uses: actions/create-release@v1
-                  env:
-                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  with:
-                                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
-                                release_name: Latest ${{ steps.get_version.outputs.version }}
-                                draft: true
-                                prerelease: false
-
         build_and_upload:
                 needs: create_release
                 runs-on: ${{ matrix.os }}
@@ -43,14 +32,6 @@ jobs:
                                 os: [ubuntu-latest, windows-latest, macos-latest]
 
                 steps:
-                - name: Checkout code
-                  uses: actions/checkout@v2
-
-                - name: Setup Node.js
-                  uses: actions/setup-node@v2
-                  with:
-                                node-version: '20' 
-
                 - name: Install dependencies
                   run: |
                                 npm install
@@ -79,7 +60,7 @@ jobs:
                   with:
                     repo_token: ${{ secrets.GITHUB_TOKEN }}
                     file: my_directory.zip
-                    asset_name: mything
+                    asset_name: slajdomat-${{ matrix.os }}.zip
                     tag: ${{ github.ref }}
                     overwrite: true
                     body: "This is my release text"
