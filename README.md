@@ -1,10 +1,8 @@
 # slajdomat
 This is a program for making zooming slides in Figma.
 
-To see how the software works, and how to install it without building it yourself, see the
+You can compile yourself (see below), or  install the latest release from [here](https://github.com/<username>/slajdomat/releases/latest). To see how the software works, see the
 [User guide](docs/README.md).
-
-
 
 ### How to compile
 
@@ -14,4 +12,4 @@ To compile and build, do:
 	npm install
 	npm run make
 
- Once you have successfully built it, then the app will be in the out directory, and the figma plugin will be in the figma-plugin.
+Once you have successfully built it, then the app will be in the out directory, and the figma plugin will be in the figma-plugin.

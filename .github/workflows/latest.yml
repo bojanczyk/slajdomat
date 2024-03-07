@@ -50,6 +50,7 @@ jobs:
                         fi
                   shell: bash
 
+                #   we upload twice: 
                 - name: Upload to latest release
                   uses: svenstaro/upload-release-action@v2
                   with:
