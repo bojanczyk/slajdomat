@@ -87,7 +87,7 @@ function getLatexSettings(settings: LatexPluginSettings): void {
   }
 
   try {
-  document.getElementById('current-insertion-font').innerHTML = pluginSettings.mathFont.family;
+    document.getElementById('current-insertion-font').innerHTML = pluginSettings.mathFont.family;
   }
   catch {
     document.getElementById('current-insertion-font').innerHTML = 'No font selected';
@@ -501,7 +501,7 @@ function selChange(msg: {
 }
 
 
-document.getElementById('slide-count').addEventListener('click', () => {postMessage({type: 'drawTree'})});
+document.getElementById('slide-count').addEventListener('click', () => { postMessage({ type: 'drawTree' }) });
 
 //the event handlers for the clicking on the buttons in the event toolbar, which create dropdowns 
 const toolbarButtons = document.getElementsByClassName('event-toolbar-menu');
@@ -688,16 +688,22 @@ function dropDownContents(slides: {
     child.remove();
 
 
+  const existingHeader = document.getElementById('links-to-existing-slides');
+  if (slides.length == 0) {
+    existingHeader.style.display = 'none';
+  }
+  else {
+    existingHeader.style.display = '';
+    //create new ones, based on the msg 
+    for (const item of slides) {
+      const child = document.createElement("div");
+      child.classList.add('row');
+      child.id = dropDownPrefix + item.id;
+      child.innerHTML = '<i class="material-icons">zoom_out_map</i>' + item.name;
+      zoomDropdown.appendChild(child)
 
-  //create new ones, based on the msg 
-  for (const item of slides) {
-    const child = document.createElement("div");
-    child.classList.add('row');
-    child.id = dropDownPrefix + item.id;
-    child.innerHTML = '<i class="material-icons">zoom_out_map</i>' + item.name;
-    zoomDropdown.appendChild(child)
 
-
+    }
   }
 }
 

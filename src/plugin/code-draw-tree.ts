@@ -2,7 +2,7 @@ import { font } from "pdfkit";
 import { Frame, Slide } from "../common/types";
 import { allSlides, findSlide, getDatabase, getRoot, state } from "./code";
 
-export { drawTree, deleteTree }
+export { drawTree, deleteTree, presentationTree, unusedSlides }
 
 type FrameNodeTree = {
     frame: FrameNode,

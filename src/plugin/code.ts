@@ -20,7 +20,7 @@ import { exportSlides } from './export'
 import { latexitOne, latexitTwo, matematykData, matematykWord } from './matematyk'
 import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
 import { LatexState } from './plugin-types'
-import { drawTree } from './code-draw-tree'
+import { drawTree, presentationTree, unusedSlides } from './code-draw-tree'
 import { save } from 'pdfkit'
 
 
@@ -44,6 +44,7 @@ function sendToUI(msg: PluginCodeToUI): void {
 
 
 //send the  list which says what are the possible candidates for child slides. 
+//these are slides that do not appear in the presentation tree
 function sendDropDownList() {
     const msg: PluginCodeToUI = {
         type: 'dropDownContents',
@@ -54,21 +55,14 @@ function sendDropDownList() {
     }
 
 
-    for (const node of allSlides())
-        if (node != state.currentSlide) {
-            let alreadyChild = false;
-            for (const e of state.database.events) {
-                if (e.type == "child" && e.id == slideId(node)) {
-                    alreadyChild = true;
-                }
-            }
-            if (!alreadyChild)
-                msg.slides.push({
-                    name: node.name,
-                    id: slideId(node)
-                });
-        }
-
+    const tree = presentationTree();
+    const unused = unusedSlides(tree);
+    for (const slide of unused) {
+        msg.slides.push({
+            name: slide.name,
+            id: slideId(slide)
+        })
+    }
 
     sendToUI(msg);
 }
