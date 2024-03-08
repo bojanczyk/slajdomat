@@ -1,7 +1,7 @@
 import { Database, PresentationNode } from "../common/types";
 import { LatexPluginSettings, LatexState } from "./plugin-types";
 
-export {PluginUIToCode, PluginCodeToUI};
+export { PluginUIToCode, PluginCodeToUI };
 
 //messages that are sent in the figma plugin, between its backend and its ui
 
@@ -17,7 +17,7 @@ type PluginUIToCode = {
   pluginSettings: LatexPluginSettings
 } | {
   type: 'clickAnimateBar',
-  index : number
+  index: number
 } | {
   type: 'saveFile'
 } | {
@@ -29,7 +29,8 @@ type PluginUIToCode = {
 } | {
   type: 'mouseLeave'
 } | {
-  type: 'gotoParent'
+  type: 'gotoSlide',
+  which: 'parent' | { slideId: string }
 } | {
   type: 'removeEvent',
   index: number
@@ -72,7 +73,7 @@ type PluginCodeToUI = {
   slideList: {
     database: Database;
     svg: Uint8Array;
-  } [],
+  }[],
   tree: PresentationNode
 } | {
   type: 'selChange',
@@ -103,5 +104,5 @@ type PluginCodeToUI = {
   slides: {
     name: string,
     id: string
-  } []
+  }[]
 }

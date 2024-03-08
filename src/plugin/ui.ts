@@ -1,5 +1,5 @@
 export {
-  postMessage
+  postMessageToCode, eventHover
 }
 
 import {
@@ -23,6 +23,7 @@ import { PluginUIToCode, PluginCodeToUI } from './messages-ui-plugin';
 
 import { version as versionNumber } from '../..//package.json';
 import { ServerResponse } from '../common/messages-viewer-server';
+import { eventList } from './ui-event-list';
 
 
 // import 'material-design-icons/iconfont/material-icons.css'
@@ -120,7 +121,7 @@ function getLatexSettings(settings: LatexPluginSettings): void {
 }
 
 function sendSettings() {
-  postMessage({
+  postMessageToCode({
     type: 'settings',
     pluginSettings: pluginSettings
   });
@@ -223,14 +224,14 @@ async function savePresentation(presentation: {
 
 //display a figma alert. Only the figma side can do this.
 function notify(text: string): void {
-  postMessage({
+  postMessageToCode({
     type: 'notify',
     text: text
   })
 }
 
 //shortcut for posting a message, so that I don't need to write the '*' each time
-function postMessage(msg: PluginUIToCode): void {
+function postMessageToCode(msg: PluginUIToCode): void {
   parent.postMessage({
     pluginMessage: msg
   }, '*');
@@ -260,184 +261,6 @@ function changeSlide(msg: {
 
 }
 
-
-
-
-
-
-function eventIconClick(index: number): void {
-  postMessage({
-    type: 'clickEvent',
-    index: index
-  });
-}
-
-function eventRemoveClick(index: number): void {
-  postMessage({
-    type: 'removeEvent',
-    index: index
-  });
-}
-
-//we don't want to trigger the hover event just after the menu is closed, so we block it for a short time
-let blockEventHover = false;
-function foldMenu(menu: Element): void {
-  menu.classList.remove('unfolded');
-  blockEventHover = true;
-}
-
-
-function eventHover(index: number): void {
-  if (blockEventHover) {
-    blockEventHover = false;
-    return;
-  }
-  else
-    postMessage({
-      type: 'hoverEvent',
-      index: index
-    })
-}
-
-//the button to merge events was clicked, we want to merge index with its predecessor (or de-merge)
-function mergeEventClick(index: number): void {
-  postMessage({
-    type: 'mergeEvent',
-    index: index
-  })
-}
-
-//get the list of events for the current slide
-function eventList(events: PresentationNode[], selected: number): void {
-
-  //make a list item for the list of events 
-  function makeEvent(event: PresentationNode, index: number): HTMLDivElement {
-
-    const retval = document.createElement('div');
-    retval.classList.add('list-item');
-    retval.innerHTML = '<div class="animate-bar"></div><i class="material-icons"></i><div class="list-label"> </div><div class="list-buttons"><i class="material-icons">delete_outline</i></div>';
-
-    const label = retval.querySelector('.list-label') as HTMLElement;
-
-    label.addEventListener('mouseenter', () => {
-      eventHover(index)
-    })
-    label.addEventListener('mouseleave', () => {
-      eventHover(-1)
-    })
-
-    const animateBar = retval.querySelector('.animate-bar') as HTMLElement;
-    if (selected == undefined || i >= selected)
-      animateBar.classList.add('future');
-
-    animateBar.addEventListener('click', (e) => {
-      // check if the click is in the upper or lower half of the item
-      const rect = retval.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const height = rect.bottom - rect.top;
-      const fraction = y / height;
-
-      postMessage({
-        type: 'clickAnimateBar',
-        index: (fraction < 0.5) ? index : index + 1
-      })
-    })
-
-    const iconNode = retval.querySelector('i') as HTMLElement;
-    iconNode.addEventListener('click', () => {
-      eventIconClick(index)
-    })
-
-    const deleteButton = retval.querySelector('.list-buttons').childNodes[0] as HTMLElement;
-    deleteButton.addEventListener('click', () => {
-      eventRemoveClick(index)
-    })
-
-    if (event.enabled == 'disabled')
-      retval.classList.add("disabled");
-
-    switch (event.type) {
-      case "show":
-        iconNode.innerHTML = "visibility";
-        break;
-      case "hide":
-        iconNode.innerHTML = "visibility_off";
-        break;
-      case "animate":
-        iconNode.innerHTML = "animation";
-        break;
-      case "child":
-        iconNode.innerHTML = "zoom_out_map";
-        break;
-      default:
-        throw "unexpected event type"
-    }
-
-    const labelNode = retval.querySelector('.list-label') as HTMLElement;
-    labelNode.innerHTML = event.name;
-    return retval;
-  }
-
-  //make an item that separates two events
-  function makeSpacer(event: PresentationNode, index: number, canMerge: boolean): HTMLDivElement {
-    const div = document.createElement('div');
-
-    div.classList.add('spacer');
-    div.innerHTML = '<div class="animate-bar"></div><div></div>'
-    const animateBar = div.childNodes[0] as HTMLElement;
-    const separator = div.childNodes[1] as HTMLElement;
-    if (index > selected)
-      animateBar.classList.add('future');
-
-    if (canMerge) {
-      const mergeIcon = document.createElement('i');
-      mergeIcon.classList.add('material-icons');
-      if (event.merged)
-        mergeIcon.innerHTML = 'link_off'
-      else
-        mergeIcon.innerHTML = 'link';
-      separator.appendChild(mergeIcon);
-      mergeIcon.addEventListener('click', () => { mergeEventClick(index) })
-    }
-
-    if (event.merged)
-      div.classList.add('merged');
-
-    animateBar.addEventListener('click', (e) => {
-      postMessage({
-        type: 'clickAnimateBar',
-        index: index
-      })
-    })
-    return div;
-  }
-
-  const eventListHTML = document.getElementById("event-list");
-  eventListHTML.innerHTML = "";
-
-  let i = 0;
-  while (i < events.length) {
-    const groupDiv = document.createElement('div');
-    groupDiv.classList.add('dropzone');
-    groupDiv.setAttribute('draggable', 'true');
-    do {
-      if (i > 0) {
-        //an event can be merged with the previous one if either both are child events, or both are show/hide events
-        let canMerge = false;
-        if (events[i].type == 'child' && events[i - 1].type == 'child') {
-          canMerge = true;
-        }
-        if (events[i].type != 'child' && events[i - 1].type != 'child') {
-          canMerge = true;
-        }
-        groupDiv.appendChild(makeSpacer(events[i], i, canMerge));
-      }
-      groupDiv.appendChild(makeEvent(events[i], i));
-      i++;
-    } while ((i < events.length) && (events[i].merged))
-    eventListHTML.appendChild(groupDiv);
-  }
-}
 
 let fontCandidate: FontName = null;
 //if the selection was changed in the ui, we need to disable/enable corresponding elements of the toolbar and dropdown. This function is triggered by a message from figma.
@@ -501,7 +324,31 @@ function selChange(msg: {
 }
 
 
-document.getElementById('slide-count').addEventListener('click', () => { postMessage({ type: 'drawTree' }) });
+document.getElementById('slide-count').addEventListener('click', () => { postMessageToCode({ type: 'drawTree' }) });
+
+
+
+//we don't want to trigger the hover event just after the menu is closed, so we block it for a short time
+let blockEventHover = false;
+
+
+function eventHover(index: number): void {
+  if (blockEventHover) {
+    blockEventHover = false;
+    return;
+  }
+  else
+    postMessageToCode({
+      type: 'hoverEvent',
+      index: index
+    })
+}
+
+
+function foldMenu(menu: Element): void {
+  menu.classList.remove('unfolded');
+  blockEventHover = true;
+}
 
 //the event handlers for the clicking on the buttons in the event toolbar, which create dropdowns 
 const toolbarButtons = document.getElementsByClassName('event-toolbar-menu');
@@ -555,7 +402,7 @@ for (const toolbarButton of toolbarButtons) {
         //unfold the current one
         toolbarButton.classList.add('unfolded');
         //ask for a refresh of the dropdown contents
-        postMessage({
+        postMessageToCode({
           type: 'requestDropDown'
         });
       }
@@ -617,14 +464,14 @@ for (const toolbarButton of toolbarButtons) {
           //this sets the menu icon to the selected element          
           exportWaiting(true);
           //this is a hack: I sleep for 10ms before calling save file. This is meant to solve the problem that, sometimes, the spinner only starts to run late in the loading process.
-          setTimeout(() => postMessage({
+          setTimeout(() => postMessageToCode({
             type: 'saveFile'
           }), 10);
         }
 
         // exporting the slides is requested
         if (target.id == 'dropdown-set-root') {
-          postMessage({ type: 'changeRoot' });
+          postMessageToCode({ type: 'changeRoot' });
           document.getElementById('is-root-slide').style.display = '';
         }
 
@@ -651,14 +498,14 @@ function createChildLink(id: string): void {
   if (id == null) {
     msg.name = (document.getElementById('new-child-name') as HTMLInputElement).value;
   }
-  postMessage(msg);
+  postMessageToCode(msg);
 }
 
 
 // what is done when the toolbar for show/hide events has been clicked. id is the id of the clicked dom element
 function showEventsClicked(id: string): void {
   const subtype = id.slice('dropdown-show-'.length) as 'show' | 'hide' | 'animate';
-  postMessage({
+  postMessageToCode({
     type: 'createEvent',
     subtype: subtype,
     id: undefined,
@@ -711,7 +558,7 @@ function dropDownContents(slides: {
 
 //functions for the matematyk plugin 
 function matematykSendWord(w: string): void {
-  postMessage({
+  postMessageToCode({
     type: 'addWord',
     text: w
   })
@@ -750,7 +597,7 @@ let cursorInsidePlugin = false;
 function pluginMouseenter() {
   if (!cursorInsidePlugin) {
     cursorInsidePlugin = true;
-    postMessage({
+    postMessageToCode({
       type: 'mouseEnterPlugin'
     })
   }
@@ -759,7 +606,7 @@ function pluginMouseenter() {
 
 function pluginMouseleave() {
   cursorInsidePlugin = false;
-  postMessage({
+  postMessageToCode({
     type: 'hoverEvent',
     index: -1
   })
@@ -771,6 +618,7 @@ function pluginMouseleave() {
 // handle messages coming from figma
 onmessage =
   function (event: MessageEvent) {
+    
     const msg = event.data.pluginMessage as PluginCodeToUI;
 
     switch (msg.type) {
@@ -843,7 +691,7 @@ document.addEventListener('click', (event: MouseEvent) => {
 
     case 'make-first-small':
       //button to make a first slide, smaller size
-      postMessage({
+      postMessageToCode({
         type: 'makeFirst',
         width: 1024,
         height: 768
@@ -852,7 +700,7 @@ document.addEventListener('click', (event: MouseEvent) => {
 
     case 'make-first-big':
       //button to make first slide, bigger size
-      postMessage({
+      postMessageToCode({
         type: 'makeFirst',
         width: 1920,
         height: 1080
@@ -867,7 +715,7 @@ document.addEventListener('click', (event: MouseEvent) => {
 
     case 'latex-button':
       //the user has clicked the latex / delatex button
-      postMessage({
+      postMessageToCode({
         type: 'latexit'
       });
       break;

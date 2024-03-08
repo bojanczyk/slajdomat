@@ -576,7 +576,7 @@ function selChange(): void {
 
 //handle messages that come from the ui
 function onMessage(msg: PluginUIToCode) {
-
+    
     switch (msg.type) {
 
         case 'notify':
@@ -654,9 +654,13 @@ function onMessage(msg: PluginUIToCode) {
             clickEvent(msg.index)
             break;
 
-        case 'gotoParent':
+        case 'gotoSlide':
             //the parent button is clicked
-            gotoSlide(parentSlide(state.currentSlide));
+            console.log(msg.which);
+            if (msg.which == 'parent')
+                gotoSlide(parentSlide(state.currentSlide));
+            else
+                gotoSlide(findSlide(msg.which.slideId));
             break;
 
         case 'addWord':
