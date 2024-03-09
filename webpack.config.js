@@ -36,7 +36,7 @@ module.exports = (env, argv) => ({
     }),
     // my own handmade script for building the plugin ui. Proably a better setup would be to use the two plugins above, with appropriate parameters, instead of the script below
     new HookShellScriptPlugin({
-      done: ['sh src/plugin/make-plugin-ui.sh']
+      done: ['sh src/scripts/make-plugin-ui.sh']
     }),
   ],
 

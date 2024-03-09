@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "webpack && electron-forge make && sh src/plugin/make-plugin-ui.sh ",
+    "make": "webpack && electron-forge make ",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "webpack": "webpack",

@@ -4,9 +4,7 @@ export {
     dragOver
 }
 
-import {
-    postMessage
-} from './ui'
+import { postMessageToCode } from './ui'
 
 // reordering events in the event list. I use a manual implementation of reordering via dragging
 
@@ -74,7 +72,7 @@ function dragOver(event: DragEvent) : void {
 }
 
 function dragDrop() : void {
-    postMessage({
+    postMessageToCode({
         type: 'moveEvent',
         index: dragStruct.sourceIndex,
         target: dragStruct.targetIndex
