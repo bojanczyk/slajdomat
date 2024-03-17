@@ -17,7 +17,7 @@ import { getLatexSettings, initSettings, pluginSettings } from './code-settings'
 import { updateThumbnails } from './code-thumbnails'
 import { loadAnimationParams, saveAnimationParams } from './code-timeline'
 import { exportSlides } from './code-export'
-import { latexitOne, latexitTwo, matematykData, matematykWord } from './matematyk'
+import { latexitOne, latexitTwo, matReplacer, matematykData, matematykWord } from './matematyk'
 import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
 import { LatexState } from './plugin-types'
 import { drawTree, presentationTree, unusedSlides } from './code-draw-tree'
@@ -502,9 +502,13 @@ function setRoot(): void {
 
 //event handler for when the document has changed. We use this to re-proportion the red rectangles for the child link
 function docChange(changes: DocumentChangeEvent): void {
+
     for (const x of changes.documentChanges) {
         if ((x.type == 'PROPERTY_CHANGE')) {
             const change = x.node as SceneNode;
+            if (x.node.type == 'TEXT') {
+                matReplacer(change as TextNode);
+            }
             if ((!change.removed) && (change.getPluginData('childLink') != '')) {
                 const rect = change as RectangleNode;
                 rect.resize(rect.width, rect.width * state.currentSlide.height / state.currentSlide.width);

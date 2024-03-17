@@ -42,5 +42,6 @@ enum LatexState {
 //this is the data stored in a node after it has been latexed
 type LatexitData = {
   fontsize: number,
-  code: string
+  code: string,
+  font: FontName
 }
