@@ -127,10 +127,7 @@ function createEvent(eventInfo: {
     sendEventList();
 
     if (eventInfo.subtype == 'child' && pluginSettings.drawTree)
-    {   
-        console.log('draw tree')
         drawTree();
-    }
 }
 
 
@@ -444,12 +441,12 @@ function setCurrentSlide(slide: FrameNode): void {
 
     if (slide != null) {
         loadCurrentData(slide);
-        const isRoot = getRoot() == state.currentSlide;
+
         const msg: PluginCodeToUI = {
             type: 'slideChange',
             docName: figma.root.name,
             slide: state.currentSlide.name,
-            isRoot: isRoot,
+            hasParent: parentSlide(state.currentSlide) != null,
             slideCount: allSlides().length,
         }
 
@@ -660,7 +657,6 @@ function onMessage(msg: PluginUIToCode) {
 
         case 'gotoSlide':
             //the parent button is clicked
-            console.log(msg.which);
             if (msg.which == 'parent')
                 gotoSlide(parentSlide(state.currentSlide));
             else

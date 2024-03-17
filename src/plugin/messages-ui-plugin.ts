@@ -85,7 +85,7 @@ type PluginCodeToUI = {
   type: 'slideChange',
   docName: string,
   slide: string,
-  isRoot: boolean,
+  hasParent: boolean,
   slideCount: number
 } | {
   type: 'noSlide'

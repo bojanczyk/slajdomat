@@ -80,9 +80,7 @@
 
 	<div class="column hidden" id="slide-column">
 		<div class="toolbar">
-			<i class="material-icons toolbar-icon"
-				title="This is the root slide, i.e. the first one in the presentation" id="is-root-slide"> stars
-			</i>
+			<i class="material-icons toolbar-button" title="Go to parent slide" id="go-to-parent">north</i>
 			<div title="Name of the current slide." id="slide-name">
 			</div>
 			<div class='toolbar-icon' title="The number of slides, i.e. top-level frames." id="slide-count"></div>
@@ -94,11 +92,16 @@
 		<!-- The toolbar which contains buttons for creating events -->
 		<div id="event-toolbar" class="toolbar">
 
+			<i class="material-icons toolbar-button"
+				title="Create a showing event. The same command is also in the Slide menu, but it is here as well because it is a frequent command."
+				id="show-direct">visibility</i>
+
 			<!-- the dropdown menu for showing/hiding -->
 			<div class="event-toolbar-menu" id="event-toolbar-show">
-				<div title="Menu for overlay events, which show or hide objects on this slide, without changing the slide. Clicking the title icon of the menu will select the most recently used command from the menu."
-					class="event-toolbar-title updatedable-menu-title">
-					<i class="material-icons menu-title-icon">visibility</i>
+				<div title="Menu for overlay events, which show or hide objects on this slide, without changing the slide."
+					class="event-toolbar-title">
+					Slide
+					<!-- <i class="material-icons menu-title-icon">visibility</i> -->
 					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
 					<div class='toolbar-triangle'>
 					</div>
@@ -122,32 +125,11 @@
 				</div>
 			</div>
 
-			<!-- the dropdown menu for exporting to the app -->
-			<div class="event-toolbar-menu" id="event-toolbar-export-menu">
-				<div title="Menu for exporting the slides. Clicking the title icon of the menu will select the most recently used command from the menu."
-					class="event-toolbar-title updatedable-menu-title">
-					<i class="material-icons menu-title-icon">file_upload</i>
-					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
-					<div class='toolbar-triangle'>
-					</div>
-				</div>
-				<div class="toolbar-dropdown">
-					<div title="The root slide is the first one in the presentation" class="row" id='dropdown-export'>
-						<i class="material-icons">file_upload</i>
-						Export slides to the app
-					</div>
-					<div title="The slides will exported without chaning the root slide" class="row"
-						id='dropdown-set-root'>
-						<i class="material-icons">stars</i>
-						Make this slide the root
-					</div>
-				</div>
-			</div>
 
 			<!-- the dropdown menu for zoom events -->
 			<div class="event-toolbar-menu" id="event-toolbar-zoom">
 				<div title="Menu for creating zoom events, which go to another slide. " class="event-toolbar-title">
-					Zoom
+					Presentation
 					<i class="material-icons hover-down-arrow">keyboard_arrow_down</i>
 					<div class='toolbar-triangle'>
 					</div>
@@ -161,12 +143,25 @@
 						<input type="input" id='new-child-name' placeholder='Name of new slide' />
 					</div>
 					<div class="separator"> </div>
-					<div class="labelrow" id="links-to-existing-slides" title="Creates a zoom link to an existing slide.">
+					<div class="labelrow" id="links-to-existing-slides"
+						title="Creates a zoom link to an existing slide.">
 						Zoom link to existing slide
+					</div>
+					<div id="separator-after" class="separator"> </div>
+					<div title="Connects to the Slajdomat app, and sends the slides to it. You can play the slides in the app."
+						class="row" id='dropdown-export'>
+						<i class="material-icons">file_upload</i>
+						Export slides to the app
+					</div>
+					<div title="Change the root of the presentation" class="row" id='dropdown-set-root'>
+						<i class="material-icons">stars</i>
+						Make this slide the root
 					</div>
 				</div>
 			</div>
 
+			<i class="material-icons toolbar-button" id="export-direct"
+				title="Export to the app. The same command is also in the Presentation menu, but it is here as well because it is a frequent command.">file_upload</i>
 			<!-- the spinner -->
 			<i class="material-icons toolbar-icon myspinner hidden" id="spinner"> restart_alt
 			</i>

@@ -158,11 +158,14 @@ function showColumn(column: WindowMode): void {
 
 //toggle the play button between "spinner" and "play"
 function exportWaiting(waiting: boolean): void {
-  const button = document.getElementById("spinner");
+  const spinner = document.getElementById("spinner");
+  const exportButton = document.getElementById("export-direct");
   if (waiting) {
-    button.classList.remove('hidden');
+    spinner.classList.remove('hidden'); 
+    exportButton.classList.add('hidden');
   } else {
-    button.classList.add('hidden');
+    spinner.classList.add('hidden');
+    exportButton.classList.remove('hidden');
   }
 }
 
@@ -242,7 +245,7 @@ function changeSlide(msg: {
   type: 'slideChange',
   docName: string,
   slide: string,
-  isRoot: boolean,
+  hasParent: boolean,
   slideCount: number
 }): void {
   // docName = msg.docName;
@@ -251,10 +254,11 @@ function changeSlide(msg: {
   document.getElementById('slide-name').innerHTML = msg.slide;
 
   //if the current slide is the root slide, then show the star
-  if (msg.isRoot)
-    document.getElementById('is-root-slide').style.display = '';
+  const parentButton = document.getElementById('go-to-parent');
+  if (msg.hasParent)
+    parentButton.classList.remove('disabled');
   else
-    document.getElementById('is-root-slide').style.display = 'none';
+    parentButton.classList.add('disabled');
 
   //display the number of slides (frames) in the presentation
   document.getElementById('slide-count').innerHTML = '' + msg.slideCount;
@@ -272,7 +276,7 @@ function selChange(msg: {
   currentFont: FontName
 }): void {
   const eventDropdowns = [
-    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide', 'dropdown-show-animate'
+    'event-toolbar-show', 'dropdown-show-show', 'dropdown-show-hide', 'dropdown-show-animate', 'show-direct'
   ]
 
   for (const i of eventDropdowns) {
@@ -380,16 +384,11 @@ for (const toolbarButton of toolbarButtons) {
 
     var dropdownTitleClicked = false;
 
-    // we  open the dropdown menus when the little arrow is clicked, or otherwise if the title of the zoom menu is clicked
-    if (target.classList.contains('hover-down-arrow'))
+    // we  open the dropdown menus when the little arrow is clicked, or the title of the  menu
+    if (target.classList.contains('hover-down-arrow') || target.classList.contains('event-toolbar-title'))
       // little arrow was clicked
       dropdownTitleClicked = true;
-    if (target.classList.contains('event-toolbar-title')) {
-      const parent = target.parentNode as HTMLElement;
-      if (parent.id == 'event-toolbar-zoom')
-        // the title of the zoom menu was clicked
-        dropdownTitleClicked = true;
-    }
+
 
     if (dropdownTitleClicked) {
       if (toolbarButton.classList.contains('unfolded'))
@@ -536,20 +535,22 @@ function dropDownContents(slides: {
 
 
   const existingHeader = document.getElementById('links-to-existing-slides');
+  const separator = document.getElementById('separator-after');
   if (slides.length == 0) {
     existingHeader.style.display = 'none';
+    separator.style.display = 'none';
   }
   else {
     existingHeader.style.display = '';
+    separator.style.display = '';
     //create new ones, based on the msg 
     for (const item of slides) {
       const child = document.createElement("div");
       child.classList.add('row');
       child.id = dropDownPrefix + item.id;
       child.innerHTML = '<i class="material-icons">zoom_out_map</i>' + item.name;
-      zoomDropdown.appendChild(child)
 
-
+      zoomDropdown.insertBefore(child, separator);
     }
   }
 }
@@ -678,6 +679,27 @@ document.addEventListener('click', (event: MouseEvent) => {
   const target = event.target as HTMLElement;
 
   switch (target.id) {
+    case 'go-to-parent':
+      postMessageToCode({
+        type: 'gotoSlide',
+        which : 'parent'
+      });
+      break;
+    case 'export-direct':
+      exportWaiting(true);
+      postMessageToCode({
+        type: 'saveFile'
+      });
+      break;
+    
+    case 'show-direct':
+      postMessageToCode({
+        type: 'createEvent',
+        subtype: 'show',
+        id: undefined,
+        name: undefined
+      })
+      break;
     case 'settings-button':
     case 'settings-button-two':
       //switch to the settings panel

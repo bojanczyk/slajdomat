@@ -156,7 +156,7 @@ the second line is just to avoid an error message */
 #directory-listing {
     font-size: 12px;
     font-weight: 300;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 #link-to-current-folder {
@@ -188,7 +188,7 @@ the second line is just to avoid an error message */
 #general-status,
 #upload-status {
     flex-grow: 1;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-bottom: 20px;
 }
 
@@ -225,7 +225,7 @@ textarea {
 }
 
 #settings-contents {
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 
