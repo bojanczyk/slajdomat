@@ -156,57 +156,67 @@ function matematykWord(addedString: string): void {
 
 async function matReplacer(text: TextNode) {
 
-    // if there is no backslash in the text, then we return, so as to speed up the process
-    if (text.characters.indexOf('\\') == -1 && text.characters.indexOf('_') == -1)
-        return
+    async function loadAllFonts() {
+        // loads all fonts in the text area
+        const fonts = new Set<string>; // Use a Set to avoid loading the same font multiple times
 
-    // find position from _ until whitespace
+        // Iterate over each character in the text
+        for (let i = 0; i < text.characters.length; i++) {
+            // Get the font used for this character
+            const font = text.getRangeFontName(i, i + 1);
 
-    let start = text.characters.indexOf('_');
-    if (start != -1) {
-        // find the closest whitespace
-        let end = text.characters.indexOf(' ', start);
-        if (end != -1) {
-            const font = text.getRangeFontName(start, start + 1);
-            await figma.loadFontAsync(font as FontName);
-            text.deleteCharacters(start, start + 1);
-            text.setRangeTextCase(start, end - 1, 'LOWER');
+            // Add the font to the set
+            const hashed = (font as FontName).family + '#' + (font as FontName).style;
+            if (!fonts.has(hashed)) {
+                await figma.loadFontAsync(font as FontName);
+                fonts.add(hashed);
+            }
 
         }
-        // get the font of the text 
 
+
+        // const font = text.getRangeFontName(start, start + 1);
+        // console.log(font);  
+        // await figma.loadFontAsync(font as FontName);
     }
 
-   
+
+    // if there is no backslash in the text, then we return, so as to speed up the process
+    if (text.characters.indexOf('\\') == -1)
+        return
+
+    let start: number;
+
+
     // find position where \alpha starts
     for (const key in latexDict) {
-        start = text.characters.indexOf('\\' + key+' ');
+        start = text.characters.indexOf('\\' + key + ' ');
         if (start != -1) {
             // get the font of the text 
-            const font = text.getRangeFontName(start, start + 1);
-        
-            await figma.loadFontAsync(pluginSettings.mathFont);
-            await figma.loadFontAsync(font as FontName);
+            await loadAllFonts();
             text.deleteCharacters(start, start + key.length + 1);
             text.insertCharacters(start, latexDict[key]);
+            await figma.loadFontAsync(pluginSettings.mathFont);
             text.setRangeFontName(start, start + latexDict[key].length, pluginSettings.mathFont);
         }
     }
 
+
     for (const key in capsDict) {
-        start = text.characters.indexOf('\\' + key + ' ');
+        const search = '\\' + key + ' ';
+        start = text.characters.indexOf(search);
         if (start != -1) {
             try {
-            const font = text.getRangeFontName(start, start + 1);
-            await figma.loadFontAsync(font as FontName);
-            text.deleteCharacters(start, start + key.length + 1);
-            text.insertCharacters(start, capsDict[key]);
-            // make it all caps
-            text.setRangeTextCase(start, start + capsDict[key].length, 'SMALL_CAPS');
-            text.setRangeTextCase(start + capsDict[key].length, start + capsDict[key].length + 1, 'ORIGINAL');
+                await loadAllFonts();
+                text.deleteCharacters(start, start + key.length + 1);
+                text.insertCharacters(start, capsDict[key]);
+                // make it all caps
+                text.setRangeTextCase(start, start + capsDict[key].length, 'SMALL_CAPS');
+                text.setRangeTextCase(start + capsDict[key].length, start + capsDict[key].length + 1, 'ORIGINAL');
             }
             catch (e) {
-                figma.notify("Could not apply small caps.");
+                figma.notify("Could not apply small caps, probably font does not support it.");
+                console.log(e);
             }
 
         }

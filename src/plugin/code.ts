@@ -104,7 +104,7 @@ function createEvent(eventInfo: {
             const newSlide = createNewSlide(state.currentSlide.width, state.currentSlide.height, eventInfo.name);
             eventInfo.id = slideId(newSlide)
         }
-        createdEvents = createChildEvent(eventInfo.id);        
+        createdEvents = createChildEvent(eventInfo.id);
     }
     else {
 
@@ -159,6 +159,8 @@ function mergeEvent(index: number): void {
     event.merged = !event.merged;
     saveCurrentData();
     sendEventList();
+    if (event.type == "child" && pluginSettings.drawTree)
+        drawTree();
 }
 
 
@@ -168,7 +170,7 @@ function reorderEvents(sourceBlock: number, targetBlock: number): void {
     saveAnimationParams();
 
 
-    
+
 
     //the source is a block, and so is the target
     const blockStarts: number[] = [];
@@ -377,7 +379,7 @@ function findEventObject(event: PresentationNode, slide: FrameNode): SceneNode {
 // disable events that are not available, and fix stuff from older versions
 // Among other places, this code is called at sendEventList, which is called at every selection change. Therefore, this code should be made more efficient.
 function cleanDatabase(): void {
-    
+
     // we will want to redraw the tree if some child events have changed
     let shouldRedrawTree = false;
 
@@ -410,13 +412,12 @@ function cleanDatabase(): void {
                 event.enabled = 'enabled';
             }
         }
-        if (oldEnabled != event.enabled && event.type == "child")
-        {
+        if (oldEnabled != event.enabled && event.type == "child") {
             shouldRedrawTree = true;
         }
     }
-    
-    if (shouldRedrawTree &&  pluginSettings.drawTree == true) {
+
+    if (shouldRedrawTree && pluginSettings.drawTree == true) {
         saveCurrentData();
         drawTree();
     }
@@ -463,8 +464,10 @@ function setCurrentSlide(slide: FrameNode): void {
 
 //go to a slide and show it on the screen
 function gotoSlide(slide: FrameNode): void {
-    figma.viewport.scrollAndZoomIntoView([slide]);
-    setCurrentSlide(slide);
+    if (slide != null) {
+        figma.viewport.scrollAndZoomIntoView([slide]);
+        setCurrentSlide(slide);
+    }
 }
 
 
@@ -577,7 +580,7 @@ function selChange(): void {
 
 //handle messages that come from the ui
 function onMessage(msg: PluginUIToCode) {
-    
+
     switch (msg.type) {
 
         case 'notify':
@@ -678,7 +681,7 @@ function onMessage(msg: PluginUIToCode) {
             latexitTwo(msg.text);
             break;
 
-        case 'drawTree' :
+        case 'drawTree':
             //draw a tree of the presentation
             drawTree();
             break;

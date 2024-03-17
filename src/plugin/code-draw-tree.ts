@@ -6,6 +6,7 @@ export { drawTree, deleteTree, presentationTree, unusedSlides }
 
 type FrameNodeTree = {
     frame: FrameNode,
+    merged: Boolean,
     children: FrameNodeTree[]
 }
 
@@ -16,16 +17,18 @@ function presentationTree(): FrameNodeTree {
     function recursive(frame: FrameNode): FrameNodeTree {
         const retval = {
             frame: frame,
+            merged: false,
             children: [] as FrameNodeTree[]
         }
 
         const database = getDatabase(frame);
         if (database != undefined) {
             for (const event of database.events) {
-                console.log(event);
                 if (event.type == 'child' && event.enabled == 'enabled') {
                     const childFrame = findSlide(event.id);
-                    retval.children.push(recursive(childFrame));
+                    const childTree = recursive(childFrame);
+                    childTree.merged = event.merged;
+                    retval.children.push(childTree);
                 }
             }
         }
@@ -90,9 +93,20 @@ function reorganizeTree(tree: FrameNodeTree, lineList: LineNode[], corner: Point
     const height = Math.max(tree.frame.height * 1.5, width * 0.1);
 
     let currentX = corner.x + width * 0.1;
+
+    let previousPoint = undefined;
     for (const child of tree.children) {
-        childCenters.push(reorganizeTree(child, lineList, { x: currentX, y: corner.y + height }));
-        // draw a line 
+        const newPoint = reorganizeTree(child, lineList, { x: currentX, y: corner.y + height })
+
+        // the line connects to the parent if not merged, and to the previous sibling if merged
+        if (child.merged && previousPoint != undefined) {
+            const line = lineBetweenPoints(previousPoint, newPoint);
+            lineList.push(line);
+        }
+        else
+            childCenters.push(newPoint);
+
+        previousPoint = newPoint;
         currentX += widthOfTree(child);
     }
 
@@ -135,7 +149,14 @@ function unusedSlides(tree: FrameNodeTree): FrameNode[] {
 
 
 
+function treeCount(tree: FrameNodeTree): number {
+    let count = 1;
+    for (const child of tree.children) {
+        count += treeCount(child);
+    }
+    return count;
 
+}
 
 // organize the slides into a tree
 async function drawTree() {
@@ -171,7 +192,9 @@ async function drawTree() {
     const fontSize = height * 0.1;
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
     const treeCaption = figma.createText();
-    treeCaption.characters = 'Presentation tree';
+    const number = treeCount(tree);
+
+    treeCaption.characters = 'Presentation tree with ' + treeCount(tree) + (number == 1 ? ' slide' : ' slides');
     treeCaption.fontSize = fontSize;
     treeCaption.y = tree.frame.y - treeCaption.height * 3;
     treeCaption.x = point.x - treeCaption.width / 2;

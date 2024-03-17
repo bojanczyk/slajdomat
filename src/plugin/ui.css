@@ -171,6 +171,7 @@ color : LightGrey;
 
 .toolbar-button.disabled {
   color : grey;
+  cursor: default;
 }
 
 .toolbar-button:hover:not(.disabled) {

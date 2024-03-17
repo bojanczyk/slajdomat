@@ -46,7 +46,7 @@ function initSettings() {
         x => {
             //the default plugin settings
             const defaultSettings = {
-                drawTree: false,
+                drawTree: true,
                 words: ['∀', '∃', '∧', '∨', '∈'],
                 active: false,
                 mathFont: {

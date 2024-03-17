@@ -1,8 +1,8 @@
 export {latexDict, capsDict}
 
 const capsDict: { [key: string]: string } = {
-    'mso ': 'mso',
-    'dfa ': 'dfa'
+    'mso': 'mso',
+    'dfa': 'dfa'
 };
 
 const latexDict: { [key: string]: string } = {
@@ -65,6 +65,7 @@ const latexDict: { [key: string]: string } = {
     'uparrow': '↑',
     'downarrow': '↓',
     'leftrightarrow': '↔',
+    'cdot': '⋅',
     'cdots': '⋯',
     'vdots': '⋮',
     'ddots': '⋱',

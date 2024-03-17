@@ -260,8 +260,8 @@ function changeSlide(msg: {
   else
     parentButton.classList.add('disabled');
 
-  //display the number of slides (frames) in the presentation
-  document.getElementById('slide-count').innerHTML = '' + msg.slideCount;
+  // //display the number of slides (frames) in the presentation
+  // document.getElementById('slide-count').innerHTML = '' + msg.slideCount;
 
 }
 
@@ -328,7 +328,6 @@ function selChange(msg: {
 }
 
 
-document.getElementById('slide-count').addEventListener('click', () => { postMessageToCode({ type: 'drawTree' }) });
 
 
 
