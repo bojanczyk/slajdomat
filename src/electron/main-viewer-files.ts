@@ -5,15 +5,16 @@ this includes:
  */
 
 
-export { copyHTMLFiles, downloadViewerFiles, getResourceDir, setResourceDir, latestViewerVersion };
+export { copyHTMLFiles, downloadViewerFiles, getResourceDir, setResourceDir, latestViewerVersion, getRatio };
 
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
+import { JSDOM } from 'jsdom';
 import { sendMessageToRenderer, sendStatus } from './main';
 import { presentationDir } from './main-files';
-import { VersionList } from '../common/types';
+import { Manifest, VersionList } from '../common/types';
 import { saveSettings, slajdomatSettings } from './main-settings';
 import { save } from 'pdfkit';
 import { isLater, theHTMLFiles } from '../common/helper';
@@ -21,6 +22,7 @@ import axios from 'axios';
 import { promisify } from 'util';
 import { pipeline as callbackPipeline } from 'stream';
 import { DownloadViewerResult } from './messages-main-renderer';
+import { manifest } from '../viewer/viewer';
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -151,4 +153,27 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Pr
     sendStatus('Viewer files downloaded at version ' + bestVersion, 'quick');
     sendMessageToRenderer({ type: 'settings', settings: slajdomatSettings, availableVersion: bestVersion, problemWithViewerFiles : false });
     return 'success'
+}
+
+
+
+function getRatio(directory : string) : number {
+
+    try {
+    const data = fs.readFileSync(path.join(directory, 'manifest.json')).toString();
+    const json = JSON.parse(data) as Manifest;
+    const rootSlideDir = json.slideDict[json.tree.id];
+    const svgContents = fs.readFileSync(path.join(directory, rootSlideDir,'image.svg')).toString();
+    
+    const dom = new JSDOM(svgContents);
+    const svg = dom.window.document.querySelector('svg');
+    
+    const width = svg.getAttribute('width');
+    const height = svg.getAttribute('height');
+    const ratio = parseFloat(height) / parseFloat(width);
+    return ratio;
+    }
+    catch (e) {
+        return 0.75;
+    }
 }

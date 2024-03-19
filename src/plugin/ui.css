@@ -237,7 +237,7 @@ cursor:pointer;
   height : 32px;
 }
 
-.matematyk-row.disabled {
+.disabled {
   cursor : default;
 }
 

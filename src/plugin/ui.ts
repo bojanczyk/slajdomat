@@ -309,21 +309,27 @@ function selChange(msg: {
     (document.getElementById('matematyk-input') as HTMLInputElement).disabled = true;
   }
 
+  const latexMenu = document.getElementById('latexit-menu');
   if (msg.latexState == LatexState.None) //no object is selected, so the latex button should be disabled
   {
-    document.getElementById('latex-button').classList.add('disabled')
+    document.getElementById('latex-button').classList.add('disabled');
+    latexMenu.classList.add('disabled');
   }
 
   if (msg.latexState == LatexState.Latex) //a text object is selected
   {
     document.getElementById('latex-button').classList.remove('disabled');
     document.getElementById('latex-button').innerHTML = 'attach_money';
+    latexMenu.classList.remove('disabled');
+    latexMenu.firstElementChild.innerHTML = 'attach_money';
   }
 
   if (msg.latexState == LatexState.Delatex) //a text object is selected
   {
     document.getElementById('latex-button').classList.remove('disabled');
     document.getElementById('latex-button').innerHTML = 'money_off';
+    latexMenu.classList.remove('disabled');
+    latexMenu.firstElementChild.innerHTML = 'money_off';
   }
 }
 
@@ -440,6 +446,12 @@ for (const toolbarButton of toolbarButtons) {
         if (target.id == 'event-toolbar-zoom' || target.id == 'dropdown-zoom-new') {
           createChildLink(null);
           foldMenu(toolbarButton);
+        }
+
+        if (target.id == 'latexit-menu') {
+          postMessageToCode({
+            type: 'latexit'
+          }); 
         }
 
 

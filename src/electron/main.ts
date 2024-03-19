@@ -24,7 +24,7 @@ import { gotoChild, gotoParent, readPresentations, revealFinder } from './main-f
 
 import { runUploadScript, saveUploadScript } from './main-upload';
 import { upgradePresentation } from './main-version';
-import { downloadViewerFiles, setResourceDir } from './main-viewer-files';
+import { downloadViewerFiles, getRatio, setResourceDir } from './main-viewer-files';
 import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
 
 
@@ -113,20 +113,23 @@ app.on('activate', () => {
   }
 });
 
+
+
 //the user has clicked a presentation name, which should result in opening that presentation in a new window
 function openViewer(dir: string, fileName: string) {
 
   const name = path.join(dir, fileName);
+  const ratio = getRatio(name);
+
+  const width = 1000;
   const offset = mainWindow.getPosition();
   const viewerWin = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: width,
+    height: width * ratio,
     x: offset[0] + 20,
     y: offset[1] + 20,
     webPreferences: {
       nodeIntegration: true,
-      // for modern versions of electron the following is also needed to enable interprocess communication
-      // (otherwise one should use contextBridge)
       contextIsolation: false,
     },
     show: false
@@ -137,6 +140,8 @@ function openViewer(dir: string, fileName: string) {
   viewerWin.once('ready-to-show', () => {
     viewerWin.show();
     viewerWin.webContents.executeJavaScript("window.runFromApp('" + name + "')");
+    // set the height of the window
+    viewerWin.setSize(width, Math.round(width * ratio));
 
     // Open the DevTools.
     //viewerWin.webContents.openDevTools();
@@ -166,7 +171,7 @@ function startApp(): void {
       readPresentations(slajdomatSettings.directory);
     }
     startServer();
-    
+
     setResourceDir();
   }
 

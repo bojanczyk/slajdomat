@@ -38,11 +38,16 @@ function sendSettings(): void {
 }
 
 
+async function fontList() {
+    const fonts = await figma.listAvailableFontsAsync();
+    console.log(fonts);
+}
 
 //initialize the settings for the plugin
 async function initSettings() {
 
 
+    fontList();
     upgradeVersion();
     const stored = await figma.clientStorage.getAsync('slajdomat');
 
