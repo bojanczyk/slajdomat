@@ -56,6 +56,12 @@ function latexitOne(): void {
                         text.fontSize = data.fontsize;
                         text.x = latexitSelection.x;
                         text.y = latexitSelection.y;
+
+                        // copy id from the original text
+                        const id = latexitSelection.getPluginData('id');
+                        if (id != '')
+                            text.setPluginData('id', id);
+
                         latexitSelection.remove();
                         figma.currentPage.selection = [text];
                     } catch (error) {
@@ -100,6 +106,11 @@ function latexitTwo(svg: string): void {
     node.rescale(latexData.fontsize * 0.065);
     node.x = latexitSelection.x;
     node.y = latexitSelection.y;
+
+    // copy id from the svg
+    const id = latexitSelection.getPluginData('id');
+    if (id != '')
+        node.setPluginData('id', id);
 
     latexitSelection.remove();
     figma.currentPage.selection = [node];
@@ -158,18 +169,18 @@ async function matReplacer(text: TextNode) {
 
     async function loadAllFonts() {
         // loads all fonts in the text area
-        const fonts = new Set<string>; // Use a Set to avoid loading the same font multiple times
+        const fonts = [] as string[];
 
         // Iterate over each character in the text
         for (let i = 0; i < text.characters.length; i++) {
             // Get the font used for this character
             const font = text.getRangeFontName(i, i + 1);
 
-            // Add the font to the set
+            // Add the font to the set (we use the font name and style as a unique identifier for the font)
             const hashed = (font as FontName).family + '#' + (font as FontName).style;
-            if (!fonts.has(hashed)) {
+            if (!fonts.includes(hashed)) {
                 await figma.loadFontAsync(font as FontName);
-                fonts.add(hashed);
+                fonts.push(hashed);
             }
 
         }

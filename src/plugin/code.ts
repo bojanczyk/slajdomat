@@ -451,6 +451,8 @@ function setCurrentSlide(slide: FrameNode): void {
             slideCount: allSlides().length,
         }
 
+        figma.currentPage.setPluginData('currentSlide', slideId(slide));
+
         sendToUI(msg);
         sendEventList();
         updateThumbnails();
@@ -692,18 +694,35 @@ function onMessage(msg: PluginUIToCode) {
     }
 }
 
-figma.on('documentchange', docChange);
-figma.on("selectionchange", selChange);
-figma.on('close', closePlugin);
-figma.showUI(__html__, {
-    width: 230,
-    height: 500
-});
-figma.ui.onmessage = onMessage;
 
 
 
-setCurrentSlide(slideWithSelection());
-initSettings();
+
+function initPlugin() {
+    figma.on('documentchange', docChange);
+    figma.on("selectionchange", selChange);
+    figma.on('close', closePlugin);
+    figma.showUI(__html__, {
+        width: 230,
+        height: 500
+    });
+    figma.ui.onmessage = onMessage;
 
 
+
+    const selectionSlide = slideWithSelection();
+    const savedCurrent = findSlide(figma.currentPage.getPluginData('currentSlide'));
+    if (selectionSlide != null) {
+        setCurrentSlide(selectionSlide);
+    }
+    else 
+        setCurrentSlide(savedCurrent);
+    
+
+    initSettings();
+
+}
+
+
+
+initPlugin();

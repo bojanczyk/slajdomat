@@ -20,9 +20,9 @@ function getLatexSettings(settings: LatexPluginSettings): void {
     let oldDrawTree = pluginSettings.drawTree;
     pluginSettings = settings;
     if (oldDrawTree !== settings.drawTree) {
-        if (settings.drawTree) 
+        if (settings.drawTree)
             drawTree()
-        else 
+        else
             deleteTree();
     }
     figma.clientStorage.setAsync('slajdomat', JSON.stringify(settings));
@@ -40,35 +40,37 @@ function sendSettings(): void {
 
 
 //initialize the settings for the plugin
-function initSettings() {
-    upgradeVersion();
-    figma.clientStorage.getAsync('slajdomat').then(
-        x => {
-            //the default plugin settings
-            const defaultSettings = {
-                drawTree: true,
-                words: ['∀', '∃', '∧', '∨', '∈'],
-                active: false,
-                mathFont: {
-                    family: 'STIXGeneral',
-                    style: 'Regular'
-                },
-                mathFontSize: 1,
-                serverURL: 'http://localhost:3001',
-                latexitURL: 'https://latex.codecogs.com/svg.latex?'
-            }
+async function initSettings() {
 
-            try {
-                pluginSettings = {
-                    ...defaultSettings,
-                    ...JSON.parse(x)
-                };
-            } catch (e) {
-                pluginSettings = defaultSettings;
-            }
-            sendSettings();
-            selChange();
-        }
-    )
+
+    upgradeVersion();
+    const stored = await figma.clientStorage.getAsync('slajdomat');
+
+    //the default plugin settings
+    const defaultSettings = {
+        drawTree: true,
+        words: ['∀', '∃', '∧', '∨', '∈'],
+        active: false,
+        mathFont: {
+            family: 'STIXGeneral',
+            style: 'Regular'
+        },
+        mathFontSize: 1,
+        serverURL: 'http://localhost:3001',
+        latexitURL: 'https://latex.codecogs.com/svg.latex?'
+    }
+
+    try {
+        pluginSettings = {
+            ...defaultSettings,
+            ...JSON.parse(stored)
+        };
+    } catch (e) {
+        pluginSettings = defaultSettings;
+    }
+    sendSettings();
+    selChange();
+
+
 }
 
