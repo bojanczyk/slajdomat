@@ -45,7 +45,7 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
     }
 }
 
-
+const startedAnimations = new Map<SVGElement, AnimationParams>;
 
 //execute an overlay event (for the moment, these are hide or show)
 function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward', silent: 'silent' | 'animated'): void {
@@ -81,7 +81,16 @@ function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward'
     if (silent == 'silent') 
         duration = 0;
 
-    let target = { ...{ duration: duration }, ...animationParams };
+    
+
+    function complete() {
+        startedAnimations.delete(svg);
+        // counter the number of started animations
+        // console.log('uncompleted animations: ' + startedAnimations.size);
+    }
+
+    startedAnimations.set(svg, animationParams);
+    let target = { ...{ duration: duration }, ...animationParams, onComplete : complete };
     gsap.to(svg, target);
 
 
