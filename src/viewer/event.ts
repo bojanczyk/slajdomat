@@ -3,11 +3,11 @@ export {
     runOverlay, zoomSlide
 };
 
-import { AnimationParams, PresentationNode, Slide } from '../common/types';
-import { gsap } from "gsap";
-import { afterParams, beforeParams, localRect, svgMap, transforms } from './loadSVG';
-import { applyTransform, Rect, } from './transform';
-import { manifest } from './viewer';
+    import { gsap } from "gsap";
+    import { AnimationParams, PresentationNode, Slide } from '../common/types';
+    import { afterParams, beforeParams, localRect, svgMap, transforms } from './loadSVG';
+    import { Rect, applyTransform, } from './transform';
+    import { manifest } from './viewer';
 
 
 
@@ -45,7 +45,7 @@ function zoomSlide(node: PresentationNode, mode: 'silent' | 'animated' = 'animat
     }
 }
 
-const startedAnimations = new Map<SVGElement, AnimationParams>;
+const startedAnimations = new Map<SVGElement, AnimationParams>();
 
 //execute an overlay event (for the moment, these are hide or show)
 function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward', silent: 'silent' | 'animated'): void {
@@ -84,9 +84,10 @@ function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward'
     
 
     function complete() {
-        startedAnimations.delete(svg);
-        // counter the number of started animations
-        // console.log('uncompleted animations: ' + startedAnimations.size);
+        // startedAnimations.delete(svg);
+        // if (startedAnimations.size == 0) {
+        //     finishedAnimations();
+        // }
     }
 
     startedAnimations.set(svg, animationParams);

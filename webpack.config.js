@@ -11,7 +11,7 @@ module.exports = (env, argv) => ({
   mode: 'development', 
   // mode: 'production', 
 
-  devtool: 'inline-source-map', //alternative is false 
+  devtool: false, //alternative is false 
 
 
   entry: {

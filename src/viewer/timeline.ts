@@ -1,11 +1,12 @@
-export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline, changeTimelineMode };
+export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline, changeTimelineMode, recoverBug };
 
 import { findSlide, isOverlay, runOverlay, zoomSlide } from "./event";
 import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "../common/types";
 
 
+
 import { markSeen, openPanelTree, timelineHTML, timelineSeen, updateTimeLineForCurrent } from "./html";
-import { addToQueue } from "./loadSVG";
+import { addToQueue, svgMap } from "./loadSVG";
 // import { loadSound } from "./sound";
 import { endRecording, initSoundTimeline, loadNearbySounds, loadSound, playAudio, soundState, startRecording } from "./sound";
 import { manifest } from "./viewer";
@@ -241,6 +242,32 @@ async function moveHead(dir: -1 | 1): Promise<void> {
     await gotoIndex(timeline.current + dir, 'animated', 0);
 }
 
+
+function findBug(state: State, direction: 'forward' | 'backward') {
+    if (state.type == 'start' && state.slide.parent == undefined && direction == 'backward') {
+        const error = new Error('cannot go back from root slide');
+        console.log(error.stack);
+        console.log('found the bug');
+    }
+
+}
+function runState(state: State, direction: 'forward' | 'backward', mode: 'silent' | 'animated') {
+
+
+    if (state.type == 'start') {
+        openPanelTree(state.slide, direction == 'forward');
+        runOverlay(state.slide, direction, mode);
+    }
+    if (state.type == 'afterEvent' && state.event.type == 'child')
+        openPanelTree(state.event, direction == 'backward');
+    if ((state.type == 'afterEvent') && (state.event.type != 'child'))
+        runOverlay(state.event, direction, mode);
+
+
+    markSeen(state, direction);
+
+}
+
 async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated', soundTime: number): Promise<void> {
     const audio = await loadSound(index);
 
@@ -261,6 +288,7 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
     if (index < 0 || index >= timeline.frames.length)
         throw 'index out of bounds';
     if (index != timeline.current) {
+
         //the frame has changed, so we need to load the slide
 
         const sourceState = currentState();
@@ -268,6 +296,7 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
         //we load the slide of the step, plus its ancestors, and their children
         const slidesToLoad: Slide[] = [];
         const targetSlide = containingSlide(targetState);
+
 
         let ancestor = targetSlide;
         while (ancestor != undefined) {
@@ -277,32 +306,22 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
                     slidesToLoad.push(cousin);
             ancestor = ancestor.parent;
         }
+        
 
+        let source = timeline.current;
+
+        // there is a bug where timeline.current can change during the execution of the following line. That is why I save it before. This should be investigated further in the future
         await addToQueue(slidesToLoad);
         // openPanelTreeRec(targetSlide);
 
 
-        function runState(state: State, direction: 'forward' | 'backward') {
 
-            if (state.type == 'start') {
-                openPanelTree(state.slide, direction == 'forward');
-                runOverlay(state.slide, direction, mode);
-            }
-            if (state.type == 'afterEvent' && state.event.type == 'child')
-                openPanelTree(state.event, direction == 'backward');
-            if ((state.type == 'afterEvent') && (state.event.type != 'child'))
-                runOverlay(state.event, direction, mode);
-
-            markSeen(state, direction);
-
-        }
-
-        let source = timeline.current;
         timeline.current = index;
 
 
         for (let i = 0; i < timeline.frames.length; i++)
             timelineSeen(i);
+
 
         //we need to run the overlays for all states that are in between the source and target state, in the entire presentation
         if (index > source || source == undefined) {
@@ -313,8 +332,9 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
             if (source == undefined)
                 inRange = true;
             for (const state of statesInPresentation) {
-                if (inRange)
-                    runState(state, 'forward');
+                if (inRange) {
+                    runState(state, 'forward', mode);
+                }
                 if (sameState(state, sourceState))
                     inRange = true;
                 if (sameState(state, targetState))
@@ -331,8 +351,9 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
                 if (sameState(state, targetState))
                     inRange = false;
 
-                if (inRange)
-                    runState(state, 'backward');
+                if (inRange) {
+                    runState(state, 'backward', mode);
+                }
 
 
             }
@@ -388,4 +409,16 @@ function decodeState(state: StateJSON): State {
     }
 }
 
+
+
+// there is a bug somewhere, which happens when the left/right key is pressed for a long time, triggering many animations. At some point, the visibility of the slides is messed up. Since I can't seem to find this bug, I check the visibility after the animations are finished  
+function recoverBug() {
+
+    console.log('recovering bug');
+
+    const index = timeline.current;
+    for (let i = 0; i < index; i++) {
+        runState(timeline.frames[i].state, 'forward', 'silent');
+    }
+}
 

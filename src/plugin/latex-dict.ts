@@ -100,4 +100,8 @@ const latexDict: { [key: string]: string } = {
     'simeq': '≃',
     'asymp': '≍',
     'doteq': '≐',
+    'models': '⊧',
+    'vdash': '⊢',
+    'dashv': '⊣',
+    'times': '×'
 }

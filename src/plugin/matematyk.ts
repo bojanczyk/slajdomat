@@ -24,6 +24,13 @@ import { capsDict, latexDict } from './latex-dict';
 let latexitSelection: SceneNode;
 
 
+function reverseReplace(text: string): string {
+    for (const key in latexDict) {
+        const search = latexDict[key];
+        text = text.replace(search, '\\' + key + ' ');
+    }
+    return text;
+}
 
 
 
@@ -34,7 +41,9 @@ function latexitOne(): void {
         const data = matematykData(latexitSelection);
 
         if (latexitSelection.type == 'TEXT') {
-            let text = encodeURIComponent((latexitSelection as TextNode).characters);
+            const characters = (latexitSelection as TextNode).characters;
+            let text = reverseReplace(characters);
+            text = encodeURIComponent(text);
             text = text.replace('%E2%80%99%20', "'");
             const url = pluginSettings.latexitURL + text;
             figma.ui.postMessage({
@@ -43,11 +52,12 @@ function latexitOne(): void {
             });
 
 
+
+
         } else
             if (data != null) {
                 const text = figma.createText();
                 latexitSelection.parent.appendChild(text);
-                console.log(data.font);
                 figma.loadFontAsync(data.font).then(() => {
                     try {
                         text.name = latexitSelection.name;
@@ -167,6 +177,7 @@ function matematykWord(addedString: string): void {
 
 async function matReplacer(text: TextNode) {
 
+
     async function loadAllFonts() {
         // loads all fonts in the text area
         const fonts = [] as string[];
@@ -184,11 +195,6 @@ async function matReplacer(text: TextNode) {
             }
 
         }
-
-
-        // const font = text.getRangeFontName(start, start + 1);
-        // console.log(font);  
-        // await figma.loadFontAsync(font as FontName);
     }
 
 
@@ -205,10 +211,12 @@ async function matReplacer(text: TextNode) {
         if (start != -1) {
             // get the font of the text 
             await loadAllFonts();
+            const spaceFont = text.getRangeFontName(start + key.length + 1, start + key.length + 2) as FontName;
             text.deleteCharacters(start, start + key.length + 1);
             text.insertCharacters(start, latexDict[key]);
             await figma.loadFontAsync(pluginSettings.mathFont);
             text.setRangeFontName(start, start + latexDict[key].length, pluginSettings.mathFont);
+            text.setRangeFontName(start + latexDict[key].length, start + latexDict[key].length + 1, spaceFont);
         }
     }
 
@@ -232,6 +240,7 @@ async function matReplacer(text: TextNode) {
 
         }
     }
+
 
 
 }

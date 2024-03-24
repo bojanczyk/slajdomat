@@ -1,7 +1,7 @@
 export {
     initPanels, markDisabled, markSeen, openPanelTree,
     openPanelTreeRec, progressCache,
-    removeLoading, timelineHTML, timelineRecording, timelineSeen, updateTimeCounter, updateTimeLineForCurrent, userAlert, timelineFailedLoad
+    removeLoading, timelineHTML, timelineRecording, timelineSeen, updateTimeCounter, updateTimeLineForCurrent, userAlert, timelineFailedLoad, isRootOpen
 };
 
 import { gsap } from "gsap";
@@ -12,7 +12,7 @@ import { formatTime, initPresenterTools } from './presenter-tools';
 import { initSearch } from './search';
 import { currentTool, toggleSketchpad } from './sketchpad';
 import { canPlaySound, initSoundHTML, loadSound } from './sound';
-import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, slideStartState, timeline } from './timeline';
+import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, recoverBug, slideStartState, timeline } from './timeline';
 import { manifest, nextButton, playButton, prevButton } from './viewer';
 import { version as versionNumber } from '../..//package.json';
 
@@ -218,6 +218,10 @@ function timelineSeen(index: number): void {
 
 //update the html (both left panel and progress bar) after a step has been processed in either direction
 function markSeen(state: State, direction: 'forward' | 'backward'): void {
+
+    // if (state.type == 'start' && state.slide.parent == undefined && direction == 'backward') {
+    //         recoverBug();
+    // }
     const treeViewDIV = treeViewCache.get(state);
 
     if (direction == 'forward') {
@@ -245,6 +249,10 @@ function subtreeOpen(node: Slide): boolean {
     if (div != undefined) {
         return !div.classList.contains('slide-stack-hidden');
     }
+}
+
+function isRootOpen() : boolean {
+    return !subtreeDivCache.get(manifest.tree).classList.contains('slide-stack-hidden');
 }
 
 //opens or closes the tree view corresponding to a child event
