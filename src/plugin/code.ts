@@ -489,15 +489,16 @@ function slideWithSelection(): FrameNode {
 function getRoot(): FrameNode {
     const rootSlide = findSlide(figma.root.getPluginData('rootSlide'));
     if (rootSlide == null) {
-        setRoot();
+        return setRoot();
     }
     return rootSlide;
 
 }
 
 //change the root to the current slide
-function setRoot(): void {
+function setRoot(): FrameNode {
     figma.root.setPluginData('rootSlide', slideId(state.currentSlide));
+    return state.currentSlide;
 }
 
 
@@ -549,6 +550,7 @@ function selChange(): void {
 
     const msg: PluginCodeToUI = {
         type: 'selChange',
+        matematykActive : pluginSettings.active,
         selected: false, // is there at least one object that can be used for show/hide
         latexState: LatexState.None, // is the current selection an object that can be latexed/de-latexed
         canInsert: false, // is the caret in a text field where characters can be inserted

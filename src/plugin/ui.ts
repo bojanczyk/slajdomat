@@ -270,6 +270,7 @@ let fontCandidate: FontName = null;
 //if the selection was changed in the ui, we need to disable/enable corresponding elements of the toolbar and dropdown. This function is triggered by a message from figma.
 function selChange(msg: {
   type: 'selChange',
+  matematykActive : boolean,
   selected: boolean,
   latexState: LatexState,
   canInsert: boolean,
@@ -290,7 +291,7 @@ function selChange(msg: {
 
 
   const fontButton = document.getElementById('new-font-name') as HTMLButtonElement;
-  fontButton.disabled = (msg.currentFont == null);
+  fontButton.disabled = (msg.currentFont == null || !msg.matematykActive);
   fontCandidate = msg.currentFont;
   if (fontCandidate != null)
     fontButton.innerHTML = fontCandidate.family;

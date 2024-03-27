@@ -78,6 +78,7 @@ type PluginCodeToUI = {
 } | {
   type: 'selChange',
   selected: boolean,
+  matematykActive : boolean,
   latexState: LatexState,
   canInsert: boolean,
   currentFont: FontName
