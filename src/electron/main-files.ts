@@ -201,16 +201,9 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
         dir: currentDir,
         presentations: {} as PresentationList,
         subfolders: [] as string[],
-        atRoot: currentDir == slajdomatSettings.directory,
-        gitscript: undefined
+        atRoot: currentDir == slajdomatSettings.directory
     };
 
-    try {
-        msg.gitscript = fs.readFileSync(path.join(slajdomatSettings.directory, '.gitscript')).toString();
-    }
-    catch (e) {
-        // there is no git script
-    }
 
     for (const file of dirList(currentDir)) {
         const fullName = path.join(currentDir, file);

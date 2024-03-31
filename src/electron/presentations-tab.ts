@@ -13,9 +13,6 @@ function receivePresentations(msg: ElectronMainToRenderer): void {
     if (msg.type != 'presentation-list')
         throw ('wrong message');
 
-    if (msg.gitscript != undefined) {
-        (document.querySelector('#upload-script-text') as HTMLTextAreaElement).value = msg.gitscript;
-    }
 
     function nameDiv(type: 'folder' | 'presentation', name: string) {
         const retval = document.createElement('div');

@@ -10,6 +10,41 @@ import { sendMessageToRenderer, sendStatus } from './main';
 import { slajdomatSettings } from './main-settings';
 import { send } from 'process';
 
+const uploadScript = `
+URL=https://raw.githubusercontent.com/bojanczyk/slajdomat/master/src/comments
+
+if [ ! -d slajdomat_comments ]; then
+  echo Creating slajdomat_comments directory
+  mkdir -p slajdomat_comments
+  curl $URL/comments.php > slajdomat_comments/comments.php
+  curl $URL/comments.json > slajdomat_comments/comments.json 
+  chmod a+w slajdomat_comments/comments.json
+  git add slajdomat_comments
+  git commit -m 'creating comments directory'
+  git push
+fi
+
+#get the comments from the server
+ssh $SSH "cd $HOSTDIR; git commit -m 'commiting comments' slajdomat_comments/comments.json; git push"
+git pull
+
+#add everything except for the comments file
+git add .
+git commit -m "Synchronize changes"
+git push
+
+# Find and remove deleted files from the remote repository
+deleted_files=$(git ls-files --deleted)
+if [ -n "$deleted_files" ]; then
+    git rm $deleted_files
+    git commit -m "Remove deleted files"
+    git push
+fi
+
+#log onto server to 
+echo Logging into web server
+ssh $SSH "cd $HOSTDIR; git pull"`
+
 
 
 //save the upload script in the presentations directory
@@ -24,10 +59,15 @@ function saveUploadScript(script: string) {
   }
 }
 
-function runUploadScript(script: string): void {
+function runUploadScript(): void {
 
-  gitUpload();
-  return;
+
+
+  let script = `
+  SSH=` + slajdomatSettings.uploadHostname + `
+  HOSTDIR=` + slajdomatSettings.uploadDirectory + `
+` + uploadScript;
+
 
   const gitProcess = child.spawn('bash', ['-c', script], { cwd: slajdomatSettings.directory });
 
@@ -53,13 +93,14 @@ function runUploadScript(script: string): void {
 }
 
 
+
 function gitUpload() {
 
-  function allowedFile( file : string) {
+  function allowedFile(file: string) {
     return !file.startsWith('comments/');
   }
 
-  function runShell( command : string ) {
+  function runShell(command: string) {
     try {
       const output = child.execSync(command, { encoding: 'utf8' });
       for (const line of output.split('\n')) {
@@ -80,7 +121,7 @@ function gitUpload() {
 
     // add all untracked files to git
     for (const untrackedFile of untrackedFiles) {
-      if (allowedFile(untrackedFile)){
+      if (allowedFile(untrackedFile)) {
         runShell('git -C ' + directoryPath + ' add ' + untrackedFile);
       }
     }
@@ -90,7 +131,7 @@ function gitUpload() {
     const changedFiles = gitDiffOutput.split('\n').filter(Boolean); // filter out empty strings
 
     for (const changedFile of changedFiles) {
-      if (allowedFile(changedFile)){
+      if (allowedFile(changedFile)) {
         runShell('git -C ' + directoryPath + ' add ' + changedFile);
       }
     }

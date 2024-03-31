@@ -150,21 +150,17 @@ for (const button of document.querySelectorAll('.toolbar-button'))
         if (button.classList.contains('disabled'))
             return;
 
-        const script = (document.querySelector('#upload-script-text') as HTMLTextAreaElement).value;
         switch (button.id) {
             case 'parent-folder-button':
                 sendElectronRendererToMain({ type: 'parent-folder-button' });
                 break;
             case 'upload-script-button':
-                sendElectronRendererToMain({ type: 'upload-script', script: script });
+                sendElectronRendererToMain({ type: 'upload-script'});
                 //start the spinner
                 document.getElementById('spinner').classList.add('myspinner');
                 break;
             case 'link-to-current-folder':
                 sendElectronRendererToMain({ type: 'reveal-in-finder', name: '', kind: 'folder' });
-                break;
-            case 'save-script':
-                sendElectronRendererToMain({ type: 'save-script', script: script });
                 break;
             case 'save-settings':
                 sendSettings();
@@ -186,26 +182,6 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 let latestVersion: string;
 let currentViewerVersion: string = undefined;
 
-// async function latestViewerVersion() {
-
-//     const fileUrl = 'https://raw.githubusercontent.com/bojanczyk/slajdomat/master/resources/version.json';
-
-//     //  // load version list from github
-//     try {
-//         const res = await fetch(fileUrl);
-//         if (!(res.ok))
-//             throw "not connected";
-//         else {
-//             const versionList = (await res.json()) as VersionList;
-//             console.log(versionList);
-//         }
-//     } catch (e) {
-
-//     }
-
-
-
-// }
 
 
 //display the settings in the forms in the settings tab
@@ -222,6 +198,8 @@ function displaySettings(settings: SlajdomatSettings, availableVersion: string) 
     (document.querySelector('#comment-url') as HTMLInputElement).value = settings.commentServer;
     currentViewerVersion = settings.viewerVersion;
     (document.querySelector('#viewer-version-number') as HTMLElement).innerText = currentViewerVersion;
+    (document.querySelector('#upload-hostname') as HTMLInputElement).value = settings.uploadHostname;
+    (document.querySelector('#upload-dir') as HTMLInputElement).value = settings.uploadDirectory;
 
     const downloadViewerText = document.getElementById('text-for-download-new-version') as HTMLSpanElement;
 
@@ -255,6 +233,7 @@ function sendSettings() {
     else
         autoUpdate = 'manual';
 
+    
 
     const settings: SlajdomatSettings = {
         ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
@@ -263,7 +242,9 @@ function sendSettings() {
         comments: (document.querySelector('#comments-checkbox') as HTMLInputElement).checked,
         commentServer: (document.querySelector('#comment-url') as HTMLInputElement).value,
         viewerVersion: currentViewerVersion,
-        viewerDownload: autoUpdate
+        viewerDownload: autoUpdate,
+        uploadHostname: (document.querySelector('#upload-hostname') as HTMLInputElement).value,
+        uploadDirectory: (document.querySelector('#upload-dir') as HTMLInputElement).value
     }
     sendElectronRendererToMain({ 'type': 'save-settings', settings: settings });
 }
@@ -302,5 +283,4 @@ document.addEventListener('keyup', (event) => {
             break;
     }
 })
-
 

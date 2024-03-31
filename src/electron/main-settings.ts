@@ -28,7 +28,9 @@ type SlajdomatSettings = {
     comments: boolean,
     commentServer: string,
     viewerVersion: string,
-    viewerDownload: 'automatic' | 'manual'
+    viewerDownload: 'automatic' | 'manual',
+    uploadHostname : string,
+    uploadDirectory : string
 }
 
 let slajdomatSettings: SlajdomatSettings;
@@ -50,9 +52,11 @@ async function loadSettings() {
             ffprobe: findExecutableInPath('ffprobe'),
             port: 3001,
             comments: false,
-            commentServer: 'slajdomat-comments.php',
+            commentServer: 'slajdomat_comments/comments.php',
             viewerVersion: undefined,
-            viewerDownload: 'automatic'
+            viewerDownload: 'automatic',
+            uploadHostname : '',
+            uploadDirectory : ''
         }
     }
 

@@ -218,12 +218,10 @@ ipcMain.on('message-to-main', (event, arg) => {
 
     case 'upload-script':
       //the button for running the git script
-      runUploadScript(message.script);
+      runUploadScript();
       break;
 
-    case 'save-script':
-      saveUploadScript(message.script);
-      break;
+
 
     case 'link-to-current-folder':
       revealFinder('', 'folder');

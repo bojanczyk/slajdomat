@@ -23,8 +23,7 @@ type ElectronMainToRenderer = {
     dir: string,
     presentations: PresentationList,
     subfolders: string[],
-    atRoot: boolean,
-    gitscript : string
+    atRoot: boolean
 } | {
     type: 'settings',
     settings : SlajdomatSettings,
@@ -54,11 +53,7 @@ type ElectronRendererToMain = {
 } | {
     type: 'parent-folder-button'
 } | {
-    type: 'upload-script',
-    script : string
-} | {
-    type: 'save-script',
-    script : string
+    type: 'upload-script'
 } | {
     type: 'link-to-current-folder'
 } | {
@@ -69,7 +64,7 @@ type ElectronRendererToMain = {
 } | {
     type: 'display-web-page',
     url : string
-} 
+}
 
 
 
