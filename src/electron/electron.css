@@ -49,6 +49,8 @@ tabs and switching between in the main window */
     padding-top: 3px;
     padding-bottom: 3px;
     cursor: pointer;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
 }
 
 #tab-heads > div.selected {
@@ -143,10 +145,6 @@ the second line is just to avoid an error message */
     background-color: #daebf7;
 }
 
-/* a button in a toolbar that is not the first one should have a gap separating it from previous ones */
-.tab-toolbar > .toolbar-button:not(:first-child) {
-    margin-left: 30px;
-}
 
 
 /* ********** presentations tab ************** */

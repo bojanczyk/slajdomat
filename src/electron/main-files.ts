@@ -201,7 +201,7 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
         dir: currentDir,
         presentations: {} as PresentationList,
         subfolders: [] as string[],
-        atRoot: currentDir == slajdomatSettings.directory
+        atRoot: currentDir == slajdomatSettings.directory 
     };
 
 
