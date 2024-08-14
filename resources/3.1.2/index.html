@@ -1,0 +1,189 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
+	<title>Slide-figma viewer</title>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+	<link rel="icon" type="image/png" href="favicon.png">
+
+
+</head>
+
+<body>
+	<div id='upper-panel' style='visibility: hidden;'>
+		<div id="sketch-panel" class="noselect tool-panel">
+			<i id="sketch-red" class="material-icons selected">edit</i>
+			<i id="sketch-blue" class="material-icons">edit</i>
+			<i id="sketch-undo" class="material-icons disabled">undo</i>
+			<i id="sketch-redo" class="material-icons">redo</i>
+		</div>
+
+		<!-- the left panel, which rolls out, and has information about the slides -->
+		<div id="left-panel">
+			<!-- <i id="close-panel" class="material-icons">close</i> -->
+			<div id="made-using-slajdomat">
+				<a href="https://github.com/bojanczyk/slajdomat"><img src='slajdomat-logo-blue.svg'></a>
+				<span id="link-to-pdf" class="material-icons hidden">picture_as_pdf</span>
+			</div>
+
+			<!-- the left panel has several tabs, and these are their heads -->
+			<div id='tab-heads'>
+				<div id='index-tab-head' class='active'> Index</div>
+				<div id='comments-tab-head'> Comments</div>
+				<div id='present-tab-head'> Present</div>
+				<div id='author-tab-head' class='hidden'> Author </div>
+			</div>
+			<!-- the contents of the tabs -->
+			<div id='tab-contents'>
+				<div id="index-tab" class="active">
+					<div id='search-panel'>
+						<div id='search-box'>
+							<i class="material-icons">search</i>
+							<input type="input" id='search-input' placeholder='Search in presentation' />
+						</div>
+						<div id='search-results'>
+						</div>
+
+					</div>
+					<div id='slide-stack-container'>
+						<div id="slide-stack" class="slide-stack">
+						</div>
+					</div>
+				</div>
+				<div id='comments-tab'>
+					<div id='add-comments'>
+						<div>Comment</div>
+						<textarea id="comment-content"> </textarea>
+						<div>Your name (optional)</div>
+						<input id="comment-name"> </input>
+						<div class="button-line">
+							<span id="add-comment-button" class="material-icons">comment</span>
+							<span>Add this comment </span>
+						</div>
+					</div>
+					<div id="comments">
+					</div>
+				</div>
+				<div id="present-tab">
+					<div id="viewer-version">
+						Viewer version 
+					</div>
+					<div>
+						<p> <b> Stopwatch.</b> Time your presentation. You can also activate it by pressing "t".</p>
+						<div class="button-line">
+							<span id="timer-button" class="material-icons">timer</span>
+							<span>Toggle stopwatch </span>
+
+						</div>
+					</div>
+					<div>
+						<p> <b> Drawing tools.</b> Create rudimentary annotation that will not be saved.
+							You can also activate them by pressing "d".</p>
+						<div class="checkbox-container">
+							<input type="checkbox" id="drawing-tools-checkbox">
+							<label for="drawing-tools-checkbox">show drawing tools</label>
+						</div>
+					</div>
+					<div>
+						<p> <b> Set key bindings. </b> Configure non-standard keys for your clicker using these buttons.
+						</p>
+						<div class="button-line key-binding">
+							<span id="new-prev-key" class="material-icons">navigate_before</span> Set key for previous
+						</div>
+						<div class="button-line key-binding">
+							<span id="new-next-key" class="material-icons">navigate_next</span> Set key for next
+						</div>
+						<p id="press-key-instructions" class="hidden"> Press a key to set this binding</p>
+						<p id='list-of-key-bindings'>
+						</p>
+
+					</div>
+				</div>
+				<div id="author-tab" class='hidden'>
+					<div>
+						<p> <b> Export pdf.</b> The pdf will be saved in the presentation directory, and accessible via
+							a button next to the Slajdomat logo.</p>
+						<div class="button-line">
+							<span id="pdf-print-button" class="material-icons">publish</span>
+							<span>Export to pdf </span>
+						</div>
+						<p id="pdf-export-status"> </p>
+					</div>
+					<div>
+						<p> <b> Timeline display</b></p>
+						<p> The timeline is the progress bar at the bottom. Choose one of the following two options for what it should contain. </p>
+						<p> 
+							<input type="radio" id="display-tree-mode" checked> <b>  Tree display. </b>
+							The timeline is a depth-first traversal of the states in the presentation tree. 
+						</p>
+						<p id="display-chronicle-mode-container"> 
+							<input type="radio" id="display-chronicle-mode"> <b> Chronicle display. </b>
+							The timeline is a list of previously recorded (state, sound) pairs, which need not respect the order of the slides. 
+						</p>
+					</div>
+					<div id='sound-recording-mode'>
+						<p> <b> Sound recording mode</b></p>
+						<p> Press r to start recording</p>
+						<p>
+							<input type="radio" id="tree-record-mode" checked> <b>Record for tree mode.</b>
+							<!-- Sounds are played in depth-first traversal. .  -->
+							Recording a new sound replaces the previous one for the same state.  This mode is useful for preparing a recorded presentation in advance, where you can correct mistakes by re-recording a sound.
+						</p>
+						<p> <input type="radio" id="chronicle-record-mode"> <b> Append to chronicle. </b> Recording a new sound appends it to a list of recorded (state, sound) pairs.  This mode is useful for recording a live presentation, where you go back and forth between slides.
+						</p>
+					</div>
+					<div>
+						<p> <b> Contents of the chronicle</b></p>
+						<p id='list-of-chronicle-sounds'>
+						</p>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<!-- the panel that contains the svg with the slides -->
+		<svg id="svg" fill="none"></svg>
+
+	</div>
+
+
+	<!-- contains the timeline slider, the current time, and the buttons for next/previous/play -->
+	<div id="progress-panel" style="visibility:hidden">
+		<!-- the page counter in the lower right corner -->
+		<div id="progress-controls">
+			<i id="open-menu" class="material-icons">menu</i>
+			<i id="prev-event" class="material-icons">navigate_before</i>
+			<i id="play-button" class="material-icons ">play_arrow</i>
+			<i id="next-event" class="material-icons">navigate_next</i>
+			<span id='sound-speed'>×1</span>
+		</div>
+		<div id="timer" class="hidden">
+			time left
+		</div>
+		<div id="progress-line">
+
+		</div>
+		<div id='page-count'>
+			<span id='time-elapsed'></span>
+			<span id="page-count-enumerator"></span>
+			<span id="page-count-denominator">loading...</span>
+		</div>
+	</div>
+
+
+	<div id="alert-box" class="visible">
+		<div> Loading </div>
+	</div>
+
+	<script type="module" src="viewer.js"></script>
+
+
+
+
+</body>
+
+</html>
