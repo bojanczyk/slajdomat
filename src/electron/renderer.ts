@@ -74,7 +74,7 @@ function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
 }
 
 //message handler, for messages that come from Electron Main
-ipcRenderer.on('message-to-renderer', (event, arg: ElectronMainToRenderer) => {
+ipcRenderer.on('message-to-renderer', (event: any, arg: ElectronMainToRenderer) => {
     switch (arg.type) {
         case 'stop-spin':
             document.getElementById('spinner').classList.remove('myspinner');
@@ -155,7 +155,7 @@ for (const button of document.querySelectorAll('.toolbar-button'))
                 sendElectronRendererToMain({ type: 'parent-folder-button' });
                 break;
             case 'upload-script-button':
-                sendElectronRendererToMain({ type: 'upload-script'});
+                sendElectronRendererToMain({ type: 'upload-script' });
                 //start the spinner
                 document.getElementById('spinner').classList.add('myspinner');
                 break;
@@ -233,7 +233,7 @@ function sendSettings() {
     else
         autoUpdate = 'manual';
 
-    
+
 
     const settings: SlajdomatSettings = {
         ffmpeg: (document.querySelector('#ffmpeg-path') as HTMLInputElement).value,
