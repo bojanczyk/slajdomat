@@ -64,9 +64,7 @@ jobs:
       - name: List directory contents (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          ls -la ./out/make/*/
-          ls -la ./out/make/*/*
-          ls -la ./out/make/*/*/*
+          ls -R
         shell: bash
 
       - name: Compress directory
