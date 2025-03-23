@@ -1,13 +1,42 @@
-name: Build and Release latest test
+name: Build and Release (debugged in March 2025)
 
 on:
         workflow_dispatch:
 
 jobs:
-             
+        create_release:
+                runs-on: ubuntu-latest
+                outputs:
+                        upload_url: ${{ steps.create_release.outputs.upload_url }}
+                        version: ${{ steps.get_version.outputs.version }}
+
+                steps:
+                - name: Checkout code
+                  uses: actions/checkout@v2
+
+                - name: Setup Node.js
+                  uses: actions/setup-node@v2
+                  with:
+                                node-version: '20' 
+
+                - name: Get version
+                  id: get_version
+                  run: |
+                                echo "::set-output name=version::$(node -p "require('./package.json').version")"
+
+                - name: Create Release
+                  id: create_release
+                  uses: actions/create-release@v1
+                  env:
+                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  with:
+                                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
+                                release_name: Latest ${{ steps.get_version.outputs.version }}
+                                draft: true
+                                prerelease: false
 
         build_and_upload:
-
+                needs: create_release
                 runs-on: ${{ matrix.os }}
                 strategy:
                         matrix:
@@ -16,16 +45,11 @@ jobs:
                 steps:
                 - name: Checkout code
                   uses: actions/checkout@v2
-  
+
                 - name: Setup Node.js
                   uses: actions/setup-node@v2
                   with:
-                    node-version: '20' 
-  
-                - name: Get version
-                  id: get_version
-                  run: |
-                                  echo "::set-output name=version::$(node -p "require('./package.json').version")"
+                                node-version: '20' 
 
                 - name: Install dependencies
                   run: |
@@ -41,30 +65,19 @@ jobs:
                   run: |
                         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
                                 7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
-                                # 7z a my_directory.zip ./out/Slajdomat-win32-x64
                         elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-                                # on macos, this directory contains the smallest file
                                 mv ./out/make/zip/darwin/x64/*zip my_directory.zip
                         else
                                 zip -r my_directory.zip ./out/
-                        fi
                   shell: bash
 
-                #   we upload twice: 
-                - name: Upload to latest release
-                  uses: svenstaro/upload-release-action@v2
+                - name: Upload Release Asset
+                  id: upload_release_asset
+                  uses: actions/upload-release-asset@v1
+                  env:
+                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   with:
-                    repo_token: ${{ secrets.GITHUB_TOKEN }}
-                    file: my_directory.zip
-                    asset_name: slajdomat-${{ matrix.os }}.zip
-                    tag: latest
-                    overwrite: true
-
-                - name: Upload to archive release
-                  uses: svenstaro/upload-release-action@v2
-                  with:
-                    repo_token: ${{ secrets.GITHUB_TOKEN }}
-                    file: my_directory.zip
-                    asset_name: slajdomat-${{ matrix.os }}-${{ steps.get_version.outputs.version }}.zip
-                    tag: archive
-                    overwrite: true
+                                upload_url: ${{ needs.create_release.outputs.upload_url }}
+                                asset_path: ./my_directory.zip
+                                asset_name: slajdomat-${{ matrix.os }}.zip
+                                asset_content_type: application/zip
