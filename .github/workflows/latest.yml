@@ -72,7 +72,7 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            mv ./out/make/darwin/arm64/*zip my_directory.zip
+            mv ./out/make/zip/darwin/arm64/*zip my_directory.zip
           else
             zip -r my_directory.zip ./out/
           fi
