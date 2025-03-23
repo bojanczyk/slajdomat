@@ -1,83 +1,83 @@
 name: Build and Release (debugged in March 2025)
 
 on:
-        workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-        create_release:
-                runs-on: ubuntu-latest
-                outputs:
-                        upload_url: ${{ steps.create_release.outputs.upload_url }}
-                        version: ${{ steps.get_version.outputs.version }}
+  create_release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
 
-                steps:
-                - name: Checkout code
-                  uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-                - name: Setup Node.js
-                  uses: actions/setup-node@v2
-                  with:
-                                node-version: '20' 
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20' 
 
-                - name: Get version
-                  id: get_version
-                  run: |
-                                echo "::set-output name=version::$(node -p "require('./package.json').version")"
+      - name: Get version
+        id: get_version
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
-                - name: Create Release
-                  id: create_release
-                  uses: actions/create-release@v1
-                  env:
-                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  with:
-                                tag_name: Automatic build ${{ steps.get_version.outputs.version }} 
-                                release_name: Latest ${{ steps.get_version.outputs.version }}
-                                draft: true
-                                prerelease: false
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: Automatic build ${{ env.version }} 
+          release_name: Latest ${{ env.version }}
+          draft: true
+          prerelease: false
 
-        build_and_upload:
-                needs: create_release
-                runs-on: ${{ matrix.os }}
-                strategy:
-                        matrix:
-                                os: [ubuntu-latest, windows-latest, macos-latest]
+  build_and_upload:
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
-                steps:
-                - name: Checkout code
-                  uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-                - name: Setup Node.js
-                  uses: actions/setup-node@v2
-                  with:
-                                node-version: '20' 
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20' 
 
-                - name: Install dependencies
-                  run: |
-                                npm install
-                  working-directory: ./
-                        
-                - name: Build Electron App
-                  run: |
-                                npm run make
-                  working-directory: ./
+      - name: Install dependencies
+        run: |
+          npm install
+        working-directory: ./
+          
+      - name: Build Electron App
+        run: |
+          npm run make
+        working-directory: ./
 
-                - name: Compress directory
-                  run: |
-                        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-                                7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
-                        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-                                mv ./out/make/zip/darwin/x64/*zip my_directory.zip
-                        else
-                                zip -r my_directory.zip ./out/
-                  shell: bash
+      - name: Compress directory
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            mv ./out/make/zip/darwin/x64/*zip my_directory.zip
+          else
+            zip -r my_directory.zip ./out/
+        shell: bash
 
-                - name: Upload Release Asset
-                  id: upload_release_asset
-                  uses: actions/upload-release-asset@v1
-                  env:
-                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  with:
-                                upload_url: ${{ needs.create_release.outputs.upload_url }}
-                                asset_path: ./my_directory.zip
-                                asset_name: slajdomat-${{ matrix.os }}.zip
-                                asset_content_type: application/zip
+      - name: Upload Release Asset
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./my_directory.zip
+          asset_name: slajdomat-${{ matrix.os }}.zip
+          asset_content_type: application/zip
