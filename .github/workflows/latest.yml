@@ -61,6 +61,12 @@ jobs:
           npm run make
         working-directory: ./
 
+      - name: List directory contents (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          ls -la ./out/make/zip/darwin/x64/
+        shell: bash
+
       - name: Compress directory
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
