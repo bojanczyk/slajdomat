@@ -69,6 +69,7 @@ jobs:
             mv ./out/make/zip/darwin/x64/*zip my_directory.zip
           else
             zip -r my_directory.zip ./out/
+          fi
         shell: bash
 
       - name: Upload Release Asset
