@@ -11,7 +11,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
 
     steps:
       - name: Checkout code
@@ -39,11 +39,13 @@ jobs:
       - name: Compress directory
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
+            7z a slajdomat-windows.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            mv ./out/make/zip/darwin/arm64/*zip my_directory.zip
+            mv ./out/make/zip/darwin/arm64/*zip slajdomat-macos-latest.zip
+          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
+            mv ./out/make/zip/darwin/x64/*zip slajdomat-macos-13.zip
           else
-            zip -r my_directory.zip ./out/
+            zip -r slajdomat-linux.zip ./out/
           fi
         shell: bash
       - name: Upload Release Assets
