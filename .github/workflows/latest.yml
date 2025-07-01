@@ -1,4 +1,4 @@
-name: Build and Release (aliaume attempt)
+name: Build and Release
 on:
   push:
     tags: ["*.*.*"]
