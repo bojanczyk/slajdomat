@@ -11,7 +11,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
 
     steps:
       - name: Checkout code
@@ -42,6 +42,8 @@ jobs:
             7z a my_directory.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             mv ./out/make/zip/darwin/arm64/*zip my_directory.zip
+          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
+            mv ./out/make/zip/darwin/x64/*zip my_directory.zip
           else
             zip -r my_directory.zip ./out/
           fi
