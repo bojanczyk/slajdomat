@@ -1,11 +1,14 @@
 name: Build and Release (aliaume attempt)
-
 on:
+  push:
+    tags: ["*.*.*"]
   workflow_dispatch:
 
 jobs:
   build_and_upload:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -44,6 +47,12 @@ jobs:
           fi
         shell: bash
       - name: Upload Release Assets
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v2
         with:
           files: "*.zip"
+      - name: Upload Artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v3
+        with:
+          path: "*.zip"
