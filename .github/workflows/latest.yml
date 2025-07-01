@@ -1,42 +1,10 @@
-name: Build and Release (debugged in March 2025)
+name: Build and Release (aliaume attempt)
 
 on:
   workflow_dispatch:
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' 
-
-      - name: Get version
-        id: get_version
-        run: |
-          echo "version=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_ENV
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: Automatic build ${{ env.version }} 
-          release_name: Latest ${{ env.version }}
-          draft: true
-          prerelease: false
-
   build_and_upload:
-    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -44,12 +12,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' 
+        uses: actions/setup-node@v4
 
       - name: Install dependencies
         run: |
@@ -77,14 +43,7 @@ jobs:
             zip -r my_directory.zip ./out/
           fi
         shell: bash
-
-      - name: Upload Release Asset
-        id: upload_release_asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./my_directory.zip
-          asset_name: slajdomat-${{ matrix.os }}.zip
-          asset_content_type: application/zip
+          files: "*.zip"
