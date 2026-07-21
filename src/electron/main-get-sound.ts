@@ -73,7 +73,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
         // find the index of msg.forWhat in the sound list
-        let index = manifest.treeTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
+        const index = manifest.treeTimeLine.findIndex((sound) => { return sameStateJSON(sound.state, msg.forWhat) });
 
         if (msg.live == 'tree' && index > -1) {
             // the sound is already there, and we are recording the default timeline, then we will replace the sound

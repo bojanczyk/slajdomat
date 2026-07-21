@@ -16,7 +16,7 @@ function initPresenterTools() {
     function listUserDefinedKeys() {
         let list = '';
         document.getElementById('list-of-key-bindings').innerHTML = '';
-        for (let key in userDefinedKeys) {
+        for (const key in userDefinedKeys) {
             if (userDefinedKeys[key] == prevButton)
                 list = list + key + ': previous slide <br>';
             if (userDefinedKeys[key] == nextButton)

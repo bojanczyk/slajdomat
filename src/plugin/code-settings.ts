@@ -17,7 +17,7 @@ let pluginSettings: LatexPluginSettings;
 
 //get the settings from the ui
 function getLatexSettings(settings: LatexPluginSettings): void {
-    let oldDrawTree = pluginSettings.drawTree;
+    const oldDrawTree = pluginSettings.drawTree;
     pluginSettings = settings;
     if (oldDrawTree !== settings.drawTree) {
         if (settings.drawTree)

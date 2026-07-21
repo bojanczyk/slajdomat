@@ -388,7 +388,7 @@ for (const toolbarButton of toolbarButtons) {
     }
 
 
-    var dropdownTitleClicked = false;
+    let dropdownTitleClicked = false;
 
     // we  open the dropdown menus when the little arrow is clicked, or the title of the  menu
     if (target.classList.contains('hover-down-arrow') || target.classList.contains('event-toolbar-title'))
@@ -419,9 +419,9 @@ for (const toolbarButton of toolbarButtons) {
         //if the title was clicked, then we want to use the most recently clicked item from the menu
         if (target.classList.contains('updatedable-menu-title')) {
           //the most recently used menu item is identfied using the icon
-          let iconName = toolbarButton.querySelectorAll('.menu-title-icon')[0].innerHTML; //this is the title icon for the toolbar
-          let menuItems = toolbarButton.querySelectorAll('.row'); // these are all menu items
-          for (let menuItem of menuItems as NodeListOf<HTMLElement>) {
+          const iconName = toolbarButton.querySelectorAll('.menu-title-icon')[0].innerHTML; //this is the title icon for the toolbar
+          const menuItems = toolbarButton.querySelectorAll('.row'); // these are all menu items
+          for (const menuItem of menuItems as NodeListOf<HTMLElement>) {
             if (iconName == getIconName(menuItem))
               target = menuItem;
           }

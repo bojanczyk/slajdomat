@@ -21,7 +21,7 @@ import { version as versionNumber } from '../..//package.json';
 const treeViewCache: StateMap<HTMLDivElement> = new StateMap();
 const subtreeDivCache: Map<Slide, HTMLDivElement> = new Map();
 //this is a link to the progress item in the progress bar at the bottom
-let progressCache: HTMLDivElement[];;
+let progressCache: HTMLDivElement[];
 
 
 

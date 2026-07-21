@@ -1,7 +1,7 @@
 {
   "name": "slajdomat",
   "productName": "Slajdomat",
-  "version": "3.1.5",
+  "version": "3.1.6",
   "description": "Software to make slides in figma",
   "main": ".webpack/main",
   "scripts": {
@@ -11,8 +11,7 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "webpack": "webpack",
-    "watch": "webpack --watch",
-    "postbuild": "echo dupa"
+    "watch": "webpack --watch --mode development"
   },
   "keywords": [],
   "author": {
@@ -21,13 +20,13 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@electron-forge/cli": "^7.7.0",
-    "@electron-forge/maker-deb": "^7.7.0",
-    "@electron-forge/maker-rpm": "^7.7.0",
-    "@electron-forge/maker-squirrel": "^7.7.0",
-    "@electron-forge/maker-zip": "^7.7.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.7.0",
-    "@electron-forge/plugin-webpack": "^7.7.0",
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-rpm": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron-forge/plugin-webpack": "^7.11.2",
     "@figma/plugin-typings": "^1.109.0",
     "@types/jsdom": "^21.1.7",
     "@types/multer": "^1.4.12",
@@ -39,7 +38,7 @@
     "@typescript-eslint/parser": "^8.27.0",
     "@vercel/webpack-asset-relocator-loader": "1.5.0",
     "css-loader": "^7.1.2",
-    "electron": "35.0.3",
+    "electron": "43.1.1",
     "eslint": "^9.23.0",
     "eslint-plugin-import": "^2.31.0",
     "file-loader": "^6.2.0",

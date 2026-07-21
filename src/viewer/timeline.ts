@@ -20,7 +20,7 @@ function reverseDir(dir: -1 | 1): -1 | 1 {
 
 
 
-let timeline = {
+const timeline = {
     frames: undefined as Frame[],
     current: undefined as number
 }
@@ -308,7 +308,7 @@ async function gotoIndex(index: number, mode: 'silent' | 'animated' = 'animated'
         }
         
 
-        let source = timeline.current;
+        const source = timeline.current;
 
         // there is a bug where timeline.current can change during the execution of the following line. That is why I save it before. This should be investigated further in the future
         await addToQueue(slidesToLoad);

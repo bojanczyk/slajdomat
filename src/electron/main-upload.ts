@@ -63,7 +63,7 @@ function runUploadScript(): void {
 
 
 
-  let script = `
+  const script = `
   SSH=` + slajdomatSettings.uploadHostname + `
   HOSTDIR=` + slajdomatSettings.uploadDirectory + `
 ` + uploadScript;

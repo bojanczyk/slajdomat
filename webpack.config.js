@@ -8,10 +8,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 
 module.exports = (env, argv) => ({
-  mode: 'development', 
-  // mode: 'production', 
+  // production unless overridden, e.g. `webpack --mode development` (used by the "watch" script)
+  mode: argv.mode || 'production',
 
-  devtool: false, //alternative is false 
+  devtool: false, //alternative is false
 
 
   entry: {

@@ -32,6 +32,7 @@ export { choosePresentationsFolder, mainWindow, sendMessageToRenderer, sendStatu
 
 //this is the link to the main window html, produced by the despicable webpack
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
+declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 //the main window with the presentation list 
 let mainWindow = null as BrowserWindow;
@@ -75,10 +76,9 @@ const createWindow = (): void => {
     height: 600,
     width: 400,
     webPreferences: {
-      nodeIntegration: true,
-      // for modern versions of electron the following is also needed to enable interprocess communication
-      // (otherwise one should use contextBridge)
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     }
   });
 
@@ -129,8 +129,8 @@ function openViewer(dir: string, fileName: string) {
     x: offset[0] + 20,
     y: offset[1] + 20,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
     show: false
   })
@@ -139,7 +139,7 @@ function openViewer(dir: string, fileName: string) {
   viewerWin.loadFile(path.join(name, 'index.html'));
   viewerWin.once('ready-to-show', () => {
     viewerWin.show();
-    viewerWin.webContents.executeJavaScript("window.runFromApp('" + name + "')");
+    viewerWin.webContents.executeJavaScript(`window.runFromApp(${JSON.stringify(name)})`);
     // set the height of the window
     viewerWin.setSize(width, Math.round(width * ratio));
 

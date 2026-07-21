@@ -94,7 +94,7 @@ type SoundDict = {
 };
 
 function soundDictToTimeline(soundDict: SoundDict, manifest: Manifest): TimelineJSON {
-    let timeline: TimelineJSON = [];
+    const timeline: TimelineJSON = [];
 
 
     for (const slideId of Object.keys(soundDict)) {
@@ -124,7 +124,7 @@ function soundDictToTimeline(soundDict: SoundDict, manifest: Manifest): Timeline
                     state = { type: 'afterEvent', slideId: slideId, eventId: node.children[index].eventId }
 
 
-                let timelineItem = {
+                const timelineItem = {
                     state: state,
                     soundFile: path.join(dir, eventIndex + '.mp3'),
                     soundDuration: soundDict[slideId][eventIndex]

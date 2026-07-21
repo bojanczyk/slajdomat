@@ -2,12 +2,9 @@
 This file describes the communication inteface between the renderer and the main process. 
 */
 
-export { ElectronMainToRenderer, ElectronRendererToMain, DownloadViewerResult };
+export { ElectronMainToRenderer, ElectronRendererToMain, DownloadViewerResult, ElectronAPI };
     import { PresentationList } from './main-files';
     import { SlajdomatSettings } from './main-settings';
-
-const { ipcRenderer } = window.require('electron');
-
 
 type DownloadViewerResult = 'success' | 'did nothing' | 'failure' | 'critical failure';
 
@@ -66,5 +63,16 @@ type ElectronRendererToMain = {
     url : string
 }
 
+//the API exposed to the renderer's global scope by the preload script (see preload.ts)
+type ElectronAPI = {
+    send: (msg: ElectronRendererToMain) => void,
+    onMessage: (callback: (msg: ElectronMainToRenderer) => void) => void,
+}
+
+declare global {
+    interface Window {
+        electronAPI: ElectronAPI
+    }
+}
 
 

@@ -306,7 +306,7 @@ function soundAdvance(t: number): { frame: number, time: number } {
             i--;
         }
     }
-    let retval = {
+    const retval = {
         frame: i,
         time: 0
     }

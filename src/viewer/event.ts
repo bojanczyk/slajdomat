@@ -91,7 +91,7 @@ function runOverlay(overlay: PresentationNode, direction: 'forward' | 'backward'
     }
 
     startedAnimations.set(svg, animationParams);
-    let target = { ...{ duration: duration }, ...animationParams, onComplete : complete };
+    const target = { ...{ duration: duration }, ...animationParams, onComplete : complete };
     gsap.to(svg, target);
 
 

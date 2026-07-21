@@ -6,7 +6,7 @@ export { drawTree, deleteTree, presentationTree, unusedSlides }
 
 type FrameNodeTree = {
     frame: FrameNode,
-    merged: Boolean,
+    merged: boolean,
     children: FrameNodeTree[]
 }
 
@@ -205,7 +205,7 @@ async function drawTree() {
     const unused = unusedSlides(tree);
     if (unused.length > 0) {
 
-        let unusedCaption = figma.createText();
+        const unusedCaption = figma.createText();
         unusedCaption.fontSize = fontSize;
         unusedCaption.characters = 'Unused slides';
         unusedCaption.y = group.y + group.height + tree.frame.height + unusedCaption.height;

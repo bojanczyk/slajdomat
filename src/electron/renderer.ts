@@ -10,8 +10,6 @@ export { selectTab, sendElectronRendererToMain };
 
 
 
-const { ipcRenderer } = window.require('electron');
-
 // import * as https from 'https';
 import { version as versionNumber } from '../..//package.json';
 import { SlajdomatSettings } from './main-settings';
@@ -36,7 +34,7 @@ import { receivePresentations } from './presentations-tab';
 
 //the interface for sending a message from the renderer process to the main process. This function is used so that there is a typed message, whose type can be used to see all possible message
 function sendElectronRendererToMain(msg: ElectronRendererToMain): void {
-    ipcRenderer.send('message-to-main', msg);
+    window.electronAPI.send(msg);
 }
 
 
@@ -74,7 +72,7 @@ function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
 }
 
 //message handler, for messages that come from Electron Main
-ipcRenderer.on('message-to-renderer', (event: any, arg: ElectronMainToRenderer) => {
+window.electronAPI.onMessage((arg: ElectronMainToRenderer) => {
     switch (arg.type) {
         case 'stop-spin':
             document.getElementById('spinner').classList.remove('myspinner');

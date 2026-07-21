@@ -140,12 +140,12 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
         // To avoid messing with the document structure, we simply reposition the content of the <a> node
         // following the bounding box of the corresponding <g> node
         for (const a of svg.querySelectorAll('a')) {
-            let child = a.firstElementChild as SVGGraphicsElement;
-            let prev_sibling = a.previousElementSibling as SVGGraphicsElement;
+            const child = a.firstElementChild as SVGGraphicsElement;
+            const prev_sibling = a.previousElementSibling as SVGGraphicsElement;
             if ((prev_sibling != null) && (child != null)) {
-                let bbox = prev_sibling.getBBox() as SVGRect;
-                const x = bbox.x || 0 as Number;
-                const y = bbox.y || 0 as Number;
+                const bbox = prev_sibling.getBBox() as SVGRect;
+                const x = bbox.x || 0 as number;
+                const y = bbox.y || 0 as number;
                 child.setAttribute('x', x.toString());
                 child.setAttribute('y', y.toString());
             }
@@ -233,7 +233,7 @@ function finishedLoading(slide: Slide, object: HTMLObjectElement) {
 //each slide has its definitions, but they use the same id's, e.g. 'image0' is used in every slide that has an image. As a result all images would point to the last occurrence of image0 in the document. Probably there is a namespace way to fix this, but since I do not understand namespaces, I simply prepend the slide id to every id in the definitions. 
 function cleanDefs(svg: SVGElement, slide: Slide): void {
     for (const c of svg.childNodes) {
-        let child = c as SVGElement;
+        const child = c as SVGElement;
         child.id = slide.id + child.id;
 
         //the following two lines might not make sense any more, I forgot why they were needed
@@ -277,7 +277,7 @@ function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
     //find pattern and corresponding use and image referenced by rectangle fill url 
     let pattern: SVGPatternElement;
     if ((defs != null) && (fill != null)) {
-        let patternId = fill.slice(5).slice(0, -1);
+        const patternId = fill.slice(5).slice(0, -1);
         for (const p of defs.childNodes) {
             if (p.nodeName == 'pattern') {
                 const pat = p as SVGPatternElement;
@@ -290,7 +290,7 @@ function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
         for (const u of pattern.childNodes) {
             if (u.nodeName == 'use') {
                 const use = u as SVGUseElement;
-                let xlink = use.getAttribute('xlink:href'); // should start with "#<slideId>image...
+                const xlink = use.getAttribute('xlink:href'); // should start with "#<slideId>image...
                 let image;
                 if (xlink != null) {
                     for (const i of defs.childNodes) {
@@ -308,14 +308,14 @@ function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
                     //          <image id="..." width="..." height="..." ...>
                     // we need to replace <rect> by <g>, but for this we need to
                     // turn x,y,width,height attributes into a transform attribute
-                    let rectG = document.createElementNS("http://www.w3.org/2000/svg", 'g') as SVGGElement;
+                    const rectG = document.createElementNS("http://www.w3.org/2000/svg", 'g') as SVGGElement;
 
                     const imgW = parseFloat(image.getAttribute('width') || '1');
                     const imgH = parseFloat(image.getAttribute('height') || '1');
                     const w = parseFloat(r.getAttribute('width') || '1');
                     const h = parseFloat(r.getAttribute('height') || '1');
-                    let scaleX = w / imgW;
-                    let scaleY = h / imgH;
+                    const scaleX = w / imgW;
+                    const scaleY = h / imgH;
 
 
 
@@ -352,8 +352,8 @@ function cleanRect(r: SVGRectElement, slide: Slide, defs: SVGDefsElement) {
 
                     rectG.id = r.id;
 
-                    let imageClone = image.cloneNode(true) as SVGImageElement;
-                    let parent = r.parentNode;
+                    const imageClone = image.cloneNode(true) as SVGImageElement;
+                    const parent = r.parentNode;
                     parent.insertBefore(rectG, r);
                     rectG.appendChild(imageClone);
                     parent.removeChild(r);

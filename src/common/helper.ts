@@ -31,7 +31,7 @@ function freshRect(x: number, y : number, width: number, height: number, avoidLi
     if (dimensions != undefined)
         insideFrame = { x: 0, y: 0, width: dimensions.width, height: dimensions.height };
 
-    let initial = { x: x, y : y, width : width, height : height};
+    const initial = { x: x, y : y, width : width, height : height};
 
     function intersects(a: Rect, b: FrameNode | Rect) {
         if (b == undefined)
@@ -54,7 +54,7 @@ function freshRect(x: number, y : number, width: number, height: number, avoidLi
         for (let j = 0; j <= i; j++) {
 
 
-            let candidates: Rect[] = [];
+            const candidates: Rect[] = [];
 
             candidates.push({ width: initial.width, height: initial.height, x: initial.x + j * xoffset, y: initial.y + i * yoffset });
             candidates.push({ width: initial.width, height: initial.height, x: initial.x + i * xoffset, y: initial.y + j * yoffset });
