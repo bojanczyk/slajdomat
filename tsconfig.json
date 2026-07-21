@@ -7,13 +7,10 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "paths": {
-      "*": ["node_modules/*"]
-    }
+    "ignoreDeprecations": "5.0"
   },
   "include": ["src/**/*"]
 }
