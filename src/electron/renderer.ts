@@ -16,8 +16,7 @@ import { SlajdomatSettings } from './main-settings';
 import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
 
 
-//icons 
-import { VersionList } from '../common/types';
+//icons
 import '../icons/download.svg';
 import '../icons/folder.svg';
 import '../icons/leftarrow.svg';
@@ -45,7 +44,7 @@ function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
 
         //the type types git and log use  scrolling log windows
         case 'upload':
-        case 'log':
+        case 'log': {
             const div = document.createElement('div');
             div.innerHTML = text;
             let statusPanel;
@@ -58,14 +57,16 @@ function statusUpdate(text: string, subtype: 'quick' | 'log' | 'upload') {
             statusPanel.appendChild(div);
             statusPanel.scrollTo(0, statusPanel.scrollHeight);
             break;
+        }
 
         //this pops up some text at the bottom of the screen for a 5 seconds
-        case 'quick':
+        case 'quick': {
             const quickStatus: HTMLElement = document.querySelector('#quick-status');
             quickStatus.innerHTML = text;
             quickStatus.style.opacity = '1';
             setTimeout(() => { quickStatus.style.opacity = '0'; }, 2500);
             break;
+        }
 
     }
 
@@ -122,11 +123,11 @@ function selectTab(tab: 'presentations' | 'welcome' | 'messages' | 'upload' | 's
 //switch tabs in the main window
 
 
-document.getElementById('welcome-head').addEventListener('click', (e) => selectTab('welcome'));
-document.getElementById('upload-head').addEventListener('click', (e) => selectTab('upload'));
-document.getElementById('presentations-head').addEventListener('click', (e) => selectTab('presentations'));
-document.getElementById('messages-head').addEventListener('click', (e) => selectTab('messages'));
-document.getElementById('settings-head').addEventListener('click', (e) => selectTab('settings'));
+document.getElementById('welcome-head').addEventListener('click', () => selectTab('welcome'));
+document.getElementById('upload-head').addEventListener('click', () => selectTab('upload'));
+document.getElementById('presentations-head').addEventListener('click', () => selectTab('presentations'));
+document.getElementById('messages-head').addEventListener('click', () => selectTab('messages'));
+document.getElementById('settings-head').addEventListener('click', () => selectTab('settings'));
 
 
 
@@ -177,7 +178,6 @@ document.getElementById('select-folder-button').addEventListener('mouseup', () =
 
 
 
-let latestVersion: string;
 let currentViewerVersion: string = undefined;
 
 
@@ -250,7 +250,7 @@ function sendSettings() {
 
 const commentsCheckbox = document.querySelector('#comments-checkbox') as HTMLInputElement;
 
-commentsCheckbox.addEventListener('click', e => {
+commentsCheckbox.addEventListener('click', () => {
     const comments = document.querySelector('#comment-container');
     const commentsField = document.querySelector('#comment-url') as HTMLInputElement;
     if (commentsCheckbox.checked) {

@@ -1,22 +1,15 @@
 export { StateMap, afterEventState, createTimeline, currentState, decodeState, encodeState, futureSlide, gotoIndex, gotoState, moveHead, pageNumber, sameState, slideStartState, statesInPresentation, timeline, changeTimelineMode, recoverBug };
 
-import { findSlide, isOverlay, runOverlay, zoomSlide } from "./event";
-import { PresentationNode, Slide, State, StateJSON, Frame, TimelineJSON } from "../common/types";
+import { findSlide, runOverlay, zoomSlide } from "./event";
+import { PresentationNode, Slide, State, StateJSON, Frame } from "../common/types";
 
 
 
 import { markSeen, openPanelTree, timelineHTML, timelineSeen, updateTimeLineForCurrent } from "./html";
-import { addToQueue, svgMap } from "./loadSVG";
+import { addToQueue } from "./loadSVG";
 // import { loadSound } from "./sound";
 import { endRecording, initSoundTimeline, loadNearbySounds, loadSound, playAudio, soundState, startRecording } from "./sound";
 import { manifest } from "./viewer";
-
-
-
-
-function reverseDir(dir: -1 | 1): -1 | 1 {
-    if (dir == 1) { return -1 } else { return 1 }
-}
 
 
 
@@ -243,14 +236,6 @@ async function moveHead(dir: -1 | 1): Promise<void> {
 }
 
 
-function findBug(state: State, direction: 'forward' | 'backward') {
-    if (state.type == 'start' && state.slide.parent == undefined && direction == 'backward') {
-        const error = new Error('cannot go back from root slide');
-        console.log(error.stack);
-        console.log('found the bug');
-    }
-
-}
 function runState(state: State, direction: 'forward' | 'backward', mode: 'silent' | 'animated') {
 
 
@@ -403,7 +388,7 @@ function decodeState(state: StateJSON): State {
             const event = slide.children.find((e) => e.eventId == state.eventId);
             return afterEventState(event);
         }
-    } catch (e) {
+    } catch {
         // this can happen if the slide or event has been deleted, or if the state is otherwise invalid
         return undefined
     }

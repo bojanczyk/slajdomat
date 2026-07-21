@@ -8,19 +8,16 @@ the idea is that each slide manifest is tagged with the version of the Slajdomat
 
 
 export { oldVersion, upgradeManifest, upgradePresentation, version};
-import { Manifest, Slide, State, StateJSON, TimelineJSON, VersionList } from '../common/types';
+import { Manifest, Slide, StateJSON, TimelineJSON } from '../common/types';
 
 
 
-import * as child from 'child_process';
 import { sendStatus } from './main';
-import { readManifest, slideDir, writeManifest } from './main-files';
+import { readManifest, writeManifest } from './main-files';
 // import { slideDir, writeManifest, copyHTMLFiles, readManifest, readPresentations } from './server';
 
 import { version as versionNumber } from '../..//package.json';
-import { TimeLike } from 'node:original-fs';
 import * as path from 'path';
-import * as https from 'https';
 import { copyHTMLFiles } from './main-viewer-files';
 
 function version(): number {
@@ -132,7 +129,7 @@ function soundDictToTimeline(soundDict: SoundDict, manifest: Manifest): Timeline
 
                 timeline.push(timelineItem);
             }
-            catch (e) {
+            catch {
                 console.log('out of range', slideId, eventIndex);
             }
 
@@ -147,7 +144,7 @@ function upgradeManifest(manifest: Manifest): void {
     if (manifest.version == version())
         return;
 
-    const soundDict = (manifest as any).soundDict as SoundDict;
+    const soundDict = (manifest as unknown as { soundDict?: SoundDict }).soundDict;
     if (soundDict != undefined)
         manifest.treeTimeLine = soundDictToTimeline(soundDict, manifest);
 

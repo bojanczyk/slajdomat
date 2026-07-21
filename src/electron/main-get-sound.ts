@@ -37,7 +37,7 @@ function existingSoundNames(path: string): string[] {
     try {
         retval = fs.readdirSync(path).filter((name) => { return name.endsWith('.mp3') });
     }
-    catch (e) {
+    catch {
         //do nothing
     }
     // remover the mp3 suffix
@@ -118,17 +118,16 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
             const ffmpegString = `${slajdomatSettings.ffmpeg} -y -i  "${absoluteFileName}.wav" "${absoluteFileName}.mp3"`;
             child.execSync(ffmpegString);
         }
-        catch (e) { throw 'Failed to run ffmpeg for ' + absoluteFileName }
+        catch { throw 'Failed to run ffmpeg for ' + absoluteFileName }
 
         fs.unlinkSync(absoluteFileName + '.wav');
 
 
         let duration: number = undefined;
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const probeString = child.execSync(`${slajdomatSettings.ffprobe} -hide_banner -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${absoluteFileName}.mp3"`);
             duration = parseFloat(probeString.toString());
-        } catch (e) { throw 'Failed to run ffprobe' }
+        } catch { throw 'Failed to run ffprobe' }
 
 
         const soundDesc = {
@@ -166,7 +165,7 @@ function onGetWav(msg: MessageToServerSound): ServerResponse {
 
 
 //start a live recording. The result is adding a new array of live steps to the manifest.
-function createChronicle(msg: MessageToServerChronicle): ServerResponse {
+function createChronicle(_msg: MessageToServerChronicle): ServerResponse {
     throw 'not implemented';
 }
 /*

@@ -217,7 +217,7 @@ async function savePresentation(presentation: {
     }
 
 
-  } catch (e) {
+  } catch {
     notify("Not connected to the Slajdomat app. Make sure that it is running.");
   }
 
@@ -756,6 +756,7 @@ document.addEventListener('click', (event: MouseEvent) => {
 
     case 'find-app-in-github':
       window.open('https://github.com/bojanczyk/slajdomat/releases/', '_blank');
+      break;
 
     default:
     //do nothing

@@ -37,13 +37,12 @@ let slajdomatSettings: SlajdomatSettings;
 
 async function loadSettings() {
 
-    let version: string;
     try {
         const fileName = path.join(app.getPath('userData'), 'settings.json');
         const data = fs.readFileSync(fileName).toString();
         slajdomatSettings = JSON.parse(data) as SlajdomatSettings;
     }
-    catch (err) {
+    catch {
         // this should be called when there are no settings, i.e. the app is loaded for the first time
 
 
@@ -61,7 +60,7 @@ async function loadSettings() {
     }
 
 
-    version = await latestViewerVersion();
+    const version: string = await latestViewerVersion();
     let downloadSuccess : DownloadViewerResult;
     if (slajdomatSettings.viewerDownload != 'manual' && slajdomatSettings.viewerVersion != version) {
         downloadSuccess = await downloadViewerFiles('unconditionally');

@@ -8,7 +8,7 @@ const compat = new FlatCompat({
 
 module.exports = [
   {
-    ignores: ['dist/**', '.webpack/**', 'out/**', 'figma-plugin/**', 'test-slides/**'],
+    ignores: ['dist/**', '.webpack/**', 'out/**', 'figma-plugin/**', 'test-slides/**', 'resources/**'],
   },
   ...compat.config(require('./.eslintrc.json')).map((config) => ({
     ...config,

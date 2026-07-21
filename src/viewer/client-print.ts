@@ -3,9 +3,8 @@ export { exportPdf, initPdf };
 
 
 import { sendToServer } from './files';
-import { currentState, gotoIndex, statesInPresentation, timeline } from './timeline';
+import { gotoIndex, timeline } from './timeline';
 import { MessageToServerPdf} from '../common/messages-viewer-server';
-import { State} from '../common/types';
 import { manifest } from './viewer';
 
 
@@ -19,12 +18,12 @@ function initPdf() {
 
       switch (button.id) {
           case 'pdf-print-button':
-              button.addEventListener('click', event => {
+              button.addEventListener('click', () => {
                   exportPdf()
               })
               break;
           case 'link-to-pdf':
-              button.addEventListener('click', event => {
+              button.addEventListener('click', () => {
                   window.open(manifest.pdfFile, 'open');
               })
               break;
@@ -46,7 +45,7 @@ function reduceSvg(svg: SVGElement & SVGSVGElement): void {
 
 
   svg.querySelectorAll('*').forEach(element => {
-    const bbox = (element as any).getBoundingClientRect();
+    const bbox = element.getBoundingClientRect();
     if (
       bbox.x + bbox.width < viewBox.x ||
       bbox.y + bbox.height < viewBox.y ||
@@ -87,7 +86,7 @@ async function exportPdf(): Promise<void> {
   }
 
   //which steps should make it to the pdf
-  function useIndex(index: number) {
+  function useIndex(_index: number) {
     return true;
     //we can later imrove this logic so that only some events are exported, such as the following (which does not work, but appeals to the right methods)
     //  return step instanceof ZoomStep && !zoomsIn(step);

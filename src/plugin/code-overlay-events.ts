@@ -83,7 +83,7 @@ function createOverlayEvent(type: 'show' | 'hide' | 'animate'): OverlayEvent[] {
                 }
                 break;
 
-            case 'animate':
+            case 'animate': {
                 const params = { x: item.x, y: item.y } as AnimationParams;
                 if (state.database.originalParams[id] == undefined)
                     state.database.originalParams[id] = {...params};
@@ -105,6 +105,7 @@ function createOverlayEvent(type: 'show' | 'hide' | 'animate'): OverlayEvent[] {
                     params: params
                 }
                 break;
+            }
         }
 
         retval.push(newEvent);

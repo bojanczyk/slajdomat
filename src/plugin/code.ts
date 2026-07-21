@@ -21,7 +21,6 @@ import { latexitOne, latexitTwo, matReplacer, matematykData, matematykWord } fro
 import { PluginCodeToUI, PluginUIToCode } from './messages-ui-plugin'
 import { LatexState } from './plugin-types'
 import { drawTree, presentationTree, unusedSlides } from './code-draw-tree'
-import { save } from 'pdfkit'
 
 
 

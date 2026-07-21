@@ -8,7 +8,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { sendMessageToRenderer, sendStatus } from './main';
 import { slajdomatSettings } from './main-settings';
-import { send } from 'process';
 
 const uploadScript = `
 URL=https://raw.githubusercontent.com/bojanczyk/slajdomat/master/src/comments
@@ -54,7 +53,7 @@ function saveUploadScript(script: string) {
     fs.writeFileSync(fileName, script);
     sendStatus('Saved upload script', 'quick');
   }
-  catch (e) {
+  catch {
     sendStatus('failed saving script', 'upload');
   }
 }
@@ -92,51 +91,3 @@ function runUploadScript(): void {
   });
 }
 
-
-
-function gitUpload() {
-
-  function allowedFile(file: string) {
-    return !file.startsWith('comments/');
-  }
-
-  function runShell(command: string) {
-    try {
-      const output = child.execSync(command, { encoding: 'utf8' });
-      for (const line of output.split('\n')) {
-        sendStatus(line, 'upload');
-      }
-    } catch (err) {
-      sendStatus('Error: ' + err, 'upload');
-    }
-  }
-
-  const directoryPath = slajdomatSettings.directory; // replace with your directory path
-
-
-  try {
-    // get all untracked files
-    const gitLsFilesOutput = child.execSync('git -C ' + directoryPath + ' ls-files --others --exclude-standard', { encoding: 'utf8' });
-    const untrackedFiles = gitLsFilesOutput.split('\n').filter(Boolean); // filter out empty strings
-
-    // add all untracked files to git
-    for (const untrackedFile of untrackedFiles) {
-      if (allowedFile(untrackedFile)) {
-        runShell('git -C ' + directoryPath + ' add ' + untrackedFile);
-      }
-    }
-
-    // get all modified files
-    const gitDiffOutput = child.execSync('git -C ' + directoryPath + ' diff --name-only', { encoding: 'utf8' });
-    const changedFiles = gitDiffOutput.split('\n').filter(Boolean); // filter out empty strings
-
-    for (const changedFile of changedFiles) {
-      if (allowedFile(changedFile)) {
-        runShell('git -C ' + directoryPath + ' add ' + changedFile);
-      }
-    }
-  } catch (err) {
-    console.error(`Error: ${err}`);
-  }
-
-}

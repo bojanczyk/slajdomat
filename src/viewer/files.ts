@@ -17,7 +17,6 @@ import { MessageToServer, ServerResponse } from '../common/messages-viewer-serve
 import {
     manifest
 } from './viewer'
-import { list, save } from 'pdfkit';
 
 
 
@@ -49,7 +48,7 @@ async function sendToServer(msg: MessageToServer): Promise<ServerResponse> {
     const json = JSON.stringify(msg);
     const response = await fetch(getServer(), {
         method: 'POST',
-        body: json as any  //I cannot figure how to correctly type putting a stream into the body
+        body: json
     });
     if (!response.ok) {
         return { status : 'error', explanation : 'not connected' };
@@ -71,7 +70,7 @@ async function fetchJSON(filename: string): Promise<unknown> {
 
         else
             return res.json();
-    } catch (e) {
+    } catch {
         userAlert("Could not load slide file " + filename);
         return null;
     }
@@ -89,5 +88,5 @@ async function probeServer() : Promise<boolean> {
         });
         return true;
     }
-    catch (e) { return false; }
+    catch { return false; }
 }

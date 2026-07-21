@@ -104,14 +104,7 @@ type TimelineJSON = {
     state : StateJSON,
     soundFile : string,
     soundDuration : number
-}[]        
-
-// a json representation of a live recording
-type ChronicleRecordingJSON = {
-    name: string,
-    date: string,
-    states: { state: StateJSON, duration: number, audio: string }[],
-}
+}[]
 
 type SoundDict = {
     key: StateJSON,

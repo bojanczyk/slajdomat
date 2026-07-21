@@ -52,7 +52,7 @@ async function exportPdf(msg: MessageToServerPdf): Promise<ServerResponse> {
       writeManifest(manifest);  
     }
   }
-  catch (e) {
+  catch {
     return { status: 'error', explanation: 'could not create pdf file' }
   }
 

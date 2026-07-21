@@ -46,13 +46,13 @@ function initPresenterTools() {
     for (const button of document.querySelectorAll('span')) {
         switch (button.id) {
             case 'new-prev-key':
-                button.addEventListener('click', event => {
+                button.addEventListener('click', () => {
                     waitingForKey = prevButton;
                     document.getElementById('press-key-instructions').classList.remove('hidden');
                 })
                 break;
             case 'new-next-key':
-                button.addEventListener('click', event => {
+                button.addEventListener('click', () => {
                     waitingForKey = nextButton;
                     document.getElementById('press-key-instructions').classList.remove('hidden');
                 })

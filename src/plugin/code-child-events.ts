@@ -17,7 +17,7 @@ function createNewSlide(width: number, height: number, name: string): FrameNode 
     try {
         basex = state.currentSlide.x;
         basey = state.currentSlide.y;
-    } catch (e) {
+    } catch {
         //the slide might not be defined, or defined and removed
         basex = 0;
         basey = 0;

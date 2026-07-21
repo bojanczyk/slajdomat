@@ -15,7 +15,6 @@ import {
     pluginSettings,
     sendSettings
 } from './code-settings'
-import { load } from 'webfontloader';
 import { capsDict, latexDict } from './latex-dict';
 
 
@@ -88,7 +87,7 @@ function matematykData(node: SceneNode): LatexitData {
     try {
         const str = node.getPluginData('matematyk');
         return JSON.parse(str)
-    } catch (e) {
+    } catch {
         return null;
     }
 }

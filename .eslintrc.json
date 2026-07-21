@@ -12,5 +12,14 @@
       "plugin:import/warnings",
       "plugin:import/typescript"
     ],
-    "parser": "@typescript-eslint/parser"
+    "parser": "@typescript-eslint/parser",
+    "rules": {
+        "import/no-unresolved": ["error", {
+            "ignore": ["^original-fs$", "^node:original-fs$", "^@figma/plugin-typings$", "^webfontloader$"]
+        }],
+        "@typescript-eslint/no-unused-vars": ["error", {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_"
+        }]
+    }
 }

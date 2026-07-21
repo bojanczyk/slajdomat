@@ -1,7 +1,3 @@
-import {
-  PresentationNode
-} from "../common/types"
-
 import {} from '@figma/plugin-typings'
 
 export {

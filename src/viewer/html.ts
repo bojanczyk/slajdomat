@@ -12,7 +12,7 @@ import { formatTime, initPresenterTools } from './presenter-tools';
 import { initSearch } from './search';
 import { currentTool, toggleSketchpad } from './sketchpad';
 import { canPlaySound, initSoundHTML, loadSound } from './sound';
-import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, recoverBug, slideStartState, timeline } from './timeline';
+import { StateMap, afterEventState, currentState, gotoIndex, gotoState, pageNumber, slideStartState, timeline } from './timeline';
 import { manifest, nextButton, playButton, prevButton } from './viewer';
 import { version as versionNumber } from '../..//package.json';
 
@@ -167,7 +167,6 @@ function timelineHTML(): void {
 
         progressCache[i] = big;
 
-        const index = timeline.frames.findIndex((s) => s == event);
         timelineSeen(i);
     }
 
@@ -358,7 +357,7 @@ function initLeftPanel(): void {
     })
 
     //sketchpad checkbox in the presenter tab
-    document.getElementById('drawing-tools-checkbox').addEventListener('change', event => {
+    document.getElementById('drawing-tools-checkbox').addEventListener('change', () => {
         toggleSketchpad();
     });
 

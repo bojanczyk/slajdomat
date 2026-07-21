@@ -134,7 +134,7 @@ function eventList(events: PresentationNode[], selected: number): void {
         if (event.merged)
             div.classList.add('merged');
 
-        animateBar.addEventListener('click', (e) => {
+        animateBar.addEventListener('click', () => {
             postMessageToCode({
                 type: 'clickAnimateBar',
                 index: index

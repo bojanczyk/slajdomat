@@ -30,12 +30,11 @@ import { timerStart, userDefinedKeys } from './presenter-tools'
 import {
     toggleSketchpad
 } from "./sketchpad"
-import { canPlaySound, endRecording, playAudio, soundAdvance, soundIcon, soundState, startRecording, stopSound } from './sound'
+import { canPlaySound, playAudio, soundAdvance, soundIcon, soundState, startRecording, stopSound } from './sound'
 import { createTimeline, gotoIndex, gotoState, moveHead, timeline } from './timeline'
 import {
     Manifest,
-    State,
-    TimelineJSON
+    State
 } from "../common/types"
 
 
@@ -166,6 +165,7 @@ function keyListener(event: KeyboardEvent) {
 
             case 't':
                 timerStart();
+                break;
 
             default:
                 if (event.key in userDefinedKeys)
@@ -233,7 +233,13 @@ function runFromApp(): void {
     //we don't use such code for the moment, since we try to communicate with the server as much as possible.
 
 }
-(window as any).runFromApp = runFromApp;
+
+declare global {
+    interface Window {
+        runFromApp: () => void
+    }
+}
+window.runFromApp = runFromApp;
 
 
 
@@ -247,7 +253,7 @@ function treeOrChronicleURL(): 'tree' | 'chronicle' {
             return 'chronicle'
         else 
             return 'tree'
-    } catch (e) {
+    } catch {
         return 'tree';
     }
 }

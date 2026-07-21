@@ -3,11 +3,6 @@ export {
 }
 
 import {
-    SoundDict,
-    State
-} from '../common/types'
-
-import {
     getManifest,
     manifest,
     serverConnected,
@@ -20,15 +15,12 @@ import {
 
 
 import {
-    progressCache,
-    timelineFailedLoad,
     timelineHTML,
     timelineRecording,
     updateTimeCounter,
     userAlert
 } from "./html"
-import { StateMap, changeTimelineMode, createTimeline, currentState, decodeState, encodeState, gotoIndex, gotoState, moveHead, sameState, timeline } from './timeline'
-import { formatTime } from './presenter-tools'
+import { StateMap, changeTimelineMode, currentState, decodeState, encodeState, moveHead, timeline } from './timeline'
 import { MessageToServerSound } from '../common/messages-viewer-server'
 
 
@@ -44,20 +36,8 @@ let soundState: SoundState = 'none';
 
 
 
-type SoundInfo = {
-    previousDuration: number,
-    audio: HTMLAudioElement
-}
-
-// let sounds: SoundInfo[] = undefined;
-
-
-function timelineAudio(index: number): HTMLAudioElement {
-    return timeline.frames[index].audio;
-}
-
-
 //to get new sounds, we use a trick where the audio name is extended with meaningless, but changing, string parameters
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- mutated for cache-busting, but nothing currently reads it; the cache-busting suffix doesn't appear to be wired into any audio URL
 let cacheFlushString = ''
 function cacheFlush(): void {
     cacheFlushString += '?' + Date.now();
@@ -95,7 +75,7 @@ function endRecording(): void {
     mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunks)
         const fr = new FileReader()
-        fr.onload = function (e) {
+        fr.onload = function () {
             async function send() {
                 try {
                     const serverResponse = await sendToServer(retval);
@@ -187,12 +167,6 @@ function playbackRateChange(): void {
 
 
 
-function findInsoundList(state: State, dict: SoundDict): number {
-    return dict.findIndex((s) => sameState(decodeState(s.key), state));
-}
-
-
-
 //for each step in the timeline, get its file name and duration
 function initSoundTimeline(mode: 'tree' | 'live'): void {
 
@@ -258,7 +232,7 @@ async function loadSound(index: number): Promise<HTMLAudioElement> {
         if (sound.audio != undefined)
             return sound.audio
         else {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const audio = new Audio(timeline.frames[index].soundFile);
                 audio.onloadeddata = () => {
                     timeline.frames[index].audio = audio;
@@ -470,15 +444,6 @@ function initSoundHTML(): void {
 
 
 
-// the timeline uses two kinds of display, depending on the whether the sound is playing, or not
-function updateTimelineDisplay(): void {
-    if (soundState == 'playing') {
-        document.getElementById('progress-panel').classList.add('playing');
-    } else {
-        document.getElementById('progress-panel').classList.remove('playing');
-    }
-}
-
 //is it possible to play a sound
 function canPlaySound(frame: number): boolean {
     if (frame == undefined)
@@ -519,26 +484,5 @@ function soundIcon(): void {
             playButton.innerHTML = "mic"
             break;
     }
-}
-
-// this code measures the volume of the microphone
-// we might use it to block slide changing when the volume is too high
-// but it is not used now
-async function volumeCheck() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    const audioContext = new AudioContext();
-    const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(stream);
-    const analyserNode = audioContext.createAnalyser();
-    mediaStreamAudioSourceNode.connect(analyserNode);
-
-    const pcmData = new Float32Array(analyserNode.fftSize);
-    const onFrame = () => {
-        analyserNode.getFloatTimeDomainData(pcmData);
-        let sumSquares = 0.0;
-        for (const amplitude of pcmData) { sumSquares += amplitude * amplitude; }
-        console.log(Math.sqrt(sumSquares / pcmData.length));
-        window.requestAnimationFrame(onFrame);
-    };
-    window.requestAnimationFrame(onFrame);
 }
 

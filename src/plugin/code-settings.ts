@@ -65,7 +65,7 @@ async function initSettings() {
             ...defaultSettings,
             ...JSON.parse(stored)
         };
-    } catch (e) {
+    } catch {
         pluginSettings = defaultSettings;
     }
     sendSettings();

@@ -3,7 +3,6 @@
 
 export type { MessageToServer, ServerResponse, MessageToServerSound, MessageToServerSlide, MessageToServerChronicle, MessageToServerPdf}
 
-import e from "cors"
 import { Database, Slide, StateJSON } from "./types"
 
 //the message sent by the plugin to the server to record a new sound

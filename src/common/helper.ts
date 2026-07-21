@@ -50,7 +50,7 @@ function freshRect(x: number, y : number, width: number, height: number, avoidLi
     const yoffset = height * 1.1;
 
 
-    for (let i = 0; true; i++)
+    for (let i = 0; ; i++)
         for (let j = 0; j <= i; j++) {
 
 

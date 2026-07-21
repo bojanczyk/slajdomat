@@ -2,10 +2,9 @@
 */
 
 export { saveAnimationParams, loadAnimationParams }
-import { stat } from "original-fs";
 import { currentParams, modifyingEvents } from "../common/animate-params";
-import { AnimateEvent, AnimationParams, OverlayEvent, PresentationNode, ShowHideEvent } from "../common/types";
-import { saveCurrentData, state } from "./code";
+import { AnimationParams } from "../common/types";
+import { state } from "./code";
 import { overlayId } from "./code-name-management";
 
 

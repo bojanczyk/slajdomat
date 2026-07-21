@@ -54,7 +54,7 @@ function findExecutableInPath(executableName: string) {
             if (stat.isFile() && stat.mode & fs.constants.S_IXUSR) {
                 return fullPath; // Return the path to the executable
             }
-        } catch (err) {
+        } catch {
             // Ignore errors and continue searching
             continue;
         }
@@ -65,7 +65,7 @@ function findExecutableInPath(executableName: string) {
 
 //writes the file in the local directory
 function writeFile(fileName: string, fileContents: string | Buffer) {
-    fs.writeFile(fileName, fileContents, function (err: any) {
+    fs.writeFile(fileName, fileContents, function (err: NodeJS.ErrnoException | null) {
         if (err) throw err;
         // sendStatus(fileName + ' written.');
     });
@@ -80,7 +80,7 @@ function gotoParent(): void {
         try {
             readPresentations(path.join(currentDir, '..'));
         }
-        catch (e) {
+        catch {
             sendStatus('Error: you clicked on parent, but the parent directory has been deleted')
         }
     }
@@ -172,7 +172,7 @@ function readManifest(presentation: string): Manifest {
             json.treeTimeLine = [];
 
         return json;
-    } catch (error) {
+    } catch {
         return undefined
     }
 }
@@ -212,7 +212,7 @@ function readPresentations(dir: string = currentDir, silent = false): string[] {
             const data = fs.readFileSync(path.join(fullName, 'manifest.json')).toString();
             const json = JSON.parse(data) as Manifest;
             msg.presentations[json.presentation] = { file: file, version: oldVersion(json) };
-        } catch (e) {
+        } catch {
             //otherwise, if display as folder, assuming it is not hidden like .git
             if (!file.startsWith('.'))
                 msg.subfolders.push(file);

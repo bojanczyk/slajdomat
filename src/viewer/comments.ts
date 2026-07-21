@@ -3,7 +3,6 @@ Handles the comments to slides
 */
 
 
-import doc from "pdfkit";
 import { userAlert } from "./html";
 import { currentState, decodeState, encodeState, gotoState } from "./timeline";
 import { StateJSON } from "../common/types";
@@ -77,7 +76,7 @@ async function initComments() {
         }
 
 
-    } catch (error) {
+    } catch {
         document.querySelector('#comments-tab-head').classList.add('hidden');
     }
 

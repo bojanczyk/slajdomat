@@ -9,20 +9,17 @@ export { copyHTMLFiles, downloadViewerFiles, getResourceDir, setResourceDir, lat
 
 import { app } from 'electron';
 import * as fs from 'fs';
-import * as https from 'https';
 import * as path from 'path';
 import { JSDOM } from 'jsdom';
 import { sendMessageToRenderer, sendStatus } from './main';
 import { presentationDir } from './main-files';
 import { Manifest, VersionList } from '../common/types';
 import { saveSettings, slajdomatSettings } from './main-settings';
-import { save } from 'pdfkit';
 import { isLater, theHTMLFiles } from '../common/helper';
 import axios from 'axios';
 import { promisify } from 'util';
 import { pipeline as callbackPipeline } from 'stream';
 import { DownloadViewerResult } from './messages-main-renderer';
-import { manifest } from '../viewer/viewer';
 
 
 //this is the directory which contains the compiled viewer files, such as viewer.js, that are used to create presentations. By the default it is the 
@@ -80,7 +77,7 @@ async function latestViewerVersion(): Promise<string> {
             return bestVersion;
         }
     }
-    catch (e) {
+    catch {
         return undefined;
     }
 }
@@ -138,7 +135,7 @@ async function downloadViewerFiles(mode: 'if not there' | 'unconditionally'): Pr
 
             sendStatus('Successfully downloaded ' + fileName);
 
-        } catch (error) {
+        } catch {
             sendStatus('Failed downloading viewer files', 'quick');
             if (someMissing)
                 return 'critical failure'
@@ -173,7 +170,7 @@ function getRatio(directory : string) : number {
     const ratio = parseFloat(height) / parseFloat(width);
     return ratio;
     }
-    catch (e) {
+    catch {
         return 0.75;
     }
 }

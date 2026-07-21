@@ -22,7 +22,7 @@ import { gotoChild, gotoParent, readPresentations, revealFinder } from './main-f
 
 
 
-import { runUploadScript, saveUploadScript } from './main-upload';
+import { runUploadScript } from './main-upload';
 import { upgradePresentation } from './main-version';
 import { downloadViewerFiles, getRatio, setResourceDir } from './main-viewer-files';
 import { ElectronMainToRenderer, ElectronRendererToMain } from './messages-main-renderer';
@@ -51,7 +51,7 @@ function sendMessageToRenderer(msg: ElectronMainToRenderer): void {
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
+if (require('electron-squirrel-startup')) { // eslint-disable-line @typescript-eslint/no-require-imports
   app.quit();
 }
 
@@ -175,7 +175,7 @@ function startApp(): void {
     setResourceDir();
   }
 
-  catch (e) {
+  catch {
     dialog.showMessageBox({
       type: 'info',
       title: 'Alert',
