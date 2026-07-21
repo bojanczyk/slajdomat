@@ -1,7 +1,6 @@
 import { VersionList } from '../common/types';
 import { version as versionNumber } from '../../package.json';
 import * as fs from 'fs';
-import * as versionsJSON from '../../resources/versions.json';
 import { isLater, theHTMLFiles } from '../common/helper';
 
 
@@ -68,12 +67,7 @@ fs.readFile(versionsFile, 'utf8', (err, data) => {
 
         // make a directory for the new version
         const newVersionDir = viewerFiles + '/' + newVersion;
-        fs.mkdir(newVersionDir, (err) => {
-            if (err) {
-                console.error('An error occurred making directory for' + newVersionDir + err);
-                return;
-            }
-        });
+        fs.mkdirSync(newVersionDir);
 
         // copy the files from test slides to the new version
         const testSlides = './test-slides';
