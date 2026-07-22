@@ -11,7 +11,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
 
     steps:
       - name: Checkout code
@@ -44,8 +44,8 @@ jobs:
             7z a slajdomat-windows.zip  out/make/squirrel.windows/x64/Slajdomat-*.exe 
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             mv ./out/make/zip/darwin/arm64/*zip slajdomat-macos-latest.zip
-          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
-            mv ./out/make/zip/darwin/x64/*zip slajdomat-macos-13.zip
+          elif [[ "${{ matrix.os }}" == "macos-15-intel" ]]; then
+            mv ./out/make/zip/darwin/x64/*zip slajdomat-macos-intel.zip
           else
             zip -r slajdomat-linux.zip ./out/
           fi

@@ -51,13 +51,19 @@ Notes about various hacks used in the setup. This may be common knowledge, but i
 
 ### Code signing on mac
 
-To distribute the binaries on mac, one needs to code sign. I guess that the proper way to do it is with a paid developer account. Without that account, macOS will raise a warning about the app being from an unidentified developer.
+To distribute the binaries on mac without a warning, one needs to code sign with a paid Apple Developer Program account ($99/year) and notarize the app. This project does not do that (there is no `osxSign`/`osxNotarize` config in forge.config.ts), so the released builds are only "ad hoc" signed, which is what Electron Forge does by default. This is enough for the app to launch at all on Apple Silicon (a completely unsigned app is refused outright, reported as "damaged"), but it is not enough to satisfy Gatekeeper, since the app is not notarized.
 
-At least, that is how it works on intel macs. On an arm mac, if an app is not code signed, then the os will claim that the program is "damaged" and want to delete it. One can work around this by using something called "ad hoc" signing, which decorates the program with some kind of empty signature: 
+This means that anyone downloading a release will hit a Gatekeeper block the first time they try to open it. How to get past this changed with macOS Sequoia: the old trick of Control-clicking the app and choosing "Open" no longer bypasses the check. The current procedure is:
 
-    codesign --force --deep -s - Slajdomat.app
+1. Unzip the app and try to open it. macOS will refuse and show a dialog.
+2. Open **System Settings → Privacy & Security**, scroll to the bottom. There is an "Open Anyway" button for the app that was just blocked (it only stays there for about an hour after the attempt).
+3. Click it, confirm in the follow-up dialog. After that, the app opens normally.
 
-This will elimiate the "damaged" message, and allow the user to run the app once they have agreed to use it from an unidentified developer. 
+If a user is comfortable with the terminal, they can also just strip the quarantine flag directly instead of going through System Settings:
+
+    xattr -cr Slajdomat.app
+
+This should probably be mentioned in the release notes / README, since it is not obvious and trips up new users.
 
 
 ## Todo
