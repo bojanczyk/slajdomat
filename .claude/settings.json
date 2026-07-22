@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tee /tmp/lint-full.log)",
+      "Bash(awk '/^\\\\/Users/{f=$0} /is defined but never used.*@typescript-eslint\\\\/no-unused-vars/{if \\($0 ~ /'\"'\"'e'\"'\"'|'\"'\"'err'\"'\"'|'\"'\"'error'\"'\"'/\\) print f}' /tmp/lint-full.log)",
+      "Bash(grep -v \"^$\\\\|^>\\\\|slajdomat@\\\\|problems \\(\\\\|potentially fixable\")",
+      "Bash(node dist/versionScript.js)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
