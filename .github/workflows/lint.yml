@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -21,7 +21,3 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        # 18 pre-existing errors remain (import-resolver config gaps + a few
-        # switch/case and loop-logic spots that need human review before
-        # being "fixed"). Non-blocking until those are cleaned up.
-        continue-on-error: true
