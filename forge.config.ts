@@ -21,6 +21,19 @@ const config: ForgeConfig = {
       // docs/developer-notes.md's "Code signing on mac" section.
       identity: '-',
       identityValidation: false,
+      // hardenedRuntime defaults to true in @electron/osx-sign, since it's
+      // a prerequisite for notarization. We're not notarizing, and hardened
+      // runtime's library validation requires every loaded framework to
+      // share the main executable's Team ID -- which ad-hoc signing can't
+      // provide, since there is no real identity. With it left on, the
+      // packaged app fails to launch at all: dyld refuses to load
+      // Electron Framework with "different Team IDs". Note this can only
+      // be disabled via optionsForFile -- a flat top-level
+      // `hardenedRuntime: false` here is silently ignored, since
+      // @electron/osx-sign only reads that key from the per-file options
+      // returned by optionsForFile (or its own defaults, which hardcode
+      // true), never from the top-level sign options object.
+      optionsForFile: () => ({ hardenedRuntime: false }),
     },
   },
   rebuildConfig: {},
