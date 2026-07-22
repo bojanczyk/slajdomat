@@ -13,6 +13,15 @@ const config: ForgeConfig = {
     asar: true,
     icon: 'src/icons/slajdomat.icns',
     executableName: 'slajdomat',
+    osxSign: {
+      // ad-hoc signing (no paid Apple Developer account): this signs the
+      // whole bundle so codesign --verify passes, which is what unlocks
+      // macOS's "unidentified developer, open anyway" recovery path
+      // instead of the unrecoverable "app is damaged" dead end. See
+      // docs/developer-notes.md's "Code signing on mac" section.
+      identity: '-',
+      identityValidation: false,
+    },
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
